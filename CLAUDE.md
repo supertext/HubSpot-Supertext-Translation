@@ -79,3 +79,7 @@ Lessons from the live API, apply them here: header `Authorization: Supertext-Aut
 - Every page and API call needs the session cookie; POSTs also the CSRF token (`src/auth/session.ts`).
 - The app definition (`hubspot-project/`) is uploaded by `.github/workflows/hubspot-app.yml` (by hand or when it changes on `main`); never change scopes or redirect URLs in HubSpot's UI only.
 - Hosting: Railway service *HubSpot* in *supertext-cms-demos* (https://hubspot-production-ac4d.up.railway.app), building the `Dockerfile`, health check `/health`, its own database `hubspot_supertext` on the shared Postgres, one instance. Don't export-ignore anything the Dockerfile copies.
+
+## Live E2E runs share one API key (always)
+
+Every push to `main` that touches the plugin, the demo or the tests starts the live E2E run, and all Supertext plugin repos share one Supertext API key, which is rate-limited per second. When the same kind of change goes to several repos, push them one repo at a time, at least 3 minutes apart (a loop with `sleep 180`), never in parallel. Docs-only changes (`docs/`, `README.md`, `CHANGELOG.md`, `CLAUDE.md`) don't start it and can go together. A live run that failed with `RATE_LIMIT_EXCEEDED` collided with another repo's run, it isn't a bug: rerun it on its own.
