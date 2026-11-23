@@ -217,7 +217,9 @@ function checkVersion(tag: string, kind: Kind, source: Item, version: Item, lang
       if (count(s, needle)) check(`${tag}: ${k} keeps its ${what}`, count(t, needle) === count(s, needle), `${count(t, needle)}/${count(s, needle)}`);
     }
   }
-  check(`${tag}: texts were changed by the translation`, before.size > 0 && changed / before.size >= 0.8, `${changed}/${before.size} texts`);
+  // Short texts can rightly stay the same (a greeting like "Hi {{ contact.firstname }},", a product
+  // name), and an email has only a handful of texts: 70% keeps the check meaningful without flaking.
+  check(`${tag}: texts were changed by the translation`, before.size > 0 && changed / before.size >= 0.7, `${changed}/${before.size} texts`);
   const scores = Object.fromEntries(Object.keys(STOPWORDS).map((l) => [l, score(all, l)]));
   const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
   check(`${tag}: text is in the target language`, best === LANG[lang], JSON.stringify(scores));
