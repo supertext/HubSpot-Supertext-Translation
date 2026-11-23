@@ -360,7 +360,7 @@ describe('interface language', () => {
     const env = setup();
     await env.connect();
     const english = await (await env.request('/settings')).text();
-    expect(english).toContain('Automatic (your browser’s language)');
+    expect(english).toContain('Automatic (your browser&#39;s language)');
     expect(english).not.toContain('class="langs"'); // no switcher in the header any more
     await env.saveSettings([...STANDARD_SETTINGS, ['uiLanguage', 'de']]);
     const german = await (await env.request('/settings')).text();
