@@ -228,7 +228,7 @@ What runs:
    - the text is in the target language (common-word count), `de-CH` without "ß";
    - the job summary (*Done: 3 created …*) and no error in the job panel;
    - translating the website page again with *Update existing versions* updates the same drafts in place (*3 updated*, no new items), checked again.
-3. The docs screenshots (`npm run docs:screenshots`) against the stand-in HubSpot and the stand-in Supertext API, as described under *Screenshots*. If the images differ from `docs/images/`, they are uploaded, and on `main` a second job opens or updates the pull request "Docs: regenerate screenshots" from the branch `automation/docs-screenshots`.
+3. The docs screenshots (`npm run docs:screenshots`) against the stand-in HubSpot and the stand-in Supertext API, as described under *Screenshots*. If the images differ from `docs/images/` and the screenshot step succeeded, they are uploaded, and on `main` a second job commits them straight to `main` ("Docs: regenerate screenshots"). There is no pull request to review, and the push, made with the workflow's own token, starts no other workflow.
 
 Triggers: weekly (Mondays 06:09 UTC), pushes to `main` that change the app, its tests or the workflow, pull requests that change `tests/e2e/` or the workflow, and by hand (*Actions → E2E → Run workflow*).
 
