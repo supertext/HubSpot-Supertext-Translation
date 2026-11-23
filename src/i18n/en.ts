@@ -112,7 +112,7 @@ export const en = {
   'settings.languages.targets': 'Translate into',
   'settings.languages.code': 'Supertext code',
   'settings.languages.codeHint':
-    'Choose the language Supertext translates into for each language, for example Swiss High German (de-CH) for German. Variants of the same language come first. Each language starts with its suggestion: the same code where HubSpot\'s code is already a Supertext code (de-ch, es, nl), else the usual variant (German → de-DE, English → en-US, Chinese (China) → zh-Hans, Spanish (Mexico) → es). A language without a suggestion shows — choose — and isn\'t translated until you pick its code.',
+    'Choose the language Supertext translates into for each language, for example German (Switzerland) (de-CH) for German. Variants of the same language come first. Each language starts with its suggestion: the same code where HubSpot\'s code is already a Supertext code (de-ch, es, nl), else the usual variant (German → de-DE, English → en-US, Chinese (China) → zh-Hans, Spanish (Mexico) → es). A language without a suggestion shows — choose — and isn\'t translated until you pick its code.',
   'settings.languages.review': 'Translation review',
   'settings.languages.reviewHint':
     "Translation review: translations into a language ticked here go through Supertext's review service, so reviewers can check and correct them on the website with the Supertext Localization Review extension. Their corrections are used the next time the item is translated into that language.",

@@ -11,19 +11,19 @@ For editors. Once the app is set up (see [INSTALLATION.md](INSTALLATION.md)), yo
 3. Under **Choose the languages**, tick the languages. The code next to each (e.g. `de-CH`) is the variant Supertext translates into.
 4. Click **Translate into 2 languages with Supertext**.
 
-   ![Translate with Supertext: Website pages, the page About us selected, no versions yet; Swiss French and Swiss High German ticked, German and Italian (Switzerland) not; Update existing versions ticked, with its warning; the button Translate into 2 languages with Supertext; below it 3. Or: Export for translation, with the file formats and Download file](images/translate-page.png)
+   ![Translate with Supertext: Website pages, the page About us selected, no versions yet; French (Switzerland) and German (Switzerland) ticked, German and Italian (Switzerland) not; Update existing versions ticked, with its warning; the button Translate into 2 languages with Supertext; below it 3. Or: Export for translation, with the file formats and Download file](images/translate-page.png)
 
 5. Each language takes a few seconds. The **Translation** box shows the result per language, with a link to each draft in HubSpot. You can leave the page meanwhile; the translation goes on.
 
-   ![Translation of About us: Done: 2 created, 0 updated, 0 kept, 0 failed; Swiss French and Swiss High German New version (draft), each with Open in HubSpot; Review the drafts in HubSpot and publish them when they are ready.](images/translate-results.png)
+   ![Translation of About us: Done: 2 created, 0 updated, 0 kept, 0 failed; French (Switzerland) and German (Switzerland) New version (draft), each with Open in HubSpot; Review the drafts in HubSpot and publish them when they are ready.](images/translate-results.png)
 
 The list then shows the versions:
 
-![The page list after translating: About us is Translated in Swiss French and Swiss High German, Not translated in German and Italian (Switzerland)](images/translated-state.png)
+![The page list after translating: About us is Translated in French (Switzerland) and German (Switzerland), Not translated in German and Italian (Switzerland)](images/translated-state.png)
 
 Marketing emails work the same way; each language gets its own copy of the email:
 
-![Marketing emails: the Autumn newsletter translated into Italian (Switzerland), Swiss French and Swiss High German, three new versions, and the About us page under Recent translations](images/email-results.png)
+![Marketing emails: the Autumn newsletter translated into Italian (Switzerland), French (Switzerland) and German (Switzerland), three new versions, and the About us page under Recent translations](images/email-results.png)
 
 The app's pages are in English, German, French or Italian, in your browser's language unless you choose another one under **Settings → Interface language** (for this browser only). They work on a phone too: on a small screen the list of content scrolls sideways to show all your languages.
 
@@ -59,7 +59,7 @@ Send the file to your translator, or upload it to Supertext's web app. In an **H
 
 The page then shows a summary per item and language, with a link to the draft in HubSpot:
 
-![Imported files: Advent calendar 2026 (Landing pages), Swiss High German, New version (draft), Imported: 5, Open in HubSpot](images/import-results.png)
+![Imported files: Advent calendar 2026 (Landing pages), German (Switzerland), New version (draft), Imported: 5, Open in HubSpot](images/import-results.png)
 
 | Line | Meaning |
 | --- | --- |

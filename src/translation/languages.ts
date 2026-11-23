@@ -31,11 +31,11 @@ export const hubspotCode = (code: string): string => code.trim().toLowerCase().r
 /** Same language code in HubSpot's sense (case and _/- ignored). */
 export const sameLanguage = (a: string, b: string): boolean => Boolean(a) && hubspotCode(a) === hubspotCode(b);
 
-/** The language's name in the given interface language ("de-ch" in English → "Swiss High German"). */
+/** The language's name in the given interface language ("de-ch" in English → "German (Switzerland)"). */
 export function languageName(code: string, uiLocale: string): string {
   try {
     const tag = code === 'no' ? 'nb' : code.replace(/-(\w+)$/, (_m, region: string) => `-${region.toUpperCase()}`);
-    const name = new Intl.DisplayNames([uiLocale], { type: 'language' }).of(tag);
+    const name = new Intl.DisplayNames([uiLocale], { type: 'language', languageDisplay: 'standard' }).of(tag);
     if (name && name.toLowerCase() !== code.toLowerCase()) return name.charAt(0).toLocaleUpperCase(uiLocale) + name.slice(1);
   } catch {
     // fall through

@@ -28,7 +28,7 @@ const browser = await chromium.launch(process.env.CHROME ? { executablePath: pro
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, locale: 'en-US' });
 page.setDefaultTimeout(60_000);
 
-// Set up (not recorded): connect through the stand-in's OAuth, a fake key, English → German and Swiss French.
+// Set up (not recorded): connect through the stand-in's OAuth, a fake key, English → German and French (Switzerland).
 await page.goto(appUrl);
 await page.click('text=Connect HubSpot');
 await page.waitForURL(`${appUrl}/settings`);
@@ -60,10 +60,10 @@ await kit.say('In Translate with Supertext, pick the page.', {
   caption: '<b>Translate with Supertext</b>: pick the page',
   during: () => kit.click(page.locator('input[name="item"][value="101"]')),
 });
-await kit.say('Keep German ticked, and untick Swiss French for now.', {
+await kit.say('Keep German ticked, and untick French (Switzerland) for now.', {
   caption: 'Choose the language: <b>German</b>',
   during: async () => {
-    await kit.click(page.locator('label.language').filter({ hasText: 'Swiss French' }));
+    await kit.click(page.locator('label.language').filter({ hasText: 'French (Switzerland)' }));
     await kit.moveTo(page.locator('label.language').filter({ hasText: 'German' }).first());
   },
 });

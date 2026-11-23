@@ -78,7 +78,8 @@ describe('translator', () => {
 describe('languages', () => {
   it('names languages in the interface language', () => {
     expect(languageName('de', 'fr')).toBe('Allemand');
-    expect(languageName('fr-ch', 'en')).toBe('Swiss French');
+    expect(languageName('fr-ch', 'en')).toBe('French (Switzerland)');
+    expect(languageName('de-ch', 'de')).toBe('Deutsch (Schweiz)');
     expect(languageName('no', 'en')).toBe('Norwegian Bokmål');
     expect(languageName('zh-tw', 'de')).toMatch(/Chinesisch/);
   });

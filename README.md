@@ -6,7 +6,7 @@ Translate your HubSpot content with [Supertext](https://www.supertext.com) AI: w
 
 > **Status: tested on a real HubSpot account** (17 October 2026: installing with OAuth, blog posts into language variants). Not yet in the HubSpot App Marketplace. What has been confirmed on a real account and what is still to check (pages, emails, knowledge base) is in [Known limitations](docs/DEVELOPER.md#known-limitations--roadmap).
 
-![Translate with Supertext: the website page About us selected, Swiss French and Swiss High German ticked](docs/images/translate-page.png)
+![Translate with Supertext: the website page About us selected, French (Switzerland) and German (Switzerland) ticked](docs/images/translate-page.png)
 
 - **Hosted app** (Node.js on Railway), installed in HubSpot with OAuth. Nothing to install on your website.
 - **Five kinds of content:** website pages, landing pages, blog posts, marketing emails and (with Service Hub Professional or Enterprise) knowledge base articles.

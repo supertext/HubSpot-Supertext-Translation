@@ -135,7 +135,7 @@ async function main() {
   await page.uncheck('input[name="language"][value="de"]');
   await shot('translate-page-de', page.locator('#translate-form'));
 
-  // Translation files: export the landing page as HTML for Swiss High German, "translate" it with the
+  // Translation files: export the landing page as HTML for German (Switzerland), "translate" it with the
   // sample translations (as a translator would), import it.
   await page.goto(`${appUrl}/?kind=landing-page&lang=en`);
   await page.check('input[name="item"][value="201"]');
