@@ -1,7 +1,9 @@
 /**
  * Screenshots of the app's pages for the guides (docs/images), taken with
- * Playwright against the stand-in HubSpot and Supertext APIs, which return
- * real translations of the sample account (tests/standin/samples.json).
+ * Playwright against the stand-in HubSpot API and the real Supertext API when
+ * SUPERTEXT_API_KEY is set (CI's secret), so the guides show real translations.
+ * Without a key the Supertext stand-in translates (the sample account's texts
+ * from tests/standin/samples.json). Version reports always go to the stand-in.
  *
  *   npm run docs:screenshots
  *
@@ -14,6 +16,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { chromium, type Locator, type Page } from 'playwright';
+import { LIVE_BASE_URL } from 'supertext-sdk/v1';
 import { createApp } from '../../src/app.js';
 import { loadConfig } from '../../src/config.js';
 import { MemoryStore } from '../../src/store/store.js';
@@ -37,6 +40,10 @@ async function main() {
   const supertextUrl = await listen((request) => supertext.handle(request));
   // The review service for languages with Translation review on: the same stand-in, never the live one.
   const reviewUrl = await listen((request) => supertext.handle(request));
+  // CI: the real Supertext API with the secret (typed into the key field below, a password field
+  // that never shows it). The review service is pointed at the API itself, so Translation review
+  // languages are translated for real too, without involving the review service.
+  const liveKey = process.env.SUPERTEXT_API_KEY?.trim() ?? '';
   const port = 8790;
   const appUrl = `http://127.0.0.1:${port}`;
   const app = createApp({
@@ -46,8 +53,7 @@ async function main() {
       HUBSPOT_CLIENT_SECRET: 'screenshots-secret',
       HUBSPOT_APP_BASE: hubspotUrl,
       HUBSPOT_API_BASE: hubspotUrl,
-      SUPERTEXT_API_ENDPOINT: `${supertextUrl}/v1/`,
-      SUPERTEXT_REVIEW_URL: `${reviewUrl}/v1/`,
+      ...(liveKey ? { SUPERTEXT_REVIEW_URL: LIVE_BASE_URL } : { SUPERTEXT_API_ENDPOINT: `${supertextUrl}/v1/`, SUPERTEXT_REVIEW_URL: `${reviewUrl}/v1/` }),
       // Version reports go to the stand-in, never to the live Commando Center.
       SUPERTEXT_REPORT_URL: `${supertextUrl}/report`,
     }),
@@ -70,7 +76,7 @@ async function main() {
   await page.waitForURL(`${appUrl}/settings`);
 
   // Settings: key, languages (each dropdown preselects its suggestion; German is set to de-DE explicitly), and a connection test.
-  await page.fill('input[name="apiKey"]', 'Supertext-Auth-Key 0123456789abcdef');
+  await page.fill('input[name="apiKey"]', liveKey || 'Supertext-Auth-Key 0123456789abcdef');
   await page.selectOption('select[name="sourceLanguage"]', 'en');
   for (const code of ['de-ch', 'fr-ch', 'it-ch', 'de']) await page.check(`#t-${code}`);
   // Translation review on for Swiss German.
@@ -111,8 +117,8 @@ async function main() {
 
   // Results after translating.
   await page.click('#translate-button');
-  await page.waitForURL(/item=101/, { timeout: 30_000 });
-  await page.waitForSelector('.job .notice.success');
+  await page.waitForURL(/item=101/, { timeout: 300_000 });
+  await page.waitForSelector('.job .notice.success', { timeout: 300_000 });
   await shot('translate-results', page.locator('.job'));
   await shot('translated-state', page.locator('table.items'));
 
@@ -125,8 +131,8 @@ async function main() {
   await page.check('input[name="item"][value="401"]');
   await page.uncheck('input[name="language"][value="de"]');
   await page.click('#translate-button');
-  await page.waitForURL(/item=401/, { timeout: 30_000 });
-  await page.waitForSelector('.job .notice.success');
+  await page.waitForURL(/item=401/, { timeout: 300_000 });
+  await page.waitForSelector('.job .notice.success', { timeout: 300_000 });
   await shot('email-results', page.locator('main'));
 
   // The blog posts in German.

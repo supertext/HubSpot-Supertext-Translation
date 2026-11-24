@@ -51,7 +51,7 @@ Everyone in your team who connects the same HubSpot account shares its settings.
 
 Enter the API key, choose your languages and click **Save**. Saving checks the API key automatically (free of charge, nothing is translated) and shows the result under the key: *API key checked: the connection to Supertext works.* means everything is in place. **Test connection** runs the same check again, also for a key you have typed but not saved yet.
 
-<img src="images/settings.png" alt="Supertext settings: the saved API key with links to create a Supertext account and generate the key, the API key check result and Test connection, both saying the connection to Supertext works; the language of the content (English); German with the Supertext language German (Germany) (de-DE) in its dropdown, Italian (Switzerland), French (Switzerland) and German (Switzerland) ticked with Italian (Switzerland) (it-CH), French (Switzerland) (fr-CH) and German (Switzerland) (de-CH) preselected; the Translation review column with only German (Switzerland) ticked; the form of address; Send version information to Supertext; the interface language (automatic); the connected account swiss-chocolate.example with the knowledge base connected; and the version 0.1.0" width="720">
+<img src="images/settings.png" alt="Supertext settings: the saved API key with links to create a Supertext account and generate the key, the API key check result and Test connection, both saying the connection to Supertext works; the language of the content (English); German with the Supertext language German (Germany) (de-DE) in its dropdown, Italian (Switzerland), French (Switzerland) and German (Switzerland) ticked with Italian (Switzerland) (it-CH), French (Switzerland) (fr-CH) and German (Switzerland) (de-CH) preselected; the Translation review column with only German (Switzerland) ticked; the form of address; Send version information to Supertext with the Send configuration to Supertext button; the interface language (automatic); the connected account swiss-chocolate.example with the knowledge base connected; and the version 0.1.0" width="720">
 
 <img src="images/settings-code-search.png" alt="The Supertext code of German being searched: ger typed in the field, the list shows Suggested: German (Austria) de-AT, German (Germany) de-DE (the current choice, in bold), German (Switzerland) de-CH, Swiss German (Bern) and Swiss German (Zürich)" width="640">
 
@@ -103,6 +103,8 @@ With **Send version information to Supertext** on, the app sends a short report 
 - whether an API key is set and the result of the key check (`ok`, `invalid`, `missing`, `unreachable` or `error`, with the time and Supertext's HTTP status).
 
 No content, no API key and no personal data. Being a hosted app, it has no ping address and sends no callback URL. Turn it off by unticking the setting and saving: then nothing at all is sent. Supertext can turn it off for all accounts on the server with `SUPERTEXT_VERSION_REPORTS=0` (the checkbox then can't be changed). The API key check itself runs either way.
+
+**Send configuration to Supertext** (*Settings → Supertext support*): when you contact Supertext support, this button sends, in one report, the account's languages with the Supertext language each is sent as. Being a hosted app, there are no plugins to list. Nothing else is sent, and nothing at all while version information is off.
 
 ## Who can translate
 

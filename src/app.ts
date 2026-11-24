@@ -13,7 +13,7 @@ import { defaultAccount, type Account, type Store } from './store/store.js';
 import { SupertextClient } from './supertext/client.js';
 import { exportItem, importFile, MAX_UPLOAD_BYTES, tooLarge, type ImportResult } from './translation/files.js';
 import { startJob, type JobDeps } from './translation/jobs.js';
-import { hubspotCode, isLanguage, supertextCodeOf } from './translation/languages.js';
+import { hubspotCode, isLanguage, resolvedTarget, supertextCodeOf, supertextSource } from './translation/languages.js';
 import { ConnectPage } from './views/connect.js';
 import { JobPanel } from './views/job.js';
 import { appUrl, type PageContext } from './views/layout.js';
@@ -417,6 +417,7 @@ export function createApp(deps: AppDeps) {
           reportsEnabled: reporting.enabled(session.account),
           reportsFixed: reporting.fixedByEnvironment,
           saved: c.req.query('saved') === '1',
+          configResult: (['sent', 'off', 'failed'] as const).find((r) => r === c.req.query('config')),
           invalidCodes: c.req.query('invalid') || undefined,
           knowledgeBase: knowledgeBase(session.account),
           review: config.reviewUrl !== '',
@@ -480,6 +481,25 @@ export function createApp(deps: AppDeps) {
     // The automatic API key check (shown on the settings page) and the settings_saved report.
     await reporting.run(account, 'afterSettingsSaved');
     return c.redirect(appUrl('/settings', { saved: '1', invalid: invalid.join(', ') || undefined }), 303);
+  });
+
+  // "Send configuration to Supertext": the account's language mapping, for Supertext support.
+  app.post('/settings/configuration', async (c) => {
+    const session = await current(c);
+    if (!session) return c.redirect('/', 303);
+    const form = await c.req.parseBody();
+    if (!sessions.checkCsrf(session.cookie, String(form.csrf ?? ''))) return c.redirect('/?error=session', 303);
+    const account = session.account;
+    let outcome: 'sent' | 'off' | 'failed' = 'off';
+    if (reporting.enabled(account)) {
+      const languages = [
+        ...(account.sourceLanguage ? [{ code: account.sourceLanguage, supertext: supertextSource(account.sourceLanguage, account.languageCodes) || null }] : []),
+        ...account.targets.map((code) => ({ code, supertext: resolvedTarget(code, account.languageCodes) })),
+      ];
+      const result = await reporting.sendConfiguration(account, languages);
+      outcome = result?.sent ? 'sent' : 'failed';
+    }
+    return c.redirect(appUrl('/settings', { config: outcome }), 303);
   });
 
   return app;

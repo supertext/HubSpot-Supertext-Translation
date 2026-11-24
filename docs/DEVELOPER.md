@@ -117,12 +117,14 @@ then `npm install`, run the tests and commit `vendor/`, `package-lock.json` and 
 
 ## Supertext Plugin Health
 
-[Supertext Plugin Health](https://github.com/Supertext/Commando-Center-Supertext-Translation/tree/main/plugin-health) (npm name `supertext-plugin-health`, 0.1.0, tag `plugin-health-v0.1.0`) sends the version reports and the API key check result to the Supertext Commando Center (`InstallationReporter`, `reportsEnabled()`; its ping answer isn't used, the app is hosted). `src/reporting.ts` passes it `SDK_VERSION` and a key checker built on the SDK. Like the SDK it is a file dependency from `vendor/supertext-plugin-health/`. Never edit it: fix it in Commando-Center-Supertext-Translation/plugin-health and copy it again:
+[Supertext Plugin Health](https://github.com/Supertext/Commando-Center-Supertext-Translation/tree/main/plugin-health) (npm name `supertext-plugin-health`, 0.4.0, tag `plugin-health-v0.4.0`) sends the version reports and the API key check result to the Supertext Commando Center (`InstallationReporter`, `reportsEnabled()`; its ping answer isn't used, the app is hosted). `src/reporting.ts` passes it `SDK_VERSION` and a key checker built on the SDK. Like the SDK it is a file dependency from `vendor/supertext-plugin-health/`. Never edit it: fix it in Commando-Center-Supertext-Translation/plugin-health and copy it again:
 
 ```bash
-scripts/vendor-plugin-health.sh <tag>                          # e.g. plugin-health-v0.1.0 (default: main)
+scripts/vendor-plugin-health.sh <tag>                          # e.g. plugin-health-v0.4.0 (default: main)
 PLUGIN_HEALTH_DIR=/path/to/clone scripts/vendor-plugin-health.sh   # a local clone as it is
 ```
+
+The script inlines Plugin Health 0.4's `config.json` (the dashboard address) into the copied `index.js` as a constant, because its JSON import attribute isn't accepted everywhere.
 
 ## Language codes
 
@@ -145,6 +147,7 @@ Version reports, the automatic API key check and the key status go to the Supert
 - **State:** Plugin Health's `ReporterState` JSON in `Account.reporter` (the `data` JSONB of `accounts`). Only `Store.saveReporterState()` writes it; `saveAccount()` keeps the stored one. Calls are serialized per account.
 - **When:** `afterSettingsSaved` after `POST /settings` (awaited; the result is shown under the API key with the center's messages, `keyCheck.*`); `onRequest` in the background on `GET /`, `GET /settings` and `POST /api/jobs`; `authenticationFailed` when a translation gets 401/403; `testConnection` on *Test connection* with the saved key (a typed, unsaved key is only checked).
 - **Setting:** `Account.versionReports` (*Send version information to Supertext*, on by default), combined with `SUPERTEXT_VERSION_REPORTS` (`0` turns it off for every account and disables the checkbox). Off: nothing is sent; the key check still runs.
+- **Send configuration:** *Settings → Supertext support* → *Send configuration to Supertext* (a button of the separate form `#config-form`, `POST /settings/configuration` with the session's CSRF token, back to `/settings?config=sent|off|failed`) runs `Reporting.sendConfiguration()`: Plugin Health's `sendExtensions()` with an empty list (a hosted app has no plugins of its own) and, through the reporter's `languages` function, the account's source language and targets with the Supertext codes they are sent as (`null` without one). It sends even within the hour after a failed report and nothing with version reports off. Plugin Health ≥ 0.4.
 - **Never breaks anything:** `Reporting.run()` catches everything; reports time out after 3 s and wait an hour after a failure. The key is never logged or sent.
 - **Tests never reach the live center:** `SUPERTEXT_REPORT_URL` points at the stand-in in `tests/helpers.ts`, `scripts/smoke.sh` and the screenshot script.
 
@@ -193,7 +196,7 @@ The protocol itself (multipart, retries, polling, packing, language codes, error
 npm run docs:screenshots   # Playwright, 1× scale, into docs/images/
 ```
 
-`tests/docs/screenshots.ts` starts the stand-ins (the Supertext stand-in also as the review service, so nothing reaches the live one) and the app in-process, connects through the stand-in's OAuth and captures the app's pages (connect, settings, translate page, results, list afterwards, update warning, email results, German UI, the export section, the import form and its summary: the landing page exported as HTML, filled with the sample German and imported). It also checks that every page fits a 390 px phone screen and fails if one is wider. Editor links point at app.hubspot.com, never at the stand-in. Regenerate them in the same commit as any UI change they show. Chromium: Playwright's own (`npx playwright install chromium`) or `CHROME=/path/to/chrome`. Screenshots of HubSpot's own screens (language settings, a translated variant in the page editor) follow from the demo account.
+`tests/docs/screenshots.ts` starts the stand-in HubSpot and the app in-process. With `SUPERTEXT_API_KEY` set (CI: the secret) the app uses the real Supertext API, so the images show real translations: the script types the key into the settings' password field (never shown) and points the review service at the API itself, so *Translation review* languages are translated for real without involving the review service; real translations can differ a little between runs, so the weekly run commits new images now and then. Without the key the Supertext stand-in translates (also as the review service, so nothing reaches the live one). Version reports always go to the stand-in (`SUPERTEXT_REPORT_URL`). The script connects through the stand-in's OAuth and captures the app's pages (connect, settings, translate page, results, list afterwards, update warning, email results, German UI, the export section, the import form and its summary: the landing page exported as HTML, filled with the sample German and imported). It also checks that every page fits a 390 px phone screen and fails if one is wider. Editor links point at app.hubspot.com, never at the stand-in. Regenerate them in the same commit as any UI change they show. Chromium: Playwright's own (`npx playwright install chromium`) or `CHROME=/path/to/chrome`. Screenshots of HubSpot's own screens (language settings, a translated variant in the page editor) follow from the demo account.
 
 ## Demo movie
 
@@ -228,7 +231,7 @@ What runs:
    - the text is in the target language (common-word count), `de-CH` without "ß";
    - the job summary (*Done: 3 created …*) and no error in the job panel;
    - translating the website page again with *Update existing versions* updates the same drafts in place (*3 updated*, no new items), checked again.
-3. The docs screenshots (`npm run docs:screenshots`) against the stand-in HubSpot and the stand-in Supertext API, as described under *Screenshots*. If the images differ from `docs/images/` and the screenshot step succeeded, they are uploaded, and on `main` a second job commits them straight to `main` ("Docs: regenerate screenshots"). There is no pull request to review, and the push, made with the workflow's own token, starts no other workflow.
+3. The docs screenshots (`npm run docs:screenshots`) against the stand-in HubSpot and, with the same secret, the real Supertext API (without it the Supertext stand-in), as described under *Screenshots*. If the images differ from `docs/images/` and the screenshot step succeeded, they are uploaded, and on `main` a second job commits them straight to `main` ("Docs: regenerate screenshots"). There is no pull request to review, and the push, made with the workflow's own token, starts no other workflow.
 
 Triggers: weekly (Mondays 06:09 UTC), pushes to `main` that change the app, its tests or the workflow, pull requests that change `tests/e2e/` or the workflow, and by hand (*Actions → E2E → Run workflow*).
 

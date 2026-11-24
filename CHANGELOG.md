@@ -4,6 +4,9 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Added: *Send configuration to Supertext* on the settings page: sends the account's language mapping to Supertext support in one report (Supertext Plugin Health 0.4.0). Nothing is sent while version reports are off.
+- Changed: version reports go to `https://pluginhealth.supertext.com` (Supertext Plugin Health 0.4.0).
+- Changed: the docs screenshots show real Supertext translations: CI takes them with the live API (secret `SUPERTEXT_API_KEY`); the Supertext stand-in translates only without the key. Version reports still go to the stand-in.
 - Changed: language lists name Supertext's languages the way Supertext's own language list does, in the interface language: *German (Switzerland)*, *Deutsch (Schweiz)*, *allemand (Suisse)*, *tedesco (Svizzera)* instead of *Swiss High German*, *Schweizer Hochdeutsch*, *allemand suisse*, *alto tedesco svizzero* (likewise *French (Switzerland)*, *English (United States)* …).
 
 ## 1.0.0 — 2026-11-10

@@ -70,6 +70,8 @@ export interface SettingsPageProps {
   knowledgeBase: boolean;
   /** A review service is set (SUPERTEXT_REVIEW_URL not empty): show the Translation review column. */
   review: boolean;
+  /** The result of "Send configuration to Supertext" (after the redirect). */
+  configResult?: 'sent' | 'off' | 'failed';
   /** This browser's interface language: chosen in the settings, or 'auto' (the browser's). */
   uiLanguage: 'auto' | (typeof LOCALES)[number];
 }
@@ -290,6 +292,18 @@ export function SettingsPage(props: SettingsPageProps) {
           </label>
           <p class="help">{t.t('settings.reports.help')}</p>
           {props.reportsFixed && <p class="help muted">{t.t('settings.reports.fixed')}</p>}
+          {/* A button of the separate form below (forms can't be nested). */}
+          <p class="actions" data-supertext-send-configuration>
+            <button type="submit" form="config-form" disabled={!props.reportsEnabled}>
+              {t.t('settings.config.button')}
+            </button>
+            {props.configResult && (
+              <span class={props.configResult === 'off' ? 'muted' : undefined} role="status">
+                {t.t(props.configResult === 'sent' ? 'settings.config.sent' : props.configResult === 'off' ? 'settings.config.off' : 'settings.config.failed')}
+              </span>
+            )}
+          </p>
+          <p class="help">{t.t('settings.config.help')}</p>
         </section>
 
         <div class="actions">
@@ -297,6 +311,10 @@ export function SettingsPage(props: SettingsPageProps) {
             {t.t('settings.save')}
           </button>
         </div>
+      </form>
+
+      <form method="post" action="/settings/configuration" id="config-form" hidden>
+        <input type="hidden" name="csrf" value={ctx.csrf} />
       </form>
 
       <section class="card connection">

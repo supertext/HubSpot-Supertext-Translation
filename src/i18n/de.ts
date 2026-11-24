@@ -141,6 +141,11 @@ export const de: Messages = {
   'settings.reports.help':
     'Sendet die ID Ihres HubSpot-Accounts sowie die Versionen dieser App und der Laufzeitumgebung an Supertext, wenn Sie diese Einstellungen speichern und nach einem Update. So sieht der Supertext-Support, welche Version Sie einsetzen. Es werden keine Inhalte, kein API-Schlüssel und keine Personendaten übertragen.',
   'settings.reports.fixed': 'Auf dem Server für alle Accounts festgelegt (SUPERTEXT_VERSION_REPORTS).',
+  'settings.config.button': 'Konfiguration an Supertext senden',
+  'settings.config.help': 'Sendet Supertext die Sprachen dieses Accounts mit ihrer Supertext-Sprache, damit der Supertext-Support besser helfen kann. Sonst wird nichts gesendet.',
+  'settings.config.sent': 'Konfiguration gesendet.',
+  'settings.config.off': 'Die Versionsinformationen sind ausgeschaltet: Es wurde nichts gesendet.',
+  'settings.config.failed': 'Die Konfiguration konnte nicht gesendet werden. Versuchen Sie es später noch einmal.',
   'settings.save': 'Speichern',
   'settings.connection.heading': 'HubSpot',
   'settings.connection.account': 'Verbunden mit dem HubSpot-Account {account}.',
