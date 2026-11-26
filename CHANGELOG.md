@@ -4,15 +4,19 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
-- Fixed: translations glued personalization tokens to the word before them (*Hallo{{ contact.firstname }}*) and, in emails, moved the comma after the token into the next paragraph. The token now travels to Supertext with its own text, so the AI reads a normal sentence, and a space the original had next to a token is put back.
-- Fixed: *Open in HubSpot* for a knowledge base article opened a page that doesn't exist; it now opens the article editor (`/knowledge-article/<account>/editor/<article>/content`).
-- Changed: a knowledge base translation is created before anything is sent to Supertext, so a language the knowledge base doesn't have costs no translation; it fails with *The knowledge base has no “it-ch” version in HubSpot yet* and says where to add it.
-- Fixed: knowledge base translations failed with *The following tag ids were not found in the knowledge base*: HubSpot's tags belong to one language, so translations are now created without the original's tags (add tags in that language in HubSpot).
-- Fixed: knowledge base articles failed with *HubSpot answered with HTTP 400 … Some required fields were not set: [knowledgeBaseId]*. A translation is now created in its original's knowledge base (found on a real HubSpot account).
+## 1.1.0 — 2026-11-26
+
+Knowledge base articles, website and landing pages, blog posts and marketing emails tested on a real HubSpot account (26 November 2026).
+
 - Added: *Send configuration to Supertext* on the settings page: sends the account's language mapping to Supertext support in one report (Supertext Plugin Health 0.4.0). Nothing is sent while version reports are off.
+- Changed: a knowledge base translation is created before anything is sent to Supertext, so a language the knowledge base doesn't have costs no translation; it fails with *The knowledge base has no “it-ch” version in HubSpot yet* and says where to add it.
 - Changed: version reports go to `https://pluginhealth.supertext.com` (Supertext Plugin Health 0.4.0).
 - Changed: the docs screenshots show real Supertext translations: CI takes them with the live API (secret `SUPERTEXT_API_KEY`); the Supertext stand-in translates only without the key. Version reports still go to the stand-in.
 - Changed: language lists name Supertext's languages the way Supertext's own language list does, in the interface language: *German (Switzerland)*, *Deutsch (Schweiz)*, *allemand (Suisse)*, *tedesco (Svizzera)* instead of *Swiss High German*, *Schweizer Hochdeutsch*, *allemand suisse*, *alto tedesco svizzero* (likewise *French (Switzerland)*, *English (United States)* …).
+- Fixed: translations glued personalization tokens to the word before them (*Hallo{{ contact.firstname }}*) and, in emails, moved the comma after the token into the next paragraph. The token now travels to Supertext with its own text, so the AI reads a normal sentence, and a space the original had next to a token is put back.
+- Fixed: *Open in HubSpot* for a knowledge base article opened a page that doesn't exist; it now opens the article editor (`/knowledge-article/<account>/editor/<article>/content`).
+- Fixed: knowledge base translations failed with *The following tag ids were not found in the knowledge base*: HubSpot's tags belong to one language, so translations are now created without the original's tags (add tags in that language in HubSpot).
+- Fixed: knowledge base articles failed with *HubSpot answered with HTTP 400 … Some required fields were not set: [knowledgeBaseId]*. A translation is now created in its original's knowledge base (found on a real HubSpot account).
 
 ## 1.0.0 — 2026-11-10
 

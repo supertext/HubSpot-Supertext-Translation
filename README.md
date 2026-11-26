@@ -4,7 +4,7 @@ Translate your HubSpot content with [Supertext](https://www.supertext.com) AI: w
 
 ![Demo: the website page About us picked on the Translate page, German ticked, Translate with Supertext, and the German draft created in HubSpot](docs/images/demo.gif)
 
-> **Status: tested on a real HubSpot account** (installing with OAuth, blog posts and knowledge base articles into language versions). Not yet in the HubSpot App Marketplace. What has been confirmed on a real account and what is still to check (pages, emails) is in [Known limitations](docs/DEVELOPER.md#known-limitations--roadmap).
+> **Status: tested on a real HubSpot account** (installing with OAuth; website and landing pages, blog posts, marketing emails and knowledge base articles into German and Italian versions). Not yet in the HubSpot App Marketplace. What has been confirmed on a real account and what is still open is in [Known limitations](docs/DEVELOPER.md#known-limitations--roadmap).
 
 ![Translate with Supertext: the website page About us selected, French (Switzerland) and German (Switzerland) ticked](docs/images/translate-page.png)
 
