@@ -4,6 +4,8 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Added: Indonesian, Romanian, Thai and Vietnamese (`id`, `ro`, `th`, `vi`) can be chosen as Supertext languages, all with formal and informal address (Supertext SDK 0.7.0).
+
 ## 1.1.0 — 2026-11-26
 
 Knowledge base articles, website and landing pages, blog posts and marketing emails tested on a real HubSpot account (26 November 2026).
