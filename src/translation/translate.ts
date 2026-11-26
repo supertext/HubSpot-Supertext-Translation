@@ -71,14 +71,13 @@ export async function translateItem(args: TranslateArgs): Promise<TranslateResul
     await updateDraft(client, kind, existingId, await translate());
     return { state: 'updated', targetId: existingId };
   }
-  if (kind === 'kb-article') {
-    // An article is created with its content in one call.
-    const created = await createArticleTranslation(client, source, args.language, await translate());
-    return { state: 'created', targetId: String(created.id) };
-  }
-  // The language version first: if HubSpot refuses it (a blog without that language, an existing
-  // variant), nothing is sent to Supertext and nothing is paid for.
-  const created = await createVersion(client, kind, source, args.language, args.primaryLanguage);
+  // The language version first: if HubSpot refuses it (a blog or knowledge base without that
+  // language, an existing variant), nothing is sent to Supertext and nothing is paid for.
+  // An article is created with the original's texts (HubSpot requires a title), then translated.
+  const created =
+    kind === 'kb-article'
+      ? await createArticleTranslation(client, source, args.language, { title: args.draft.title ?? source.title })
+      : await createVersion(client, kind, source, args.language, args.primaryLanguage);
   try {
     const values = await translate();
     if (Object.keys(values).length > 0) await updateDraft(client, kind, String(created.id), values);

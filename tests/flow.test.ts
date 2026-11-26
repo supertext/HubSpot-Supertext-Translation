@@ -235,7 +235,7 @@ describe('knowledge base', () => {
       path: 'track-my-order',
       state: 'DRAFT',
       translationOfId: '501',
-      tagIds: [11],
+      tagIds: [],
     });
     expect(german.body).toBe(
       '<p>Sie erhalten einen Tracking-Link per E-Mail, sobald Ihre Bestellung versandt wird.</p><ol><li>Öffnen Sie die E-Mail.</li><li>Klicken Sie auf <strong>Paket verfolgen</strong>.</li></ol>',
@@ -243,6 +243,18 @@ describe('knowledge base', () => {
     // HubSpot lists articles' translations as a list; the app reads it.
     const again = await (await env.request('/?kind=kb-article')).text();
     expect(again).toContain(`/knowledge/${PORTAL_ID}/edit/${german.id}`);
+  });
+
+  it("fails only the language the knowledge base doesn't have, before anything is sent to Supertext", async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings([...STANDARD_SETTINGS, ['target', 'de']]);
+    const { job, html } = await env.translate('kb-article', '501', ['de-ch', 'de']);
+    expect(job.status).toBe('done');
+    expect(job.items[1]).toMatchObject({ language: 'de', state: 'failed', error: { code: 'kbLanguageMissing', params: { language: 'de' } } });
+    expect(html).toContain('The knowledge base has no “de” version in HubSpot yet, so nothing was translated for this language.');
+    expect(env.supertext.documents.map((d) => d.target)).toEqual(['de-CH']);
+    expect(version(env, 'kb-article', '501', 'de')).toBeUndefined();
   });
 
   it('is only offered when the account granted its scopes', async () => {

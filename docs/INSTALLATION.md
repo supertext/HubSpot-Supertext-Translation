@@ -135,6 +135,7 @@ Nothing to do: the app runs on Supertext's servers and is updated there. The set
 | *HubSpot refused the request …* | The account's subscription doesn't include this kind of content (for example multi-language pages without Professional), or the app lacks the scope. HubSpot's own message is shown in brackets. |
 | *The knowledge base isn't connected* | The account has no Service Hub Professional or Enterprise, or the knowledge base access was left out at install. Connect HubSpot again and allow it. |
 | *The blog has no “fr-ch” version in HubSpot yet …* | Add a language variation of the blog for that language in HubSpot (Settings → Content → Blog), then translate again. The app checks this with HubSpot before translating, so nothing is sent to Supertext for that language. |
+| *The knowledge base has no “de-ch” version in HubSpot yet …* | Add the language to the knowledge base in HubSpot: Settings → Content → Knowledge Base → the second dropdown at the top → *Add/edit multi-language variations* → *Add multi-language variation*. Nothing is sent to Supertext for a language the knowledge base doesn't have. |
 | *The item has no language in HubSpot …* | Set the page's language in HubSpot (page settings), or set *Language of your content* under Settings. |
 | *Add your Supertext API key* / *No Supertext API key configured* | Enter the key under Settings (step 3). |
 | *API key checked: the connection to Supertext works.* | All good. |

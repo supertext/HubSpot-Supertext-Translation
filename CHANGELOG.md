@@ -4,6 +4,8 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Changed: a knowledge base translation is created before anything is sent to Supertext, so a language the knowledge base doesn't have costs no translation; it fails with *The knowledge base has no “it-ch” version in HubSpot yet* and says where to add it.
+- Fixed: knowledge base translations failed with *The following tag ids were not found in the knowledge base*: HubSpot's tags belong to one language, so translations are now created without the original's tags (add tags in that language in HubSpot).
 - Fixed: knowledge base articles failed with *HubSpot answered with HTTP 400 … Some required fields were not set: [knowledgeBaseId]*. A translation is now created in its original's knowledge base (found on a real HubSpot account).
 - Added: *Send configuration to Supertext* on the settings page: sends the account's language mapping to Supertext support in one report (Supertext Plugin Health 0.4.0). Nothing is sent while version reports are off.
 - Changed: version reports go to `https://pluginhealth.supertext.com` (Supertext Plugin Health 0.4.0).

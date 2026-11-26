@@ -172,7 +172,7 @@ export async function createVersion(
 }
 
 /** A new knowledge base article in another language, linked to the primary (made with its content at once). */
-export function createArticleTranslation(client: HubSpotClient, source: Item, language: string, fields: Record<string, unknown>): Promise<Item> {
+export async function createArticleTranslation(client: HubSpotClient, source: Item, language: string, fields: Record<string, unknown>): Promise<Item> {
   const body: Record<string, unknown> = {
     ...fields,
     // HubSpot requires the knowledge base; a translation stays in its primary's (the language tells them apart).
@@ -181,8 +181,17 @@ export function createArticleTranslation(client: HubSpotClient, source: Item, la
     translationOfId: source.id,
     path: source.path,
   };
-  if (Array.isArray(source.tagIds)) body.tagIds = source.tagIds;
-  return client.json<Item>('POST', paths['kb-article'], body);
+  // No tags: HubSpot's tags belong to a language of the knowledge base, so the original's tag IDs
+  // are refused for another language ("The following tag ids were not found in the knowledge base").
+  try {
+    return await client.json<Item>('POST', paths['kb-article'], body);
+  } catch (error) {
+    // HubSpot: "'de-ch' is invalid or not supported by this knowledge base. Supported languages are: ."
+    if (error instanceof HubSpotError && error.status === 400 && /not supported by this knowledge base/i.test(error.detail ?? '')) {
+      throw new LocalizedError(`The knowledge base has no ${language} version in HubSpot yet.`, 'kbLanguageMissing', { language });
+    }
+    throw error;
+  }
 }
 
 /** Writes fields to the item's draft (partial update; the live version stays until someone publishes). */

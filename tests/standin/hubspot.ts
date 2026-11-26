@@ -49,6 +49,7 @@ const PATHS: [Kind, RegExp][] = [
   ['kb-article', /^\/cms\/knowledge-base\/2027-03-beta\/articles/],
 ];
 
+const KB_LANGUAGES = ['en', 'de-ch', 'fr-ch', 'it-ch'];
 const KB_SCOPES = ['cms.knowledge_base.articles.read', 'cms.knowledge_base.articles.write'];
 
 export function createHubSpotStandin(): HubSpotStandin {
@@ -239,6 +240,14 @@ export function createHubSpotStandin(): HubSpotStandin {
         // HubSpot's wording (2027-03-beta, seen on a real account on 26 November 2026).
         const missing = ['knowledgeBaseId', 'language', 'title'].filter((field) => !article[field]);
         if (missing.length) return error(400, `Invalid input JSON on line 1, column 1. Some required fields were not set: [${missing.join(', ')}]`);
+        // The sample knowledge base has English and German, French and Italian (Switzerland).
+        if (!KB_LANGUAGES.includes(String(article.language))) {
+          return error(400, `'${article.language}' is invalid or not supported by this knowledge base. Supported languages are: ${KB_LANGUAGES.join(', ')}.`);
+        }
+        // Tags belong to one language: the primary's tag IDs aren't found for a translation (seen on a real account).
+        if (primary && Array.isArray(body?.tagIds) && body.tagIds.length > 0) {
+          return error(404, `The following tag ids were not found in the knowledge base: [${body.tagIds.join(', ')}].`);
+        }
         entries.set(id, { kind, live: article, draft: structuredClone(article), archived: false, group: primary ? primary.group : id });
         return json(view(entries.get(id)!, 'live'));
       }

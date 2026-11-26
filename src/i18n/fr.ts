@@ -192,6 +192,8 @@ export const fr: Messages = {
   'error.hubspotRateLimited': 'Trop de requêtes vers HubSpot. Veuillez réessayer dans un instant.',
   'error.hubspotUnavailable': 'HubSpot est actuellement indisponible. Veuillez réessayer dans un instant.',
   'error.blogLanguageMissing': "Le blog n’a pas encore de version « {language} » dans HubSpot ; rien n’a donc été traduit pour cette langue. Ajoutez une variante linguistique du blog dans HubSpot (Paramètres → Contenu → Blog), puis relancez la traduction.",
+  'error.kbLanguageMissing':
+    "La base de connaissances n’a pas encore de version « {language} » dans HubSpot ; rien n’a donc été traduit pour cette langue. Ajoutez la langue à la base de connaissances dans HubSpot (Paramètres → Contenu → Base de connaissances → Ajouter/modifier des variantes multilingues), puis traduisez à nouveau.",
   'error.hubspotHttp': 'HubSpot a répondu avec le code HTTP {status}.',
   'error.hubspotUnreachable': 'Impossible de joindre HubSpot : {reason}',
   'error.itemMissing': 'Le contenu n’existe plus dans HubSpot.',
