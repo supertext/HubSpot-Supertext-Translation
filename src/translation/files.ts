@@ -16,7 +16,7 @@ import { translateItem } from './translate.js';
  *
  * Segments: the item's extraction (`extractItem`), keyed by field path (`htmlTitle`,
  * `widgets.module_1.body.html.0`, `content.plainTextVersion.3`). Every segment travels as HTML,
- * so HubL placeholders (`<span data-hs="N">`) stay protected codes; an imported text that loses
+ * so HubL placeholders (`<span data-hs="N" translate="no">{{ … }}</span>`) stay protected codes; an imported text that loses
  * or doubles one is refused like a Supertext answer would be.
  *
  * Reference format (the job's `reference`, the XLIFF `original`):

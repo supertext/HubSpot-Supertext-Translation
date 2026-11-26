@@ -142,8 +142,8 @@ describe('landing pages', () => {
       '<p>Bonjour {{ contact.firstname }}, notre calendrier de l’Avent peut être commandé.</p><p>Commandez avant le 30 novembre pour une livraison avant le 1er décembre.</p>',
     );
     expect(widgets.form.body).toEqual({ form_id: 'f0e1d2c3', response_type: 'inline' });
-    expect(env.supertext.documents[0].html).toContain('<span data-hs="0"></span>');
-    expect(env.supertext.documents[0].html).not.toContain('contact.firstname');
+    // The placeholder carries the token's text, so the AI reads a normal sentence.
+    expect(env.supertext.documents[0].html).toContain('Hello <span data-hs="0" translate="no">{{ contact.firstname }}</span>, our advent calendar');
   });
 });
 

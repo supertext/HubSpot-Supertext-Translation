@@ -4,6 +4,7 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Fixed: translations glued personalization tokens to the word before them (*Hallo{{ contact.firstname }}*) and, in emails, moved the comma after the token into the next paragraph. The token now travels to Supertext with its own text, so the AI reads a normal sentence, and a space the original had next to a token is put back.
 - Fixed: *Open in HubSpot* for a knowledge base article opened a page that doesn't exist; it now opens the article editor (`/knowledge-article/<account>/editor/<article>/content`).
 - Changed: a knowledge base translation is created before anything is sent to Supertext, so a language the knowledge base doesn't have costs no translation; it fails with *The knowledge base has no “it-ch” version in HubSpot yet* and says where to add it.
 - Fixed: knowledge base translations failed with *The following tag ids were not found in the knowledge base*: HubSpot's tags belong to one language, so translations are now created without the original's tags (add tags in that language in HubSpot).

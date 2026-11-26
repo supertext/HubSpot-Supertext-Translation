@@ -19,11 +19,29 @@ describe('rich text', () => {
 
   it('protects HubL and refuses a translation that lost a token', () => {
     const { html, tags } = protect('Hi {{ contact.firstname }}, {% if contact.city %}see you{% endif %} <a href="{{ link }}">here</a>');
-    expect(html).toBe('Hi <span data-hs="0"></span>, <span data-hs="1"></span>see you<span data-hs="2"></span> <a href="{{ link }}">here</a>');
+    expect(html).toBe(
+      'Hi <span data-hs="0" translate="no">{{ contact.firstname }}</span>, <span data-hs="1" translate="no">{% if contact.city %}</span>see you<span data-hs="2" translate="no">{% endif %}</span> <a href="{{ link }}">here</a>',
+    );
     expect(tags).toEqual(['{{ contact.firstname }}', '{% if contact.city %}', '{% endif %}']);
     expect(restore(html, tags)).toContain('{{ contact.firstname }}');
     expect(() => restore('Hallo, <span data-hs="1"></span>bis bald<span data-hs="2"></span>', tags)).toThrow(/2 of 3 HubL/);
     expect(() => restore('<span data-hs="0"></span><span data-hs="0"></span><span data-hs="1"></span><span data-hs="2"></span>', tags)).toThrow();
+    // Only the number counts: an empty placeholder (an older export file) or a changed text inside still works.
+    expect(restore('Hallo <span data-hs="0"></span>, <span data-hs="1">{% if %}</span>bis bald<span data-hs="2" translate="no">x</span>', tags)).toBe(
+      'Hallo {{ contact.firstname }}, {% if contact.city %}bis bald{% endif %}',
+    );
+  });
+
+  it('puts back a space the original had next to a HubL token', () => {
+    const { html, tags } = protect('Hi {{ contact.firstname }}, welcome to {{ company.name }} today');
+    // Seen on a real account: the AI glued the token to the word before it.
+    expect(restore('Hallo<span data-hs="0" translate="no">x</span>, willkommen bei<span data-hs="1"></span>heute', tags, html)).toBe(
+      'Hallo {{ contact.firstname }}, willkommen bei {{ company.name }} heute',
+    );
+    // Punctuation and spaces that are there stay as they are; no space is added where the original had none.
+    expect(restore('Hallo <span data-hs="0"></span>, bei <span data-hs="1"></span>.', tags, html)).toBe('Hallo {{ contact.firstname }}, bei {{ company.name }}.');
+    const glued = protect('{{ contact.firstname }}s order');
+    expect(restore('Bestellung von<span data-hs="0"></span>s', glued.tags, glued.html)).toBe('Bestellung von{{ contact.firstname }}s');
   });
 
   it('translates alt texts and leaves code, styles and notranslate alone', () => {
@@ -97,7 +115,7 @@ describe('module data', () => {
       subject: 'Hi',
       content: { plainTextVersion: 'Hello {{ contact.firstname }},\n\nBye.\n{{ unsubscribe_link }}' },
     });
-    expect(extraction.segments.map((s) => s.html)).toEqual(['Hi', 'Hello <span data-hs="0"></span>,', 'Bye.']);
+    expect(extraction.segments.map((s) => s.html)).toEqual(['Hi', 'Hello <span data-hs="0" translate="no">{{ contact.firstname }}</span>,', 'Bye.']);
     extraction.apply(['Salut', 'Bonjour <span data-hs="0"></span>,', 'Au revoir.']);
     expect(fields()).toEqual({
       subject: 'Salut',

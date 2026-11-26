@@ -15,10 +15,15 @@ import { LocalizedError } from '../i18n/error.js';
  *
  * HubL — personalization tokens such as {{ contact.firstname }}, tags such as
  * {% module "cta" %} and comments {# … #} — must reach the page or email
- * unchanged: in the text it travels as empty `<span data-hs="N"></span>`
+ * unchanged: in the text it travels as `<span data-hs="N" translate="no">{{ … }}</span>`
  * placeholders and is put back afterwards; a segment that loses or doubles one
- * is refused (`hublTags`). HubL inside attributes (link addresses) isn't
- * touched anyway.
+ * is refused (`hublTags`). The placeholder carries the tag's own text: with an
+ * empty one, Supertext's AI dropped the space before it and moved the comma
+ * after it into the next paragraph ("Hallo{{ contact.firstname }}" / ", Die …",
+ * seen on a real account). Only the number counts when it comes back (what is
+ * inside is ignored), and a space the original had next to a tag is put back
+ * if the translation glued the tag to a word. HubL inside attributes (link
+ * addresses) isn't touched anyway.
  */
 
 export const escapeHtml = (value: string): string =>
@@ -40,7 +45,7 @@ const MARKER = 'data-st-a';
 
 /** {{ … }}, {% … %} and {# … #}: HubL expressions, statements and comments. */
 export const HUBL = /\{\{[\s\S]{0,400}?\}\}|\{%[\s\S]{0,400}?%\}|\{#[\s\S]{0,400}?#\}/g;
-const PLACEHOLDER = /<span\b[^>]*?\bdata-hs="(\d+)"[^>]*?(?:\/>|>\s*<\/span>)/g;
+const PLACEHOLDER = /<span\b[^>]*?\bdata-hs="(\d+)"[^>]*?(?:\/>|>[^<]*<\/span>)/g;
 
 /** A text to translate: `html` is what Supertext gets (HubL as placeholders). */
 export interface Segment {
@@ -64,19 +69,37 @@ export function protect(html: string): { html: string; tags: string[] } {
         ? part
         : part.replace(HUBL, (tag) => {
             tags.push(tag);
-            return `<span data-hs="${tags.length - 1}"></span>`;
+            return `<span data-hs="${tags.length - 1}" translate="no">${tag}</span>`;
           }),
     )
     .join('');
   return { html: out, tags };
 }
 
-/** Placeholders → HubL. Every tag must come back exactly once, else the segment is refused. */
-export function restore(html: string, tags: string[]): string {
+const WORD = /[\p{L}\p{N}]/u;
+
+/** Per placeholder of the sent segment: was there white space before and after it? */
+function spacing(source: string): Map<number, { before: boolean; after: boolean }> {
+  const map = new Map<number, { before: boolean; after: boolean }>();
+  for (const m of source.matchAll(PLACEHOLDER)) {
+    const start = m.index ?? 0;
+    const end = start + m[0].length;
+    map.set(Number(m[1]), { before: /\s/.test(source[start - 1] ?? ''), after: /\s/.test(source[end] ?? '') });
+  }
+  return map;
+}
+
+/**
+ * Placeholders → HubL. Every tag must come back exactly once, else the segment is refused.
+ * With `source` (the segment as sent), a space the original had before or after a tag is put
+ * back where the translation glued the tag to a word ("Hallo{{ contact.firstname }}").
+ */
+export function restore(html: string, tags: string[], source?: string): string {
   const seen = new Set<number>();
+  const spaces = source === undefined ? undefined : spacing(source);
   let received = 0;
   let doubled = false;
-  const out = html.replace(PLACEHOLDER, (_all, index: string) => {
+  const out = html.replace(PLACEHOLDER, (all: string, index: string, offset: number, whole: string) => {
     const i = Number(index);
     received++;
     if (i >= tags.length || seen.has(i)) {
@@ -84,7 +107,10 @@ export function restore(html: string, tags: string[]): string {
       return '';
     }
     seen.add(i);
-    return tags[i];
+    const space = spaces?.get(i);
+    const before = space?.before && WORD.test(whole[offset - 1] ?? '') ? ' ' : '';
+    const after = space?.after && WORD.test(whole[offset + all.length] ?? '') ? ' ' : '';
+    return before + tags[i] + after;
   });
   if (doubled || seen.size !== tags.length) {
     throw new LocalizedError(
@@ -104,7 +130,7 @@ export function plainSegment(text: string): Segment {
 
 /** The translation of a segment: HTML for text blocks, decoded text for plain segments. */
 export function segmentResult(segment: Segment, translated: string): string {
-  const html = restore(translated, segment.tags);
+  const html = restore(translated, segment.tags, segment.html);
   if (!segment.plain) return html;
   return parse(html.replace(/<br\s*\/?>/gi, '\n')).text.replace(/[ \t]+/g, ' ').trim();
 }

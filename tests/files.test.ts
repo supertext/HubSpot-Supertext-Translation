@@ -80,8 +80,7 @@ describe('export for translation', () => {
     const html = await exportFile(env, { kind: 'landing-page', itemId: '201', languages: ['de-ch'], format: 'html' });
     expect(html.headers.get('Content-Disposition')).toBe('attachment; filename="hubspot-201-de-ch.html"');
     const body = await html.text();
-    expect(body).toContain('<span data-hs="0"></span>');
-    expect(body).not.toContain('{{ contact.firstname }}');
+    expect(body).toContain('Hello <span data-hs="0" translate="no">{{ contact.firstname }}</span>, our advent calendar');
 
     const two = await exportFile(env, { kind: 'landing-page', itemId: '201', languages: ['de-ch', 'fr-ch'], format: 'html' });
     expect(two.status).toBe(400);

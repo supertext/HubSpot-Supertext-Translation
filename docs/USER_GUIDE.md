@@ -45,7 +45,7 @@ Instead of letting Supertext translate right away, you can download an item's te
 
 The file holds exactly the texts the app would send to Supertext (see *What is translated*). If the item has none, you get *Nothing to translate.* and no file.
 
-Send the file to your translator, or upload it to Supertext's web app. In an **HTML file**, the translator must leave the head (the `supertext:` lines), the `data-st-id` attributes and the empty `<span data-hs="…">` placeholders (your personalization tokens) alone, and translate only the text between the tags. An HTML file can't mark a text as "not translated": imported unchanged, it writes the original text into the language version.
+Send the file to your translator, or upload it to Supertext's web app. In an **HTML file**, the translator must leave the head (the `supertext:` lines), the `data-st-id` attributes and the `<span data-hs="…">` placeholders with your personalization tokens (such as `{{ contact.firstname }}`) alone, and translate only the text between the tags. An HTML file can't mark a text as "not translated": imported unchanged, it writes the original text into the language version.
 
 ### Import
 

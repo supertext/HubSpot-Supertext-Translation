@@ -84,7 +84,7 @@ function texts(kind: Kind, item: Item): Map<string, string> {
     const segment = extraction.segments[i];
     // Restore the HubL placeholders, so the text is compared as the editor sees it.
     let n = 0;
-    map.set(k, segment.html.replace(/<span data-hs="\d+"><\/span>/g, () => segment.tags[n++] ?? ''));
+    map.set(k, segment.html.replace(/<span data-hs="\d+"[^>]*>[^<]*<\/span>/g, () => segment.tags[n++] ?? ''));
   });
   return map;
 }
@@ -211,7 +211,15 @@ function checkVersion(tag: string, kind: Kind, source: Item, version: Item, lang
     all += ` ${plain(t)}`;
     const left = LEFTOVERS.filter((l) => t.includes(l));
     if (left.length) check(`${tag}: ${k} has no protocol leftovers`, false, left.join(', '));
-    if ((s.match(HUBL) ?? []).length) check(`${tag}: ${k} keeps its HubL`, sorted(t.match(HUBL) ?? []) === sorted(s.match(HUBL) ?? []));
+    if ((s.match(HUBL) ?? []).length) {
+      check(`${tag}: ${k} keeps its HubL`, sorted(t.match(HUBL) ?? []) === sorted(s.match(HUBL) ?? []));
+      // A token that stands apart in the original stands apart in the translation ("Hallo {{ contact.firstname }}", not "Hallo{{ … }}").
+      const glued = [...t.matchAll(HUBL)].filter((m) => /[\p{L}\p{N}]/u.test(t[(m.index ?? 0) - 1] ?? '') && /\s/.test(s[s.indexOf(m[0]) - 1] ?? ''));
+      check(`${tag}: ${k} keeps the space before its HubL`, glued.length === 0, glued.map((m) => t.slice(Math.max(0, (m.index ?? 0) - 12), (m.index ?? 0) + m[0].length)).join(' | '));
+    }
+    // Punctuation doesn't wander into the next paragraph ("<p>, Die Blätter …", seen with empty placeholders).
+    const stray = /<(p|li|h[1-6])\b[^>]*>\s*[,;:.]/i;
+    if (!stray.test(s)) check(`${tag}: ${k} starts no paragraph with punctuation`, !stray.test(t), t.match(stray)?.[0]);
     if (hrefs(s).length) check(`${tag}: ${k} keeps its links`, sorted(hrefs(t)) === sorted(hrefs(s)));
     for (const [what, needle] of [['bold', '<strong'], ['italics', '<em'], ['list items', '<li']]) {
       if (count(s, needle)) check(`${tag}: ${k} keeps its ${what}`, count(t, needle) === count(s, needle), `${count(t, needle)}/${count(s, needle)}`);
