@@ -59,7 +59,7 @@ HubSpot's date-based versions: `2026-09` (the current GA version) for OAuth, pag
 | Landing pages | `…/landing-pages` | same | same | same |
 | Blog posts | `GET /cms/blogs/2026-09/posts`, `…/{id}` | `GET`/`PATCH …/{id}/draft` | `POST …/posts/multi-language/create-language-variation` (`id`, `language`) | `DELETE …/{id}` |
 | Marketing emails | `GET /marketing/emails/2026-09`, `…/{id}` | `GET`/`PATCH …/{id}/draft` | `POST …/clone` (`id`, `cloneName`, `language`) | `DELETE …/{id}` |
-| Knowledge base | `GET /cms/knowledge-base/2027-03-beta/articles`, `…/{id}` | `GET`/`PATCH …/{id}/draft` | `POST …/articles` with `language`, `translationOfId`, the content, `path`, `tagIds` | `PATCH …/{id}` `{archived: true}` (deletes) |
+| Knowledge base | `GET /cms/knowledge-base/2027-03-beta/articles`, `…/{id}` | `GET`/`PATCH …/{id}/draft` | `POST …/articles` with `knowledgeBaseId` (the primary's; required), `language`, `translationOfId`, the content, `path`, `tagIds` | `PATCH …/{id}` `{archived: true}` (deletes) |
 
 Lists: `limit=25&sort=-updatedAt&archived=false`, cursor `paging.next.after`. Language versions (`ContentSummary.translations`): HubSpot's `translations` of the item (a map keyed by language for pages and posts; a list for articles, both read), without the item itself; items with `translatedFromId` / `translationOfId` are versions and aren't listed. Email copies are recorded by the app (`translations` table) since HubSpot doesn't link them.
 
@@ -326,7 +326,7 @@ Never tag or create releases by hand.
   - the shape of `translations` on pages, posts and articles, and that `create-language-variation` copies the draft and accepts `primaryLanguage`;
   - which module fields real themes use for text (the walker's `TEXT_KEY` list) and that `PATCH …/draft` with whole `widgets` / `layoutSections` objects keeps the page editable in the drag-and-drop editor;
   - that `PATCH …/draft` of an email with the whole `content` object works, and where the preview text lives in emails made with the drag-and-drop editor;
-  - the knowledge base beta: whether `POST /articles` takes the content directly, the required fields of `PATCH …/draft`, and how `translations` is returned;
+  - the knowledge base beta (26 November 2026, on a real account: the app sees articles once the account has Service Hub Professional and the app is connected again; `POST /articles` without `knowledgeBaseId` is refused with *Some required fields were not set: [knowledgeBaseId]*, now sent): whether `POST /articles` takes the content directly, the required fields of `PATCH …/draft`, and how `translations` is returned;
   - the editor links for EU-hosted accounts (`app-eu1.hubspot.com`).
 - Text in templates, global content (headers, footers), forms, CTAs and HubDB isn't translated; HubSpot keeps those per language elsewhere.
 - A version removed after a failed translation is archived by HubSpot (`DELETE` archives pages, posts and emails); check whether an archived variant still blocks a new one in the same language.

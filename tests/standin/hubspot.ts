@@ -228,7 +228,6 @@ export function createHubSpotStandin(): HubSpotStandin {
         const id = String(nextId++);
         const article: Item = {
           id,
-          knowledgeBaseId: 'kb-1',
           state: 'DRAFT',
           accessGroupIds: [],
           accessType: primary?.live.accessType ?? 'PUBLIC',
@@ -237,7 +236,9 @@ export function createHubSpotStandin(): HubSpotStandin {
           tagIds: [],
           ...body,
         };
-        if (!article.title || !article.language) return error(400, 'title and language are required');
+        // HubSpot's wording (2027-03-beta, seen on a real account on 26 November 2026).
+        const missing = ['knowledgeBaseId', 'language', 'title'].filter((field) => !article[field]);
+        if (missing.length) return error(400, `Invalid input JSON on line 1, column 1. Some required fields were not set: [${missing.join(', ')}]`);
         entries.set(id, { kind, live: article, draft: structuredClone(article), archived: false, group: primary ? primary.group : id });
         return json(view(entries.get(id)!, 'live'));
       }

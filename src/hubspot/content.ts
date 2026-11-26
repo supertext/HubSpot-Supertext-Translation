@@ -175,6 +175,8 @@ export async function createVersion(
 export function createArticleTranslation(client: HubSpotClient, source: Item, language: string, fields: Record<string, unknown>): Promise<Item> {
   const body: Record<string, unknown> = {
     ...fields,
+    // HubSpot requires the knowledge base; a translation stays in its primary's (the language tells them apart).
+    knowledgeBaseId: source.knowledgeBaseId,
     language,
     translationOfId: source.id,
     path: source.path,
