@@ -242,7 +242,7 @@ describe('knowledge base', () => {
     );
     // HubSpot lists articles' translations as a list; the app reads it.
     const again = await (await env.request('/?kind=kb-article')).text();
-    expect(again).toContain(`/knowledge/${PORTAL_ID}/edit/${german.id}`);
+    expect(again).toContain(`/knowledge-article/${PORTAL_ID}/editor/${german.id}/content`);
   });
 
   it("fails only the language the knowledge base doesn't have, before anything is sent to Supertext", async () => {

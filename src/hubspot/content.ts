@@ -278,6 +278,6 @@ export function editorUrl(kind: Kind, portalId: string, id: string, appBase = 'h
     case 'email':
       return `${appBase}/email/${p}/edit/${i}/content`;
     case 'kb-article':
-      return `${appBase}/knowledge/${p}/edit/${i}`;
+      return `${appBase}/knowledge-article/${p}/editor/${i}/content`; // seen on a real account
   }
 }

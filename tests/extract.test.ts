@@ -135,6 +135,6 @@ describe('HubSpot items', () => {
     expect(editorUrl('site-page', '42', '7')).toBe('https://app.hubspot.com/pages/42/editor/7/content');
     expect(editorUrl('blog-post', '42', '7')).toBe('https://app.hubspot.com/blog/42/editor/7/content');
     expect(editorUrl('email', '42', '7')).toBe('https://app.hubspot.com/email/42/edit/7/content');
-    expect(editorUrl('kb-article', '42', '7')).toBe('https://app.hubspot.com/knowledge/42/edit/7');
+    expect(editorUrl('kb-article', '42', '7')).toBe('https://app.hubspot.com/knowledge-article/42/editor/7/content');
   });
 });
