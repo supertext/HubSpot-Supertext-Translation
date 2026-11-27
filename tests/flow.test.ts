@@ -53,7 +53,7 @@ describe('website pages', () => {
     await env.saveSettings(STANDARD_SETTINGS);
     const list = await (await env.request('/')).text();
     expect(list).toContain('About us');
-    expect(list).toContain('Not translated');
+    expect(list).toMatch(/title="[^"]+: Not translated"/);
 
     const { job, html } = await env.translate('site-page', '101', ['de-ch', 'fr-ch']);
     expect(job.status).toBe('done');
@@ -91,7 +91,7 @@ describe('website pages', () => {
     expect(env.hubspot.draft('101')!.name).toBe('About us');
 
     const after = await (await env.request('/?kind=site-page')).text();
-    expect(after.match(/>Translated</g)?.length).toBe(2);
+    expect(after.match(/<a class="version-icon done"/g)?.length).toBe(2);
     expect(after).not.toContain('Über uns'); // variants aren't listed as items of their own
   });
 
@@ -256,7 +256,7 @@ describe('batches', () => {
     // The page reloads with the job's items checked and the new versions listed.
     const list = await (await env.request(`/?kind=site-page&job=${id}`)).text();
     expect(list).toMatch(/value="102"[^>]*checked/);
-    expect(list).not.toContain('Not translated');
+    expect(list).not.toMatch(/<td class="version"><span class="version-icon none"/);
     // A later visit starts with nothing checked.
     expect(await (await env.request('/?kind=site-page')).text()).not.toMatch(/name="item"[^>]*checked/);
   });
@@ -272,6 +272,28 @@ describe('batches', () => {
     const odd = await env.api('POST', '/api/jobs', { kind: 'site-page', itemIds: ['101', '../x'], languages: ['de-ch'] });
     expect(odd.status).toBe(400);
     expect(env.supertext.documents.length).toBe(0);
+  });
+});
+
+describe('connecting again', () => {
+  it('offers Connect HubSpot again in the settings and keeps the settings, API key and history', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings([...STANDARD_SETTINGS.filter(([name]) => name !== 'tone'), ['apiKey', 'my-key'], ['tone', 'more'], ['publishTranslations', '1']]);
+    const { job } = await env.translate('site-page', '101', ['de-ch']);
+    // As an account connected before the app asked to publish articles.
+    const before = (await env.store.getAccount(PORTAL_ID))!;
+    await env.store.saveAccount({ ...before, scopes: before.scopes.filter((scope) => scope !== 'cms.knowledge_base.articles.publish') });
+    const settings = await (await env.request('/settings')).text();
+    expect(settings).toContain('Publishing articles is not allowed yet');
+    expect(settings).toMatch(/<a class="button" href="\/oauth\/start" id="reconnect">Connect HubSpot again<\/a>/);
+
+    await env.connect();
+    const after = (await env.store.getAccount(PORTAL_ID))!;
+    expect(after).toMatchObject({ apiKey: 'my-key', tone: 'more', targets: before.targets, publishTranslations: true, languageCodes: before.languageCodes });
+    expect(after.scopes).toContain('cms.knowledge_base.articles.publish');
+    expect(await env.store.getJob(PORTAL_ID, job.id)).toBeTruthy();
+    expect(await (await env.request('/settings')).text()).toContain('Knowledge base: connected.');
   });
 });
 

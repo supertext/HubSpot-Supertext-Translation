@@ -150,11 +150,29 @@ export function TranslatePage(props: TranslatePageProps) {
                       <td class="lang">{item.language || '–'}</td>
                       {targets.map((code) => {
                         const id = versions[code];
-                        if (!id) return <td><span class="badge none">{t.t('version.none')}</span></td>;
+                        const language = languageName(code, t.locale);
+                        if (!id) {
+                          const label = `${language}: ${t.t('version.none')}`;
+                          return (
+                            <td class="version">
+                              <span class="version-icon none" title={label} role="img" aria-label={label}>
+                                <VersionIcon done={false} />
+                              </span>
+                            </td>
+                          );
+                        }
+                        const label = `${language}: ${t.t('version.open')}`;
                         return (
-                          <td>
-                            <a class="badge done" href={editorUrl(kind, account.accountId, id, props.appBase)} target="_blank" rel="noopener">
-                              {t.t('version.exists')}
+                          <td class="version">
+                            <a
+                              class="version-icon done"
+                              href={editorUrl(kind, account.accountId, id, props.appBase)}
+                              target="_blank"
+                              rel="noopener"
+                              title={label}
+                              aria-label={label}
+                            >
+                              <VersionIcon done={true} />
                             </a>
                           </td>
                         );
@@ -164,6 +182,16 @@ export function TranslatePage(props: TranslatePageProps) {
                 </tbody>
               </table>
               </div>
+              <p class="legend muted">
+                <span class="version-icon done" aria-hidden="true">
+                  <VersionIcon done={true} />
+                </span>{' '}
+                {t.t('version.legendDone')}
+                <span class="version-icon none" aria-hidden="true">
+                  <VersionIcon done={false} />
+                </span>{' '}
+                {t.t('version.none')}
+              </p>
               <div class="pager">
                 <span
                   id="selection-count"
@@ -276,6 +304,20 @@ export function TranslatePage(props: TranslatePageProps) {
       </section>
       {(props.history.length > 0 || !props.job) && <History t={t} jobs={props.history} />}
     </Layout>
+  );
+}
+
+/** A version's mark in the list: a check in a mint circle (translated), an empty circle (not yet). */
+function VersionIcon(props: { done: boolean }) {
+  return props.done ? (
+    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" focusable="false">
+      <circle cx="11" cy="11" r="11" fill="currentColor" />
+      <path d="M6.5 11.5l3 3 6-6.5" fill="none" stroke="#003230" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  ) : (
+    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" focusable="false">
+      <circle cx="11" cy="11" r="9.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2.4" />
+    </svg>
   );
 }
 

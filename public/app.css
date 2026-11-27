@@ -242,3 +242,12 @@ ul.counts li { margin: 0 0 2px; }
 /* Language columns: the short code, the language's name as a tooltip. */
 th.lang-code abbr { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; white-space: nowrap; }
 .history-table td.title, .history-table .result { font-weight: 400; }
+.items td.version, .items th.lang-code { text-align: center; }
+.version-icon { display: inline-flex; vertical-align: middle; border-radius: 50%; }
+.version-icon.done { color: var(--mint); }
+a.version-icon.done:hover { color: var(--mint-hover); }
+a.version-icon:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+.version-icon.none { color: var(--muted); opacity: .55; }
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13px; margin: 10px 0 0; }
+.legend .version-icon.none { margin-left: 12px; }
+.legend svg { width: 16px; height: 16px; }

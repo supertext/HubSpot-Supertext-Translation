@@ -103,7 +103,7 @@ await kit.say('The list shows the page as translated into German.', {
   caption: 'The page now has a German version',
   during: async () => {
     await scrollTo(page.locator('#translate-form'));
-    await kit.moveTo(row.locator('.badge.done'));
+    await kit.moveTo(row.locator('.version-icon.done'));
   },
 });
 await kit.caption('');

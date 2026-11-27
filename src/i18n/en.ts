@@ -94,6 +94,8 @@ export const en = {
 
   // Language versions per language
   'version.none': 'Not translated',
+  'version.open': 'Translated: open in HubSpot',
+  'version.legendDone': 'Translated (click to open in HubSpot)',
   'version.exists': 'Translated',
 
   // Progress and results
@@ -207,6 +209,9 @@ export const en = {
   'settings.connection.account': 'Connected to the HubSpot account {account}.',
   'settings.connection.kb': 'Knowledge base: connected.',
   'settings.connection.noKb': 'Knowledge base: not connected (needs Service Hub Professional or Enterprise).',
+  'settings.connection.kbNoPublish': 'Knowledge base: connected. Publishing articles is not allowed yet: connect HubSpot again to allow it.',
+  'settings.connection.reconnect': 'Connect HubSpot again',
+  'settings.connection.reconnectHint': 'Keeps your settings, API key and history. Use it when the app asks for a new permission, such as publishing knowledge base articles, or after the knowledge base was added to your HubSpot subscription.',
   'settings.connection.disconnect': 'Disconnect HubSpot',
   'settings.connection.disconnectHint':
     'Removes your settings and the stored tokens. Language versions already made stay in HubSpot. To remove the app from HubSpot too, uninstall it under Settings → Integrations → Connected apps in HubSpot.',

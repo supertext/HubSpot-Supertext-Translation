@@ -273,7 +273,11 @@ export function SettingsPage(props: SettingsPageProps) {
           <p class="help">{t.t('settings.style.publishHelp')}</p>
           {account.publishTranslations &&
             account.scopes.includes('cms.knowledge_base.articles.write') &&
-            !account.scopes.includes(KB_PUBLISH_SCOPE) && <p class="help warning-text">{t.t('settings.style.publishKbScope')}</p>}
+            !account.scopes.includes(KB_PUBLISH_SCOPE) && (
+              <p class="help warning-text">
+                {t.t('settings.style.publishKbScope')} <a href="/oauth/start">{t.t('settings.connection.reconnect')}</a>
+              </p>
+            )}
           <label class="inline">
             <input type="checkbox" name="translateLinks" value="1" checked={account.translateLinks} />
             {t.t('settings.style.links')} <span class="badge beta">{t.t('beta')}</span>
@@ -349,7 +353,21 @@ export function SettingsPage(props: SettingsPageProps) {
           <strong>{account.accountName || account.accountId}</strong>
           {/\.$/.test(account.accountName) && accountAfter.startsWith('.') ? accountAfter.slice(1) : accountAfter}
         </p>
-        <p class="muted">{t.t(props.knowledgeBase ? 'settings.connection.kb' : 'settings.connection.noKb')}</p>
+        <p class="muted">
+          {t.t(
+            !props.knowledgeBase
+              ? 'settings.connection.noKb'
+              : account.scopes.includes(KB_PUBLISH_SCOPE)
+                ? 'settings.connection.kb'
+                : 'settings.connection.kbNoPublish',
+          )}
+        </p>
+        <p>
+          <a class="button" href="/oauth/start" id="reconnect">
+            {t.t('settings.connection.reconnect')}
+          </a>
+        </p>
+        <p class="help">{t.t('settings.connection.reconnectHint')}</p>
         <form method="post" action="/disconnect" id="disconnect-form" data-confirm={t.t('settings.connection.confirm')}>
           <input type="hidden" name="csrf" value={ctx.csrf} />
           <button type="submit" class="danger">

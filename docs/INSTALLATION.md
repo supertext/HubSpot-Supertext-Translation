@@ -52,7 +52,7 @@ Everyone in your team who connects the same HubSpot account shares its settings.
 
 Enter the API key, choose your languages and click **Save**. Saving checks the API key automatically (free of charge, nothing is translated) and shows the result under the key: *API key checked: the connection to Supertext works.* means everything is in place. **Test connection** runs the same check again, also for a key you have typed but not saved yet.
 
-<img src="images/settings.png" alt="Supertext settings: the saved API key with links to create a Supertext account and generate the key, the API key check result and Test connection, both saying the connection to Supertext works; the language of the content (English); German with the Supertext language German (Germany) (de-DE) in its dropdown, Italian (Switzerland), French (Switzerland) and German (Switzerland) ticked with Italian (Switzerland) (it-CH), French (Switzerland) (fr-CH) and German (Switzerland) (de-CH) preselected; the Translation review column with only German (Switzerland) ticked; the form of address, Translate the addresses (URLs) of new versions (ticked), Publish translations right away (not ticked) and Point links to the translated pages, posts and articles (marked Beta, ticked); Send version information to Supertext with the Send configuration to Supertext button; the interface language (automatic); the connected account swiss-chocolate.example with the knowledge base connected; and the version 0.1.0" width="720">
+<img src="images/settings.png" alt="Supertext settings: the saved API key with links to create a Supertext account and generate the key, the API key check result and Test connection, both saying the connection to Supertext works; the language of the content (English); German with the Supertext language German (Germany) (de-DE) in its dropdown, Italian (Switzerland), French (Switzerland) and German (Switzerland) ticked with Italian (Switzerland) (it-CH), French (Switzerland) (fr-CH) and German (Switzerland) (de-CH) preselected; the Translation review column with only German (Switzerland) ticked; the form of address, Translate the addresses (URLs) of new versions (ticked), Publish translations right away (not ticked) and Point links to the translated pages, posts and articles (marked Beta, ticked); Send version information to Supertext with the Send configuration to Supertext button; the interface language (automatic); the connected account swiss-chocolate.example with the knowledge base connected and Connect HubSpot again; and the version 0.1.0" width="720">
 
 <img src="images/settings-code-search.png" alt="The Supertext code of German being searched: ger typed in the field, the list shows Suggested: German (Austria) de-AT, German (Germany) de-DE (the current choice, in bold), German (Switzerland) de-CH, Swiss German (Bern) and Swiss German (Zürich)" width="640">
 
@@ -138,6 +138,10 @@ Editors can download an item's texts as an XLIFF 1.2 or HTML file (*Translate �
 ## Updating
 
 Nothing to do: the app runs on Supertext's servers and is updated there. The settings page shows the current version.
+
+## Connecting again
+
+**Settings → HubSpot → Connect HubSpot again** goes through HubSpot's connection screen once more and keeps everything: the API key, the settings, the languages, the history and the links. Use it when the app asks for a permission it didn't have yet: the knowledge base after it was added to your HubSpot subscription, or publishing articles for *Publish translations right away* (accounts connected before 28 November 2026). The settings say *Publishing articles is not allowed yet* when that is the case.
 
 ## Disconnecting
 

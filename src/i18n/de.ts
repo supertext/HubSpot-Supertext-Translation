@@ -90,6 +90,8 @@ export const de: Messages = {
   'state.other': 'Andere',
 
   'version.none': 'Nicht übersetzt',
+  'version.open': 'Übersetzt: in HubSpot öffnen',
+  'version.legendDone': 'Übersetzt (Klick öffnet die Version in HubSpot)',
   'version.exists': 'Übersetzt',
 
   'job.heading': 'Übersetzung',
@@ -202,6 +204,9 @@ export const de: Messages = {
   'settings.connection.account': 'Verbunden mit dem HubSpot-Account {account}.',
   'settings.connection.kb': 'Wissensdatenbank: verbunden.',
   'settings.connection.noKb': 'Wissensdatenbank: nicht verbunden (erfordert Service Hub Professional oder Enterprise).',
+  'settings.connection.kbNoPublish': 'Wissensdatenbank: verbunden. Das Veröffentlichen von Artikeln ist noch nicht erlaubt: Verbinden Sie HubSpot erneut, um es zu erlauben.',
+  'settings.connection.reconnect': 'HubSpot erneut verbinden',
+  'settings.connection.reconnectHint': 'Ihre Einstellungen, der API-Schlüssel und der Verlauf bleiben erhalten. Nutzen Sie es, wenn die App eine neue Berechtigung braucht, etwa zum Veröffentlichen von Wissensdatenbank-Artikeln, oder nachdem die Wissensdatenbank zu Ihrem HubSpot-Abo hinzugekommen ist.',
   'settings.connection.disconnect': 'HubSpot trennen',
   'settings.connection.disconnectHint':
     'Entfernt Ihre Einstellungen und die gespeicherten Tokens. Bereits erstellte Sprachversionen bleiben in HubSpot. Um die App auch aus HubSpot zu entfernen, deinstallieren Sie sie in HubSpot unter Einstellungen → Integrationen → Verknüpfte Apps.',

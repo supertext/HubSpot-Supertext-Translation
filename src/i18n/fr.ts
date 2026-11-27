@@ -88,6 +88,8 @@ export const fr: Messages = {
   'state.other': 'Autre',
 
   'version.none': 'Non traduit',
+  'version.open': 'Traduit : ouvrir dans HubSpot',
+  'version.legendDone': 'Traduit (un clic ouvre la version dans HubSpot)',
   'version.exists': 'Traduit',
 
   'job.heading': 'Traduction',
@@ -199,6 +201,9 @@ export const fr: Messages = {
   'settings.connection.account': 'Connecté au compte HubSpot {account}.',
   'settings.connection.kb': 'Base de connaissances : connectée.',
   'settings.connection.noKb': 'Base de connaissances : non connectée (nécessite Service Hub Professional ou Enterprise).',
+  'settings.connection.kbNoPublish': 'Base de connaissances : connectée. La publication d’articles n’est pas encore autorisée : connectez de nouveau HubSpot pour l’autoriser.',
+  'settings.connection.reconnect': 'Connecter de nouveau HubSpot',
+  'settings.connection.reconnectHint': 'Vos paramètres, la clé API et l’historique sont conservés. Utilisez-le lorsque l’application demande une nouvelle autorisation, par exemple pour publier des articles de la base de connaissances, ou après l’ajout de la base de connaissances à votre abonnement HubSpot.',
   'settings.connection.disconnect': 'Déconnecter HubSpot',
   'settings.connection.disconnectHint':
     'Supprime vos paramètres et les jetons enregistrés. Les versions linguistiques déjà créées restent dans HubSpot. Pour retirer aussi l’app de HubSpot, désinstallez-la dans HubSpot sous Paramètres → Intégrations → Applications connectées.',

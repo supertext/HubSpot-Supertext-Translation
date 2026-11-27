@@ -88,6 +88,8 @@ export const it: Messages = {
   'state.other': 'Altro',
 
   'version.none': 'Non tradotto',
+  'version.open': 'Tradotto: apri in HubSpot',
+  'version.legendDone': 'Tradotto (un clic apre la versione in HubSpot)',
   'version.exists': 'Tradotto',
 
   'job.heading': 'Traduzione',
@@ -199,6 +201,9 @@ export const it: Messages = {
   'settings.connection.account': 'Collegato all’account HubSpot {account}.',
   'settings.connection.kb': 'Knowledge base: collegata.',
   'settings.connection.noKb': 'Knowledge base: non collegata (richiede Service Hub Professional o Enterprise).',
+  'settings.connection.kbNoPublish': 'Knowledge base: collegata. La pubblicazione degli articoli non è ancora consentita: colleghi di nuovo HubSpot per consentirla.',
+  'settings.connection.reconnect': 'Collega di nuovo HubSpot',
+  'settings.connection.reconnectHint': 'Le impostazioni, la chiave API e la cronologia vengono mantenute. Lo usi quando l’app chiede una nuova autorizzazione, ad esempio per pubblicare articoli della knowledge base, o dopo aver aggiunto la knowledge base al Suo abbonamento HubSpot.',
   'settings.connection.disconnect': 'Scollega HubSpot',
   'settings.connection.disconnectHint':
     'Rimuove le Sue impostazioni e i token salvati. Le versioni linguistiche già create restano in HubSpot. Per rimuovere l’app anche da HubSpot, la disinstalli in HubSpot in Impostazioni → Integrazioni → App collegate.',

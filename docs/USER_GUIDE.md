@@ -7,7 +7,7 @@ For editors. Once the app is set up (see [INSTALLATION.md](INSTALLATION.md)), yo
 ## Translate
 
 1. Open the app and go to **Translate**.
-2. Under **Choose what to translate**, pick the kind of content — *Website pages*, *Landing pages*, *Blog posts*, *Marketing emails* or *Knowledge base* — and tick the item, or several (see [Translate many items at once](#translate-many-items-at-once)). The list shows each item's state in HubSpot and its language, and for each of your languages whether it has a version already (*Translated*, a link into HubSpot's editor) or not. The language columns are headed by HubSpot's language codes (`DE-CH`, `FR-CH` …); point at one to see the language's name.
+2. Under **Choose what to translate**, pick the kind of content — *Website pages*, *Landing pages*, *Blog posts*, *Marketing emails* or *Knowledge base* — and tick the item, or several (see [Translate many items at once](#translate-many-items-at-once)). The list shows each item's state in HubSpot and its language, and for each of your languages whether it has a version already: a green check opens that version in HubSpot's editor, a dashed circle means *Not translated* (the legend under the list says so too). The language columns are headed by HubSpot's language codes (`DE-CH`, `FR-CH` …); point at one to see the language's name.
 3. Under **Choose the languages**, tick the languages. The code next to each (e.g. `de-CH`) is the variant Supertext translates into.
 4. Click **Translate into 2 languages with Supertext**.
 

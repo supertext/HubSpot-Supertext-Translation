@@ -4,6 +4,8 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Added: *Settings → HubSpot → Connect HubSpot again*: grants new permissions (such as publishing knowledge base articles) and keeps the API key, settings and history.
+- Changed: the Translate page marks each language with an icon instead of text: a green check opens the version in HubSpot, a dashed circle means not translated; the language's name and the state are in the tooltip, with a legend under the list.
 - Changed: the language columns on the Translate page and in batch results are headed by the short language code (`DE-CH`), with the language's name as a tooltip, so many languages fit.
 - Added: a **History** tab with every translation, 50 per page, filtered by kind of content and *With failures* / *Running*; each opens its full result. *Recent translations* links to it, and the Translate page's result box shows the latest translation of the open tab (not of another kind).
 - Added: *Settings → Translation → Publish translations right away* (off by default): website pages, landing pages, blog posts and knowledge base articles are published as soon as they are translated, and updating a version publishes its new text. Marketing emails are never sent; they stay drafts. Publishing knowledge base articles needs a new optional HubSpot permission: accounts connected before need to connect HubSpot again. If HubSpot refuses to publish, the version stays a draft and the result says why.
