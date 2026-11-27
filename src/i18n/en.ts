@@ -114,6 +114,20 @@ export const en = {
   'job.open': 'Open in HubSpot',
   'job.review': 'Review the drafts in HubSpot and publish them when they are ready.',
   'history.heading': 'Recent translations',
+  'history.all': 'All translations',
+  'history.pageHeading': 'History',
+  'history.intro': 'Every translation started in the app, newest first. Open one to see its result per item and language, with links to the versions in HubSpot.',
+  'history.kindFilter': 'Kind of content',
+  'history.allKinds': 'All',
+  'history.outcomeFilter': 'Show',
+  'history.outcome.all': 'All',
+  'history.outcome.problems': 'With failures',
+  'history.outcome.running': 'Running',
+  'history.none': 'No translations match.',
+  'history.count.one': '{count} translation',
+  'history.count.other': '{count} translations',
+  'history.back': 'All translations',
+  'history.openInTranslate': 'Show on the Translate page',
   'history.empty': 'No translations yet.',
 
   // Settings page
@@ -264,6 +278,7 @@ export const en = {
 
   // Translation files
   beta: 'Beta',
+  'nav.history': 'History',
   'nav.links': 'Links',
   'nav.import': 'Import translation',
   'export.heading': '3. Or: Export for translation',

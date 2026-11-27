@@ -98,6 +98,8 @@ td.link { text-align: right; white-space: nowrap; }
 .filters { display: flex; flex-wrap: wrap; gap: 12px; font-size: 14px; }
 .filters a { color: var(--muted); }
 .filters a.active { color: var(--text); font-weight: 600; text-decoration: underline; }
+.card > .filters { margin: 0 0 12px; }
+.history-table td.codes span { white-space: nowrap; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 table.batch td.cell { white-space: normal; font-size: 13px; }
 table.batch th { font-size: 13px; }

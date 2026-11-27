@@ -25,6 +25,12 @@ Marketing emails work the same way; each language gets its own copy of the email
 
 ![Marketing emails: the Autumn newsletter translated into Italian (Switzerland), French (Switzerland) and German (Switzerland), three new versions, and the About us page under Recent translations](images/email-results.png)
 
+## History
+
+The **History** tab lists every translation started in the app, newest first, 50 per page: when, what (an item, or *About us and 4 more* for a batch), the kind, the languages and the outcome. Filter by kind of content, or show only translations **With failures** or still **Running**. Click a name to see its result per item and language, with *Open in HubSpot* links. The Translate page shows the last five under *Recent translations*, with a link to *All translations*, and its result box shows the latest translation of the tab you have open.
+
+![History: four translations with date, name, kind, languages and Done: … created, updated, kept, failed; filters for the kind of content and All, With failures, Running](images/history.png)
+
 ## Translate many items at once
 
 Tick up to **50 items** of one kind and translate them in one go: the button says, for example, **Translate 2 items into 3 languages with Supertext**. The box at the top of the table ticks every item on the page. The items are translated one after the other, each into all the ticked languages; the **Translation** box shows a row per item and a column per language, with a link to each draft. An item that fails (it was deleted in HubSpot, it is itself a language version, …) shows why in its row and the others still run.

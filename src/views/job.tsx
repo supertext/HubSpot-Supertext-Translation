@@ -140,41 +140,57 @@ export function ReviewHint(props: { t: Translator; items: Pick<JobItem, 'state' 
   return <p class="help">{props.t.t(written.every((item) => item.published) ? 'job.reviewPublished' : 'job.review')}</p>;
 }
 
-/** The last translations, newest first. */
+/** Jobs as table rows: when, what (a link to the job), kind, languages, outcome. Shared by the Translate and History pages. */
+export function JobRows(props: { t: Translator; jobs: Job[] }) {
+  const { t } = props;
+  const date = new Intl.DateTimeFormat(t.locale, { dateStyle: 'medium', timeStyle: 'short' });
+  return (
+    <table class="results history-table">
+      <tbody>
+        {props.jobs.map((job) => {
+          const totals = jobTotals(job);
+          return (
+            <tr>
+              <td class="when">{date.format(new Date(job.createdAt))}</td>
+              <td class="title">
+                <a href={`/history/${encodeURIComponent(job.id)}`}>{jobName(t, job)}</a>
+              </td>
+              <td class="muted">{t.t(`kind.${job.kind}` as MessageKey)}</td>
+              <td class="codes">
+                {job.languages.map((code, index) => (
+                  <span>
+                    {code.toUpperCase()}
+                    {index < job.languages.length - 1 ? ', ' : ''}
+                  </span>
+                ))}
+              </td>
+              <td>
+                {job.status === 'running' ? (
+                  <span class="spinner" aria-hidden="true"></span>
+                ) : job.status === 'failed' && job.error ? (
+                  <span class="result failed">{t.error(job.error)}</span>
+                ) : (
+                  <span class={totals.failed > 0 ? 'result failed' : 'result created'}>{t.t('job.done', totals)}</span>
+                )}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+/** The last translations, newest first, and the way to all of them. */
 export function History(props: { t: Translator; jobs: Job[] }) {
   const { t, jobs } = props;
-  const date = new Intl.DateTimeFormat(t.locale, { dateStyle: 'medium', timeStyle: 'short' });
   return (
     <section class="card history">
       <h2>{t.t('history.heading')}</h2>
-      {jobs.length === 0 ? (
-        <p class="muted">{t.t('history.empty')}</p>
-      ) : (
-        <table class="results">
-          <tbody>
-            {jobs.map((job) => {
-              const totals = jobTotals(job);
-              return (
-                <tr>
-                  <td class="when">{date.format(new Date(job.createdAt))}</td>
-                  <td class="title">{jobName(t, job)}</td>
-                  <td class="muted">{t.t(`kind.${job.kind}` as MessageKey)}</td>
-                  <td>{job.languages.map((code) => code.toUpperCase()).join(', ')}</td>
-                  <td>
-                    {job.status === 'running' ? (
-                      <span class="spinner" aria-hidden="true"></span>
-                    ) : job.status === 'failed' && job.error ? (
-                      <span class="result failed">{t.error(job.error)}</span>
-                    ) : (
-                      <span class={totals.failed > 0 ? 'result failed' : 'result created'}>{t.t('job.done', totals)}</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
+      {jobs.length === 0 ? <p class="muted">{t.t('history.empty')}</p> : <JobRows t={t} jobs={jobs} />}
+      <p>
+        <a href="/history">{t.t('history.all')}</a>
+      </p>
     </section>
   );
 }

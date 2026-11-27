@@ -176,8 +176,27 @@ export interface Store {
   saveJob(job: Job): Promise<void>;
   getJob(accountId: string, id: string): Promise<Job | undefined>;
   recentJobs(accountId: string, limit: number): Promise<Job[]>;
+  /** A page of the account's jobs, newest first, with how many match (the History page). */
+  findJobs(accountId: string, query: JobQuery): Promise<{ jobs: Job[]; total: number }>;
   /** Jobs still "running" after a restart are marked failed. */
   failRunningJobs(error: ErrorInfo): Promise<void>;
+}
+
+/** Which jobs the History page lists. */
+export interface JobQuery {
+  kind?: Kind;
+  /** `problems`: stopped, or with a language that failed; `running`: still running. */
+  outcome?: 'problems' | 'running';
+  limit: number;
+  offset: number;
+}
+
+/** Whether a job matches a query (the in-memory store; Postgres has the same in SQL). */
+export function jobMatches(job: Job, query: Pick<JobQuery, 'kind' | 'outcome'>): boolean {
+  if (query.kind && job.kind !== query.kind) return false;
+  if (query.outcome === 'running') return job.status === 'running';
+  if (query.outcome === 'problems') return job.status === 'failed' || job.items.some((item) => item.state === 'failed');
+  return true;
 }
 
 export const newJobId = (): string => randomUUID();
@@ -327,6 +346,13 @@ export class MemoryStore implements Store {
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, limit)
       .map((job) => structuredClone(job));
+  }
+
+  async findJobs(accountId: string, query: JobQuery) {
+    const all = [...this.jobs.values()]
+      .filter((job) => job.accountId === accountId && jobMatches(job, query))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return { jobs: all.slice(query.offset, query.offset + query.limit).map((job) => structuredClone(job)), total: all.length };
   }
 
   async failRunningJobs(error: ErrorInfo) {

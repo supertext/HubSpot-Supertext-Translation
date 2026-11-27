@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { SDK_VERSION } from 'supertext-sdk';
 import { describe, expect, it } from 'vitest';
 import { REVIEW_URL } from '../src/config.js';
@@ -271,6 +272,53 @@ describe('batches', () => {
     const odd = await env.api('POST', '/api/jobs', { kind: 'site-page', itemIds: ['101', '../x'], languages: ['de-ch'] });
     expect(odd.status).toBe(400);
     expect(env.supertext.documents.length).toBe(0);
+  });
+});
+
+describe('history', () => {
+  it('lists every translation, 50 per page, filtered by kind and outcome, each one opening its results', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    const page = await env.translate('site-page', '101', ['de-ch']);
+    const failed = await env.translate('site-page', '999', ['de-ch']);
+    const post = await env.translate('blog-post', '301', ['de-ch']);
+    // Older jobs, as after months of use.
+    for (let n = 0; n < 60; n++) {
+      await env.store.saveJob({
+        ...structuredClone(page.job),
+        id: randomUUID(),
+        itemTitle: `Old ${n}`,
+        createdAt: new Date(Date.UTC(2026, 0, 1, 0, n)).toISOString(),
+      });
+    }
+
+    const first = await (await env.request('/history')).text();
+    expect(first).toContain('63 translations');
+    expect(first).toContain('Page 1 of 2');
+    expect(first.match(/href="\/history\/[0-9a-f-]{36}"/g)?.length).toBe(50);
+    // Newest first: the blog post's job is the first row.
+    expect(first.indexOf(`/history/${post.job.id}`)).toBeLessThan(first.indexOf(`/history/${page.job.id}`));
+    expect((await (await env.request('/history?page=2')).text()).match(/href="\/history\/[0-9a-f-]{36}"/g)?.length).toBe(13);
+
+    const posts = await (await env.request('/history?kind=blog-post')).text();
+    expect(posts).toContain('1 translation');
+    expect(posts).toContain(`/history/${post.job.id}`);
+    const problems = await (await env.request('/history?outcome=problems')).text();
+    expect(problems).toContain('1 translation');
+    expect(problems).toContain(`/history/${failed.job.id}`);
+
+    const detail = await (await env.request(`/history/${page.job.id}`)).text();
+    expect(detail).toContain('Translation: About us');
+    expect(detail).toContain('Open in HubSpot');
+    expect((await env.request('/history/not-a-job')).headers.get('location')).toBe('/history');
+
+    // The Translate page shows the latest job of its own tab, and links to the history.
+    const blogTab = await (await env.request('/?kind=blog-post')).text();
+    expect(blogTab).toContain('Translation: How we roast our cocoa beans');
+    expect(blogTab).toContain('href="/history"');
+    const landingTab = await (await env.request('/?kind=landing-page')).text();
+    expect(landingTab).not.toContain('<div class="card job">');
   });
 });
 

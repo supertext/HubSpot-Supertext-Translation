@@ -21,6 +21,7 @@ import { appUrl, type PageContext } from './views/layout.js';
 import { KeyCheckMessage, keyCheckText, SettingsPage } from './views/settings.js';
 import { ImportPage } from './views/import.js';
 import { TranslatePage } from './views/translate.js';
+import { HISTORY_OUTCOMES, HistoryPage, JobPage, type HistoryOutcome } from './views/history.js';
 import { LINK_FILTERS, LinksPage, type LinkFilter, type LinkRow } from './views/links.js';
 import { ContentLinks, LINK_TARGETS } from './translation/links.js';
 
@@ -198,9 +199,9 @@ export function createApp(deps: AppDeps) {
       }
     }
     const history = await store.recentJobs(account.accountId, 6);
-    // `?job=`: the job that just finished (the page reloads with it), else the latest.
+    // `?job=`: the job that just finished (the page reloads with it), else the latest of this kind.
     const asked = /^[\w-]{1,64}$/.test(c.req.query('job') ?? '') ? await store.getJob(account.accountId, c.req.query('job')!) : undefined;
-    const latest = asked ?? history[0];
+    const latest = asked ?? (await store.findJobs(account.accountId, { kind, limit: 1, offset: 0 })).jobs[0];
     // Checked: `?item=`, or the items of the job the page reloaded with (never just the latest job's).
     const selected = c.req.query('item') ? [c.req.query('item') as string] : asked?.kind === kind ? jobItemIds(asked) : [];
     return c.html(
@@ -442,6 +443,45 @@ export function createApp(deps: AppDeps) {
     const all = await store.allLinks(accountId);
     return { all: all.length, waiting: all.filter((l) => l.status === 'waiting').length };
   };
+
+  // History: every translation of the account, 50 per page, by kind and outcome.
+  app.get('/history', async (c) => {
+    const session = await current(c);
+    if (!session) return c.redirect('/', 302);
+    const t = tr(c);
+    const { account } = session;
+    const requested = c.req.query('kind') ?? '';
+    const kind = isKind(requested) ? requested : undefined;
+    const outcomeQuery = c.req.query('outcome') as HistoryOutcome | undefined;
+    const outcome: HistoryOutcome = outcomeQuery && HISTORY_OUTCOMES.includes(outcomeQuery) ? outcomeQuery : 'all';
+    const query = { kind, outcome: outcome === 'all' ? undefined : outcome };
+    const first = await store.findJobs(account.accountId, { ...query, limit: 0, offset: 0 });
+    const pages = Math.max(1, Math.ceil(first.total / PER_PAGE));
+    const pageNumber = Math.min(pages, Math.max(1, Number.parseInt(c.req.query('page') ?? '1', 10) || 1));
+    const { jobs, total } = await store.findJobs(account.accountId, { ...query, limit: PER_PAGE, offset: (pageNumber - 1) * PER_PAGE });
+    return c.html(
+      page(
+        HistoryPage({
+          ctx: pageContext(t, 'history', session),
+          kinds: KINDS.filter((k) => k !== 'kb-article' || knowledgeBase(account)),
+          kind,
+          outcome,
+          jobs,
+          total,
+          page: pageNumber,
+          pages,
+        }),
+      ),
+    );
+  });
+
+  app.get('/history/:id', async (c) => {
+    const session = await current(c);
+    if (!session) return c.redirect('/', 302);
+    const job = await store.getJob(session.account.accountId, c.req.param('id'));
+    if (!job) return c.redirect('/history', 302);
+    return c.html(page(JobPage({ ctx: pageContext(tr(c), 'history', session), account: session.account, job, appBase: editorBase })));
+  });
 
   app.get('/links', async (c) => {
     const session = await current(c);

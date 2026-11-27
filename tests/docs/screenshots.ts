@@ -184,10 +184,14 @@ async function main() {
   await page.goto(`${appUrl}/links`);
   await shot('links', page.locator('main'));
 
+  // History: every translation, filtered by kind and outcome.
+  await page.goto(`${appUrl}/history?lang=en`);
+  await shot('history', page.locator('main'));
+
   // Phones: every page must fit a 390 px wide screen (wide tables scroll inside their card).
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
   await phone.context().addCookies(await page.context().cookies());
-  for (const path of ['/?lang=en', '/?kind=email', '/import', '/links', '/settings']) {
+  for (const path of ['/?lang=en', '/?kind=email', '/import', '/links', '/history', '/settings']) {
     await phone.goto(`${appUrl}${path}`);
     const width = await phone.evaluate(() => document.documentElement.scrollWidth);
     if (width > 390) throw new Error(`${path} is ${width}px wide on a phone (390px screen)`);

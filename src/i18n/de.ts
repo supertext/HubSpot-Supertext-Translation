@@ -109,6 +109,20 @@ export const de: Messages = {
   'job.open': 'In HubSpot öffnen',
   'job.review': 'Prüfen Sie die Entwürfe in HubSpot und veröffentlichen Sie sie, wenn sie bereit sind.',
   'history.heading': 'Letzte Übersetzungen',
+  'history.all': 'Alle Übersetzungen',
+  'history.pageHeading': 'Verlauf',
+  'history.intro': 'Alle Übersetzungen, die in der App gestartet wurden, die neuesten zuerst. Öffnen Sie eine, um das Ergebnis pro Inhalt und Sprache zu sehen, mit Links zu den Versionen in HubSpot.',
+  'history.kindFilter': 'Art des Inhalts',
+  'history.allKinds': 'Alle',
+  'history.outcomeFilter': 'Anzeigen',
+  'history.outcome.all': 'Alle',
+  'history.outcome.problems': 'Mit Fehlern',
+  'history.outcome.running': 'Laufend',
+  'history.none': 'Keine passenden Übersetzungen.',
+  'history.count.one': '{count} Übersetzung',
+  'history.count.other': '{count} Übersetzungen',
+  'history.back': 'Alle Übersetzungen',
+  'history.openInTranslate': 'Auf der Seite Übersetzen anzeigen',
   'history.empty': 'Noch keine Übersetzungen.',
 
   'settings.heading': 'Supertext-Einstellungen',
@@ -259,6 +273,7 @@ export const de: Messages = {
 
   // Translation files
   beta: 'Beta',
+  'nav.history': 'Verlauf',
   'nav.links': 'Links',
   'nav.import': 'Übersetzung importieren',
   'export.heading': '3. Oder: Für Übersetzung exportieren',

@@ -335,6 +335,14 @@ for (const lang of post.languages) {
   check(`publish: blog post → ${TARGETS[lang]} is published`, live?.state === 'PUBLISHED' && live?.currentlyPublished === true, String(live?.state));
 }
 
+// --- History: every job of this run, each opening its results ---------------------------------
+await page.goto(`${appUrl}/history?lang=en`);
+const historyRows = await page.locator('.history-table a[href^="/history/"]').count();
+check('history: every translation of this run is listed', historyRows === ITEMS.length + 2, `${historyRows} rows`);
+await page.locator('.history-table a[href^="/history/"]').first().click();
+await page.locator('.job').waitFor();
+check('history: the latest translation opens with its results', (await page.locator('.job h2').textContent())?.includes('How we roast our cocoa beans') ?? false, (await page.locator('.job h2').textContent()) ?? '');
+
 await browser.close();
 if (failures.length) {
   console.error(`\n${failures.length} check(s) failed:\n- ${failures.join('\n- ')}`);

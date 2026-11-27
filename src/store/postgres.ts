@@ -3,7 +3,7 @@ import type { ReporterState } from 'supertext-plugin-health';
 import type { Tokens } from '../hubspot/client.js';
 import type { Kind } from '../hubspot/content.js';
 import type { ErrorInfo } from '../i18n/error.js';
-import { defaultAccount, type Account, type Job, type Secrets, type Store, type Translation, type LinkStatus } from './store.js';
+import { defaultAccount, type Account, type Job, type JobQuery, type Secrets, type Store, type Translation, type LinkStatus } from './store.js';
 
 /**
  * PostgreSQL store (the shared Railway Postgres; its own database, created on
@@ -241,6 +241,25 @@ export class PostgresStore implements Store {
       [accountId, limit],
     );
     return rows.map((row) => row.data as Job);
+  }
+
+  async findJobs(accountId: string, query: JobQuery) {
+    const where = ['account_id = $1'];
+    const params: unknown[] = [accountId];
+    if (query.kind) {
+      params.push(query.kind);
+      where.push(`data->>'kind' = $${params.length}`);
+    }
+    if (query.outcome === 'running') where.push(`status = 'running'`);
+    // Stopped, or a language that failed (items is a JSON array of results).
+    if (query.outcome === 'problems') where.push(`(status = 'failed' OR data->'items' @> '[{"state":"failed"}]'::jsonb)`);
+    const condition = where.join(' AND ');
+    const total = await this.pool.query(`SELECT count(*)::int AS n FROM translation_jobs WHERE ${condition}`, params);
+    const { rows } = await this.pool.query(
+      `SELECT data FROM translation_jobs WHERE ${condition} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      [...params, query.limit, query.offset],
+    );
+    return { jobs: rows.map((row) => row.data as Job), total: Number(total.rows[0]?.n ?? 0) };
   }
 
   async failRunningJobs(error: ErrorInfo) {
