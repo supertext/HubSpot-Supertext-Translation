@@ -241,3 +241,4 @@ ul.counts li { margin: 0 0 2px; }
 
 /* Language columns: the short code, the language's name as a tooltip. */
 th.lang-code abbr { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; white-space: nowrap; }
+.history-table td.title, .history-table .result { font-weight: 400; }
