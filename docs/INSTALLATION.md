@@ -44,7 +44,7 @@ The app asks HubSpot for:
 | --- | --- |
 | `content` | Read website pages, landing pages, blog posts and marketing emails, and create their language versions as drafts |
 | `cms.knowledge_base.articles.read`, `cms.knowledge_base.articles.write` (optional) | Read knowledge base articles and create their translations. Left out if the account doesn't have the knowledge base. |
-| `cms.knowledge_base.articles.publish` (optional) | Publish article translations, only with *Publish translations right away* on. Accounts connected before version 1.4 don't have it: connect HubSpot again to grant it. |
+| `cms.knowledge_base.articles.publish` (optional) | Publish article translations, only with *Publish translations right away* on. |
 
 Everyone in your team who connects the same HubSpot account shares its settings. The connection stays until you disconnect it in the app or uninstall the app in HubSpot (Settings → Integrations → Connected apps).
 
@@ -141,7 +141,7 @@ Nothing to do: the app runs on Supertext's servers and is updated there. The set
 
 ## Connecting again
 
-**Settings → HubSpot → Connect HubSpot again** goes through HubSpot's connection screen once more and keeps everything: the API key, the settings, the languages, the history and the links. Use it when the app asks for a permission it didn't have yet: the knowledge base after it was added to your HubSpot subscription, or publishing articles for *Publish translations right away* (accounts connected before version 1.4). The settings say *Publishing articles is not allowed yet* when that is the case.
+**Settings → HubSpot → Connect HubSpot again** goes through HubSpot's connection screen once more and keeps everything: the API key, the settings, the languages, the history and the links. Use it when the app asks for a permission it didn't have yet: the knowledge base after it was added to your HubSpot subscription, or publishing articles for *Publish translations right away* if that permission was left out. The settings say *Publishing articles is not allowed yet* when that is the case.
 
 ## Disconnecting
 
@@ -176,7 +176,7 @@ Nothing to do: the app runs on Supertext's servers and is updated there. The set
 | *Supertext doesn't translate into …* | Check the language's Supertext code under Settings → Languages. |
 | *Too many requests to Supertext / HubSpot* | The rate limit was still exceeded after 4 automatic retries. Wait a moment and start again. |
 | *Your Supertext translation limit is exceeded* | Your Supertext plan's volume is used up. |
-| *Saved as a draft, not published: To publish knowledge base articles, connect HubSpot again …* | The account was connected before the app could publish articles. Connect HubSpot again (Settings → *Connect HubSpot*) and allow it. |
+| *Saved as a draft, not published: To publish knowledge base articles, connect HubSpot again …* | The app isn't allowed to publish articles (the permission was left out when HubSpot was connected). Use *Connect HubSpot again* under Settings → HubSpot and allow it. |
 | *Saved as a draft, not published: HubSpot refused …* | HubSpot didn't let the app publish the version (subscription, permissions, a required field); it is a draft: publish it in HubSpot. |
 | *The app restarted during the translation* | Start the translation again; languages already done are kept. |
 | *Select at most 50 items at a time.* | A batch takes up to 50 items; translate more in several runs. |
