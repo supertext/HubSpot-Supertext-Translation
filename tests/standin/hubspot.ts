@@ -52,6 +52,7 @@ const PATHS: [Kind, RegExp][] = [
 ];
 
 const KB_LANGUAGES = ['en', 'de-ch', 'fr-ch', 'it-ch'];
+export const KB_URL = 'https://help.swiss-chocolate.example';
 const KB_SCOPES = ['cms.knowledge_base.articles.read', 'cms.knowledge_base.articles.write'];
 
 export function createHubSpotStandin(): HubSpotStandin {
@@ -81,7 +82,12 @@ export function createHubSpotStandin(): HubSpotStandin {
     const members = [...entries.values()].filter((e) => e.group === entry.group && !e.archived && e.kind === entry.kind);
     if (entry.kind === 'email') return undefined;
     if (entry.kind === 'kb-article') {
-      return members.filter((e) => e !== entry).map((e) => ({ id: e.live.id, language: e.live.language }));
+      // As on a real account (26 November 2026): language → { id, title, state }.
+      const map: Record<string, unknown> = {};
+      for (const member of members) {
+        if (member !== entry) map[String(member.live.language)] = { id: String(member.live.id), title: member.live.title, state: member.live.state };
+      }
+      return map;
     }
     const map: Record<string, unknown> = {};
     for (const member of members) {
@@ -94,6 +100,8 @@ export function createHubSpotStandin(): HubSpotStandin {
     const item = structuredClone(entry[which]);
     const t = translations(entry);
     if (t !== undefined) item.translations = t;
+    // An article's address: the knowledge base's language version and the article's path.
+    if (entry.kind === 'kb-article') item.url = `${KB_URL}/${String(item.language)}/knowledge-base/${String(item.path)}`;
     if (entry.archived) item.archived = true;
     return item;
   };

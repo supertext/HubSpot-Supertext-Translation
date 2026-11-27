@@ -37,6 +37,15 @@ CREATE TABLE IF NOT EXISTS translation_jobs (
   data JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS waiting_links (
+  account_id TEXT NOT NULL,
+  article_id TEXT NOT NULL,
+  language TEXT NOT NULL,
+  target_id TEXT NOT NULL,
+  ignored BOOLEAN NOT NULL DEFAULT false,
+  PRIMARY KEY (account_id, article_id, target_id)
+);
+CREATE INDEX IF NOT EXISTS waiting_links_target ON waiting_links (account_id, language, target_id);
 CREATE INDEX IF NOT EXISTS translation_jobs_account ON translation_jobs (account_id, created_at DESC);
 `;
 
@@ -130,7 +139,7 @@ export class PostgresStore implements Store {
   }
 
   async deleteAccount(accountId: string) {
-    for (const table of ['accounts', 'translations', 'translation_jobs']) {
+    for (const table of ['accounts', 'translations', 'translation_jobs', 'waiting_links']) {
       await this.pool.query(`DELETE FROM ${table} WHERE account_id = $1`, [accountId]);
     }
   }
@@ -153,6 +162,41 @@ export class PostgresStore implements Store {
        ON CONFLICT (account_id, kind, source_id, language) DO UPDATE SET target_id = $5, updated_at = $6`,
       [accountId, translation.kind, translation.sourceId, translation.language, translation.targetId, translation.updatedAt],
     );
+  }
+
+  async saveWaitingLinks(accountId: string, articleId: string, language: string, targetIds: string[]) {
+    await this.pool.query('DELETE FROM waiting_links WHERE account_id = $1 AND article_id = $2 AND NOT ignored', [accountId, articleId]);
+    for (const targetId of new Set(targetIds)) {
+      await this.pool.query(
+        'INSERT INTO waiting_links (account_id, article_id, language, target_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
+        [accountId, articleId, language, targetId],
+      );
+    }
+  }
+
+  async waitingFor(accountId: string, language: string, targetId: string) {
+    const { rows } = await this.pool.query(
+      'SELECT article_id FROM waiting_links WHERE account_id = $1 AND language = $2 AND target_id = $3 AND NOT ignored',
+      [accountId, language, targetId],
+    );
+    return rows.map((row) => String(row.article_id));
+  }
+
+  async allWaitingLinks(accountId: string) {
+    const { rows } = await this.pool.query(
+      'SELECT article_id, language, target_id FROM waiting_links WHERE account_id = $1 AND NOT ignored ORDER BY language, article_id, target_id',
+      [accountId],
+    );
+    return rows.map((row) => ({ articleId: String(row.article_id), language: String(row.language), targetId: String(row.target_id) }));
+  }
+
+  async removeWaitingLink(accountId: string, articleId: string, targetId: string) {
+    await this.pool.query('UPDATE waiting_links SET ignored = true WHERE account_id = $1 AND article_id = $2 AND target_id = $3', [accountId, articleId, targetId]);
+  }
+
+  async ignoredLinks(accountId: string, articleId: string) {
+    const { rows } = await this.pool.query('SELECT target_id FROM waiting_links WHERE account_id = $1 AND article_id = $2 AND ignored', [accountId, articleId]);
+    return rows.map((row) => String(row.target_id));
   }
 
   async saveJob(job: Job) {

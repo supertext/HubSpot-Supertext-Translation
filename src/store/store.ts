@@ -40,6 +40,11 @@ export interface Account {
    * and an article's path ("about-us" → "ueber-uns"). Existing versions keep theirs.
    */
   translateUrls: boolean;
+  /**
+   * Point links between knowledge base articles to the article in the same language: when an
+   * article is translated, and later, when an article it links to gets its translation.
+   */
+  translateLinks: boolean;
   /** "Send version information to Supertext" (SUPERTEXT_VERSION_REPORTS=0 turns it off for all accounts). */
   versionReports: boolean;
   /** The Commando Center reporter's state (Plugin Health's ReporterState JSON); see reporting.ts. */
@@ -61,6 +66,7 @@ export const defaultAccount = (accountId: string): Account => ({
   languageCodes: {},
   reviewLanguages: [],
   translateUrls: true,
+  translateLinks: true,
   versionReports: true,
   reporter: null,
   connectedAt: new Date().toISOString(),
@@ -100,6 +106,13 @@ export interface Job {
   finishedAt?: string;
 }
 
+/** A translation's link to an original that has no version in the translation's language yet. */
+export interface WaitingLink {
+  articleId: string;
+  language: string;
+  targetId: string;
+}
+
 export interface Store {
   getAccount(accountId: string): Promise<Account | undefined>;
   /** Saves the settings; keeps the stored tokens (only `saveTokens` writes them) and `reporter` (only `saveReporterState`). */
@@ -114,6 +127,20 @@ export interface Store {
   /** The language versions the app made for one kind: source ID → language → version ID. */
   translations(accountId: string, kind: Kind): Promise<Map<string, Record<string, string>>>;
   saveTranslation(accountId: string, translation: Translation): Promise<void>;
+
+  /**
+   * Links still waiting for a translation: `articleId` (a translation the app wrote) links to the
+   * originals `targetIds`, which have no version in `language` yet. Replaces the article's list.
+   */
+  saveWaitingLinks(accountId: string, articleId: string, language: string, targetIds: string[]): Promise<void>;
+  /** The translations in `language` whose links wait for `targetId` to be translated. */
+  waitingFor(accountId: string, language: string, targetId: string): Promise<string[]>;
+  /** All waiting links of the account (Settings → Links waiting for a translation). */
+  allWaitingLinks(accountId: string): Promise<WaitingLink[]>;
+  /** Stops waiting: the link stays on the original, also later (see `ignoredLinks`). */
+  removeWaitingLink(accountId: string, articleId: string, targetId: string): Promise<void>;
+  /** The originals whose links in `articleId` are to stay as they are ("Stop waiting"). */
+  ignoredLinks(accountId: string, articleId: string): Promise<string[]>;
 
   saveJob(job: Job): Promise<void>;
   getJob(accountId: string, id: string): Promise<Job | undefined>;
@@ -160,6 +187,8 @@ export class MemoryStore implements Store {
   private readonly accounts = new Map<string, Account>();
   private readonly records = new Map<string, Translation[]>();
   private readonly jobs = new Map<string, Job>();
+  /** accountId → articleId → { language, targets, ignored }. */
+  private readonly waiting = new Map<string, Map<string, { language: string; targets: string[]; ignored: string[] }>>();
 
   async getAccount(accountId: string) {
     const account = this.accounts.get(accountId);
@@ -193,6 +222,7 @@ export class MemoryStore implements Store {
   async deleteAccount(accountId: string) {
     this.accounts.delete(accountId);
     this.records.delete(accountId);
+    this.waiting.delete(accountId);
     for (const [id, job] of this.jobs) if (job.accountId === accountId) this.jobs.delete(id);
   }
 
@@ -203,6 +233,40 @@ export class MemoryStore implements Store {
       result.set(t.sourceId, { ...(result.get(t.sourceId) ?? {}), [t.language]: t.targetId });
     }
     return result;
+  }
+
+  async saveWaitingLinks(accountId: string, articleId: string, language: string, targetIds: string[]) {
+    const map = this.waiting.get(accountId) ?? new Map();
+    const ignored: string[] = map.get(articleId)?.ignored ?? [];
+    const targets = [...new Set(targetIds)].filter((id) => !ignored.includes(id));
+    if (targets.length || ignored.length) map.set(articleId, { language, targets, ignored });
+    else map.delete(articleId);
+    this.waiting.set(accountId, map);
+  }
+
+  async waitingFor(accountId: string, language: string, targetId: string) {
+    return [...(this.waiting.get(accountId) ?? new Map<string, { language: string; targets: string[]; ignored: string[] }>())]
+      .filter(([, entry]) => entry.language === language && entry.targets.includes(targetId))
+      .map(([articleId]) => articleId);
+  }
+
+  async allWaitingLinks(accountId: string) {
+    const result: WaitingLink[] = [];
+    for (const [articleId, entry] of this.waiting.get(accountId) ?? []) {
+      for (const targetId of entry.targets) result.push({ articleId, language: entry.language, targetId });
+    }
+    return result;
+  }
+
+  async removeWaitingLink(accountId: string, articleId: string, targetId: string) {
+    const entry = this.waiting.get(accountId)?.get(articleId);
+    if (!entry) return;
+    entry.targets = entry.targets.filter((t) => t !== targetId);
+    if (!entry.ignored.includes(targetId)) entry.ignored.push(targetId);
+  }
+
+  async ignoredLinks(accountId: string, articleId: string) {
+    return [...(this.waiting.get(accountId)?.get(articleId)?.ignored ?? [])];
   }
 
   async saveTranslation(accountId: string, translation: Translation) {

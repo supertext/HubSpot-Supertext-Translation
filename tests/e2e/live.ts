@@ -29,7 +29,7 @@ import { loadConfig } from '../../src/config.js';
 import { extractItem, type Item, type Kind } from '../../src/hubspot/content.js';
 import { HUBL } from '../../src/hubspot/rich-text.js';
 import { MemoryStore } from '../../src/store/store.js';
-import { createHubSpotStandin } from '../standin/hubspot.js';
+import { createHubSpotStandin, KB_URL } from '../standin/hubspot.js';
 import { createSupertextStandin } from '../standin/supertext.js';
 
 const key = process.env.E2E_STANDIN === '1' ? 'stand-in' : (process.env.SUPERTEXT_API_KEY ?? '');
@@ -51,6 +51,9 @@ const ITEMS: { kind: Kind; id: string; languages: string[] }[] = [
   { kind: 'blog-post', id: '301', languages: ['de-ch', 'fr-ch'] },
   { kind: 'email', id: '401', languages: ['de-ch', 'fr-ch', 'it-ch'] },
   { kind: 'kb-article', id: '501', languages: ['de-ch', 'fr-ch', 'it-ch'] },
+  // Linked articles: "Returning an order" links to 501 and to 503, which is translated after it.
+  { kind: 'kb-article', id: '502', languages: ['de-ch', 'fr-ch', 'it-ch'] },
+  { kind: 'kb-article', id: '503', languages: ['de-ch', 'fr-ch', 'it-ch'] },
 ];
 
 const failures: string[] = [];
@@ -231,7 +234,9 @@ function checkVersion(tag: string, kind: Kind, source: Item, version: Item, lang
     // Punctuation doesn't wander into the next paragraph ("<p>, Die Blätter …", seen with empty placeholders).
     const stray = /<(p|li|h[1-6])\b[^>]*>\s*[,;:.]/i;
     if (!stray.test(s)) check(`${tag}: ${k} starts no paragraph with punctuation`, !stray.test(t), t.match(stray)?.[0]);
-    if (hrefs(s).length) check(`${tag}: ${k} keeps its links`, sorted(hrefs(t)) === sorted(hrefs(s)));
+    // Links between articles point to the translations (checked below); the others stay as they are.
+    if (hrefs(s).length && kind !== 'kb-article') check(`${tag}: ${k} keeps its links`, sorted(hrefs(t)) === sorted(hrefs(s)));
+    if (hrefs(s).length && kind === 'kb-article') check(`${tag}: ${k} keeps its links`, hrefs(t).length === hrefs(s).length, `${hrefs(t).length}/${hrefs(s).length}`);
     for (const [what, needle] of [['bold', '<strong'], ['italics', '<em'], ['list items', '<li']]) {
       if (count(s, needle)) check(`${tag}: ${k} keeps its ${what}`, count(t, needle) === count(s, needle), `${count(t, needle)}/${count(s, needle)}`);
     }
@@ -261,6 +266,18 @@ for (const { kind, id, languages } of ITEMS) {
     firstIds.set(`${id}:${lang}`, list[0].id);
     checkVersion(tag, kind, source, list[0], lang);
   }
+}
+
+// --- Links between articles: in the language of the translation, also the one translated later ---
+for (const lang of ['de-ch', 'fr-ch', 'it-ch']) {
+  const id = (original: string) => firstIds.get(`${original}:${lang}`) ?? '';
+  const address = (original: string) => `/${lang}/knowledge-base/${String(hubspot.draft(id(original))?.path ?? '')}`;
+  const returning = hrefs(String(hubspot.draft(id('502'))?.body ?? ''));
+  check(`links ${lang}: "Returning an order" links to the translated "Track my order"`, returning[0] === `${KB_URL}${address('501')}`, returning[0]);
+  check(`links ${lang}: … and, once translated, to "Damaged chocolate" with its anchor`, returning[1] === `${address('503')}#photos`, returning[1]);
+  check(`links ${lang}: … and keeps its other links`, returning[2] === '#before' && returning[3] === 'https://www.swiss-chocolate.example/contact', returning.slice(2).join(' '));
+  const damaged = hrefs(String(hubspot.draft(id('503'))?.body ?? ''));
+  check(`links ${lang}: "Damaged chocolate" links to the translated "Returning an order"`, damaged[0] === `${KB_URL}${address('502')}`, damaged[0]);
 }
 
 // --- Again with "Update existing versions": the same drafts, updated in place ------------------

@@ -1,3 +1,4 @@
+import { KnowledgeBaseLinks } from './links.js';
 import { TranslationFileError, TranslationFiles, type FileJob, type FileSegment, type ImportedSegment } from 'supertext-sdk';
 import { extractItem, getDraft, isKind, type Kind } from '../hubspot/content.js';
 import type { Extraction } from '../hubspot/extract.js';
@@ -270,6 +271,7 @@ async function importJob(
     overwrite: true,
     primaryLanguage: item.itemLanguage,
     produce,
+    links: ref.kind === 'kb-article' && account.translateLinks ? new KnowledgeBaseLinks(item.client, deps.store, account.accountId) : undefined,
   });
   if (written.targetId && written.state !== 'kept') {
     await deps.store.saveTranslation(account.accountId, {

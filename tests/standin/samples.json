@@ -38,7 +38,20 @@
     "track my order": "Bestellung verfolgen",
     "roasting": "Rösten",
     "advent calendar": "Adventskalender",
-    "contact": "Kontakt"
+    "contact": "Kontakt",
+    "Returning an order": "Eine Bestellung zurücksenden",
+    "Send chocolate back within 14 days": "Schokolade innerhalb von 14 Tagen zurücksenden",
+    "How to return an order": "So senden Sie eine Bestellung zurück",
+    "Before you send it back": "Bevor Sie sie zurücksenden",
+    "Find the parcel with <a href=\"https://help.swiss-chocolate.example/en/knowledge-base/track-my-order\">tracking</a> first.": "Finden Sie das Paket zuerst mit der <a href=\"https://help.swiss-chocolate.example/en/knowledge-base/track-my-order\">Sendungsverfolgung</a>.",
+    "Damaged on arrival? See <a href=\"/en/knowledge-base/damaged-chocolate#photos\">damaged chocolate</a>, <a href=\"#before\">the first step</a> or <a href=\"https://www.swiss-chocolate.example/contact\">our shop</a>.": "Beschädigt angekommen? Siehe <a href=\"/en/knowledge-base/damaged-chocolate#photos\">beschädigte Schokolade</a>, <a href=\"#before\">den ersten Schritt</a> oder <a href=\"https://www.swiss-chocolate.example/contact\">unseren Laden</a>.",
+    "Damaged chocolate": "Beschädigte Schokolade",
+    "What to do when chocolate arrives melted or broken": "Was tun, wenn die Schokolade geschmolzen oder zerbrochen ankommt",
+    "Melted or broken chocolate": "Geschmolzene oder zerbrochene Schokolade",
+    "Take photos": "Fotos machen",
+    "Photos help us replace it. Then follow <a href=\"https://help.swiss-chocolate.example/en/knowledge-base/returning-an-order\">returning an order</a>.": "Fotos helfen uns beim Ersatz. Folgen Sie dann <a href=\"https://help.swiss-chocolate.example/en/knowledge-base/returning-an-order\">eine Bestellung zurücksenden</a>.",
+    "returning an order": "Bestellung zurücksenden",
+    "damaged chocolate": "Beschädigte Schokolade"
   },
   "fr": {
     "About us": "À propos de nous",
@@ -79,7 +92,20 @@
     "track my order": "Suivre ma commande",
     "roasting": "Torréfaction",
     "advent calendar": "Calendrier de l’Avent",
-    "contact": "Contact"
+    "contact": "Contact",
+    "Returning an order": "Retourner une commande",
+    "Send chocolate back within 14 days": "Renvoyer le chocolat dans les 14 jours",
+    "How to return an order": "Comment retourner une commande",
+    "Before you send it back": "Avant de la renvoyer",
+    "Find the parcel with <a href=\"https://help.swiss-chocolate.example/en/knowledge-base/track-my-order\">tracking</a> first.": "Retrouvez d’abord le colis grâce au <a href=\"https://help.swiss-chocolate.example/en/knowledge-base/track-my-order\">suivi</a>.",
+    "Damaged on arrival? See <a href=\"/en/knowledge-base/damaged-chocolate#photos\">damaged chocolate</a>, <a href=\"#before\">the first step</a> or <a href=\"https://www.swiss-chocolate.example/contact\">our shop</a>.": "Endommagé à l’arrivée ? Voir <a href=\"/en/knowledge-base/damaged-chocolate#photos\">chocolat endommagé</a>, <a href=\"#before\">la première étape</a> ou <a href=\"https://www.swiss-chocolate.example/contact\">notre boutique</a>.",
+    "Damaged chocolate": "Chocolat endommagé",
+    "What to do when chocolate arrives melted or broken": "Que faire si le chocolat arrive fondu ou cassé",
+    "Melted or broken chocolate": "Chocolat fondu ou cassé",
+    "Take photos": "Prenez des photos",
+    "Photos help us replace it. Then follow <a href=\"https://help.swiss-chocolate.example/en/knowledge-base/returning-an-order\">returning an order</a>.": "Les photos nous aident à le remplacer. Suivez ensuite <a href=\"https://help.swiss-chocolate.example/en/knowledge-base/returning-an-order\">retourner une commande</a>.",
+    "returning an order": "Retourner une commande",
+    "damaged chocolate": "Chocolat endommagé"
   },
   "it": {
     "About us": "Chi siamo",
@@ -120,6 +146,19 @@
     "track my order": "Seguire il mio ordine",
     "roasting": "Tostatura",
     "advent calendar": "Calendario dell’Avvento",
-    "contact": "Contatto"
+    "contact": "Contatto",
+    "Returning an order": "Restituire un ordine",
+    "Send chocolate back within 14 days": "Rispedire il cioccolato entro 14 giorni",
+    "How to return an order": "Come restituire un ordine",
+    "Before you send it back": "Prima di rispedirlo",
+    "Find the parcel with <a href=\"https://help.swiss-chocolate.example/en/knowledge-base/track-my-order\">tracking</a> first.": "Trovi prima il pacco con il <a href=\"https://help.swiss-chocolate.example/en/knowledge-base/track-my-order\">tracciamento</a>.",
+    "Damaged on arrival? See <a href=\"/en/knowledge-base/damaged-chocolate#photos\">damaged chocolate</a>, <a href=\"#before\">the first step</a> or <a href=\"https://www.swiss-chocolate.example/contact\">our shop</a>.": "Danneggiato all’arrivo? Veda <a href=\"/en/knowledge-base/damaged-chocolate#photos\">cioccolato danneggiato</a>, <a href=\"#before\">il primo passo</a> o <a href=\"https://www.swiss-chocolate.example/contact\">il nostro negozio</a>.",
+    "Damaged chocolate": "Cioccolato danneggiato",
+    "What to do when chocolate arrives melted or broken": "Cosa fare se il cioccolato arriva sciolto o rotto",
+    "Melted or broken chocolate": "Cioccolato sciolto o rotto",
+    "Take photos": "Faccia delle foto",
+    "Photos help us replace it. Then follow <a href=\"https://help.swiss-chocolate.example/en/knowledge-base/returning-an-order\">returning an order</a>.": "Le foto ci aiutano a sostituirlo. Poi segua <a href=\"https://help.swiss-chocolate.example/en/knowledge-base/returning-an-order\">restituire un ordine</a>.",
+    "returning an order": "Restituire un ordine",
+    "damaged chocolate": "Cioccolato danneggiato"
   }
 }

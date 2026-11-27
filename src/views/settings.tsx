@@ -68,6 +68,8 @@ export interface SettingsPageProps {
   invalidCodes?: string;
   /** The account granted the knowledge base scopes. */
   knowledgeBase: boolean;
+  /** Links between articles still waiting for a translation (Settings → Translation). */
+  waitingLinks: number;
   /** A review service is set (SUPERTEXT_REVIEW_URL not empty): show the Translation review column. */
   review: boolean;
   /** The result of "Send configuration to Supertext" (after the redirect). */
@@ -263,6 +265,16 @@ export function SettingsPage(props: SettingsPageProps) {
             {t.t('settings.style.urls')}
           </label>
           <p class="help">{t.t('settings.style.urlsHelp')}</p>
+          <label class="inline">
+            <input type="checkbox" name="translateLinks" value="1" checked={account.translateLinks} />
+            {t.t('settings.style.links')}
+          </label>
+          <p class="help">{t.t('settings.style.linksHelp')}</p>
+          {props.waitingLinks > 0 && (
+            <p class="help">
+              {t.tn('settings.style.waiting', props.waitingLinks)} <a href="/links">{t.t('settings.style.waitingList')}</a>
+            </p>
+          )}
         </section>
 
         <section class="card">

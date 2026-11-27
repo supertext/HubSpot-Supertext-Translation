@@ -131,6 +131,12 @@ export const de: Messages = {
   'settings.style.urls': "Adressen (URLs) neuer Versionen übersetzen",
   'settings.style.urlsHelp':
     "Zum Beispiel wird /de-ch/about-us zu /de-ch/ueber-uns, bei Seiten, Blogbeiträgen und Wissensdatenbank-Artikeln. Bestehende Versionen behalten ihre Adresse, damit veröffentlichte Links weiter funktionieren. Sprachen mit anderer Schrift (etwa Japanisch oder Russisch) behalten die ursprüngliche Adresse.",
+  'settings.style.links': "Links zwischen Wissensdatenbank-Artikeln auf die übersetzten Artikel setzen",
+  'settings.style.linksHelp':
+    "Ein Link von einem Artikel auf einen anderen führt zu diesem Artikel in derselben Sprache. Links auf Artikel, die noch nicht übersetzt sind, werden automatisch angepasst, sobald sie übersetzt sind. Geändert werden nur die Entwürfe von Übersetzungen, die die App erstellt hat: Eine veröffentlichte Übersetzung hat danach einen neuen Entwurf zum Veröffentlichen.",
+  'settings.style.waiting.one': "{count} Link wartet auf eine Übersetzung.",
+  'settings.style.waiting.other': "{count} Links warten auf eine Übersetzung.",
+  'settings.style.waitingList': "Liste ansehen",
   'settings.style.notOffered':
     'Supertext bietet für {languages} keine formelle oder informelle Anrede an; diese Sprachen werden mit der Vorgabe von Supertext übersetzt.',
   'settings.keyCheck.label': 'Prüfung des API-Schlüssels:',
@@ -254,4 +260,19 @@ export const de: Messages = {
   'error.fileOtherSystem': 'Diese Datei gehört zu einem anderen System ({plugin}).',
   'error.fileNotFound': 'Der Inhalt, aus dem diese Datei exportiert wurde, existiert nicht mehr.',
   'error.fileNoLanguage': 'Die Website hat keine Sprache {language}.',
+  'links.heading': "Links, die auf eine Übersetzung warten",
+  'links.intro': "Übersetzte Wissensdatenbank-Artikel, deren Links noch auf ein Original führen, weil dieser Artikel noch keine Version in ihrer Sprache hat. Sobald die App ihn übersetzt, werden diese Links automatisch angepasst.",
+  'links.off': "Das Anpassen von Links ist unter Einstellungen → Übersetzung ausgeschaltet, deshalb wird nichts auf dieser Liste angepasst.",
+  'links.updated.one': "Bei {count} Übersetzung wurden die Links angepasst.",
+  'links.updated.other': "Bei {count} Übersetzungen wurden die Links angepasst.",
+  'links.removed': "Der Link bleibt beim Original und steht nicht mehr auf dieser Liste.",
+  'links.empty': "Es warten keine Links: Alle Links zwischen übersetzten Artikeln führen zur richtigen Sprache.",
+  'links.language': "Sprache",
+  'links.translation': "Übersetzung",
+  'links.waitsFor': "Verlinkt auf (noch nicht übersetzt)",
+  'links.gone': "Nicht mehr in HubSpot ({id})",
+  'links.remove': "Nicht mehr warten",
+  'links.update': "Links jetzt anpassen",
+  'links.updateHelp': "Prüft jede Übersetzung auf dieser Liste erneut und setzt ihre Links auf die Versionen, die es jetzt gibt, auch auf solche, die in HubSpot von Hand erstellt wurden. Geändert werden nur Entwürfe.",
+  'links.back': "Zurück zu den Einstellungen",
 };

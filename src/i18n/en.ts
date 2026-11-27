@@ -136,6 +136,12 @@ export const en = {
   'settings.style.urls': "Translate the addresses (URLs) of new versions",
   'settings.style.urlsHelp':
     "For example /de-ch/about-us becomes /de-ch/ueber-uns, for pages, blog posts and knowledge base articles. Versions that exist already keep their address, so published links don't break. Languages written in other scripts (such as Japanese or Russian) keep the original address.",
+  'settings.style.links': "Point links between knowledge base articles to the translated articles",
+  'settings.style.linksHelp':
+    "A link from one article to another points to that article in the same language. Links to articles that aren't translated yet are updated automatically once they are. Only the drafts of translations the app made are changed: a published translation then has a new draft to publish.",
+  'settings.style.waiting.one': "{count} link is waiting for a translation.",
+  'settings.style.waiting.other': "{count} links are waiting for a translation.",
+  'settings.style.waitingList': "See the list",
   'settings.style.notOffered':
     "Supertext offers no formal or informal address for {languages}; these are translated with Supertext's default.",
   'settings.keyCheck.label': 'API key check:',
@@ -259,6 +265,21 @@ export const en = {
   'error.fileOtherSystem': 'This file belongs to another system ({plugin}).',
   'error.fileNotFound': 'The item this file was exported from no longer exists.',
   'error.fileNoLanguage': 'The site has no language {language}.',
+  'links.heading': "Links waiting for a translation",
+  'links.intro': "Translated knowledge base articles whose links still point to an original, because that article has no version in their language yet. When the app translates it, these links are updated automatically.",
+  'links.off': "Updating links is turned off under Settings → Translation, so nothing on this list is updated.",
+  'links.updated.one': "{count} translation had its links updated.",
+  'links.updated.other': "{count} translations had their links updated.",
+  'links.removed': "The link stays on the original and is no longer on this list.",
+  'links.empty': "No links are waiting: every link between translated articles points to the right language.",
+  'links.language': "Language",
+  'links.translation': "Translation",
+  'links.waitsFor': "Links to (not translated yet)",
+  'links.gone': "No longer in HubSpot ({id})",
+  'links.remove': "Stop waiting",
+  'links.update': "Update links now",
+  'links.updateHelp': "Checks every translation on this list again and points its links to the versions that exist now, including ones made by hand in HubSpot. Only drafts are changed.",
+  'links.back': "Back to the settings",
 } as const;
 
 export type MessageKey = keyof typeof en;

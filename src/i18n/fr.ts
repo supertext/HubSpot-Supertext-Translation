@@ -128,6 +128,12 @@ export const fr: Messages = {
   'settings.style.urls': "Traduire les adresses (URL) des nouvelles versions",
   'settings.style.urlsHelp':
     "Par exemple, /fr-ch/about-us devient /fr-ch/a-propos-de-nous, pour les pages, les articles de blog et les articles de la base de connaissances. Les versions existantes gardent leur adresse, pour que les liens publiés restent valables. Les langues écrites dans un autre alphabet (japonais ou russe, par exemple) gardent l’adresse d’origine.",
+  'settings.style.links': "Faire pointer les liens entre articles de la base de connaissances vers les articles traduits",
+  'settings.style.linksHelp':
+    "Un lien d’un article vers un autre mène à cet article dans la même langue. Les liens vers des articles pas encore traduits sont mis à jour automatiquement dès qu’ils le sont. Seuls les brouillons des traductions créées par l’application sont modifiés : une traduction publiée a alors un nouveau brouillon à publier.",
+  'settings.style.waiting.one': "{count} lien attend une traduction.",
+  'settings.style.waiting.other': "{count} liens attendent une traduction.",
+  'settings.style.waitingList': "Voir la liste",
   'settings.style.notOffered':
     'Supertext ne propose pas de forme d’adresse formelle ou informelle pour {languages} ; ces langues sont traduites avec le réglage par défaut de Supertext.',
   'settings.keyCheck.label': 'Vérification de la clé API :',
@@ -250,4 +256,19 @@ export const fr: Messages = {
   'error.fileOtherSystem': 'Ce fichier appartient à un autre système ({plugin}).',
   'error.fileNotFound': 'Le contenu à partir duquel ce fichier a été exporté n’existe plus.',
   'error.fileNoLanguage': 'Le site n’a pas de langue {language}.',
+  'links.heading': "Liens en attente d’une traduction",
+  'links.intro': "Articles traduits de la base de connaissances dont les liens mènent encore à un original, parce que cet article n’a pas encore de version dans leur langue. Dès que l’application le traduit, ces liens sont mis à jour automatiquement.",
+  'links.off': "La mise à jour des liens est désactivée dans Paramètres → Traduction ; rien sur cette liste n’est donc mis à jour.",
+  'links.updated.one': "Les liens de {count} traduction ont été mis à jour.",
+  'links.updated.other': "Les liens de {count} traductions ont été mis à jour.",
+  'links.removed': "Le lien reste sur l’original et ne figure plus sur cette liste.",
+  'links.empty': "Aucun lien en attente : tous les liens entre articles traduits mènent à la bonne langue.",
+  'links.language': "Langue",
+  'links.translation': "Traduction",
+  'links.waitsFor': "Lien vers (pas encore traduit)",
+  'links.gone': "N’existe plus dans HubSpot ({id})",
+  'links.remove': "Ne plus attendre",
+  'links.update': "Mettre à jour les liens maintenant",
+  'links.updateHelp': "Vérifie à nouveau chaque traduction de cette liste et fait pointer ses liens vers les versions qui existent maintenant, y compris celles créées à la main dans HubSpot. Seuls les brouillons sont modifiés.",
+  'links.back': "Retour aux paramètres",
 };

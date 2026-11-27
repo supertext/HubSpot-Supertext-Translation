@@ -272,7 +272,7 @@ describe('knowledge base', () => {
     expect(german.body).toBe(
       '<p>Sie erhalten einen Tracking-Link per E-Mail, sobald Ihre Bestellung versandt wird.</p><ol><li>Öffnen Sie die E-Mail.</li><li>Klicken Sie auf <strong>Paket verfolgen</strong>.</li></ol>',
     );
-    // HubSpot lists articles' translations as a list; the app reads it.
+    // HubSpot lists articles' translations by language; the app reads them.
     const again = await (await env.request('/?kind=kb-article')).text();
     expect(again).toContain(`/knowledge-article/${PORTAL_ID}/editor/${german.id}/content`);
   });
@@ -287,6 +287,95 @@ describe('knowledge base', () => {
     expect(html).toContain('The knowledge base has no “de” version in HubSpot yet, so nothing was translated for this language.');
     expect(env.supertext.documents.map((d) => d.target)).toEqual(['de-CH']);
     expect(version(env, 'kb-article', '501', 'de')).toBeUndefined();
+  });
+
+  it('points links between articles to the translations, also when the linked article is translated later', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    const KB = 'https://help.swiss-chocolate.example';
+    const hrefs = (html: unknown) => [...String(html).matchAll(/href="([^"]*)"/g)].map((m) => m[1]);
+
+    // "Track my order" first; "Returning an order" links to it (full address) and to "Damaged chocolate" (relative, with an anchor).
+    await env.translate('kb-article', '501', ['de-ch']);
+    await env.translate('kb-article', '502', ['de-ch']);
+    const tracking = version(env, 'kb-article', '501', 'de-ch')!;
+    const returning = version(env, 'kb-article', '502', 'de-ch')!;
+    expect(hrefs(returning.body)).toEqual([
+      `${KB}/de-ch/knowledge-base/${tracking.path}`, // translated: the German article's (translated) address
+      '/en/knowledge-base/damaged-chocolate#photos', // not translated yet: stays, and waits
+      '#before', // an anchor on the same article
+      'https://www.swiss-chocolate.example/contact', // not an article
+    ]);
+    expect(await env.store.waitingFor(PORTAL_ID, 'de-ch', '503')).toEqual([String(returning.id)]);
+
+    // An editor changes the German draft meanwhile; then "Damaged chocolate" is translated.
+    const edited = String(returning.body).replace('</p>', ' Danke!</p>');
+    env.hubspot.edit(String(returning.id), { body: edited });
+    await env.translate('kb-article', '503', ['de-ch']);
+    const damaged = version(env, 'kb-article', '503', 'de-ch')!;
+    const fixed = version(env, 'kb-article', '502', 'de-ch')!;
+    // The waiting link now points to the German article, relative as it was and with its anchor; the editor's change stays.
+    expect(hrefs(fixed.body)[1]).toBe(`/de-ch/knowledge-base/${damaged.path}#photos`);
+    expect(String(fixed.body)).toContain('Danke!');
+    expect(await env.store.waitingFor(PORTAL_ID, 'de-ch', '503')).toEqual([]);
+    // And the new article's own link to "Returning an order" points to its German version right away.
+    expect(hrefs(damaged.body)).toEqual([`${KB}/de-ch/knowledge-base/${fixed.path}`]);
+    // The English originals are never changed.
+    expect(hrefs(env.hubspot.draft('502')!.body)[0]).toBe(`${KB}/en/knowledge-base/track-my-order`);
+  });
+
+  it('shows the waiting links, lets them go, and updates them on request', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    const post = async (path: string, fields: [string, string][] = []) =>
+      env.request(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams([['csrf', await env.csrf()], ...fields]).toString(),
+      });
+    await env.translate('kb-article', '502', ['de-ch', 'fr-ch']);
+    const german = version(env, 'kb-article', '502', 'de-ch')!;
+    const french = version(env, 'kb-article', '502', 'fr-ch')!;
+
+    // "Returning an order" waits for "Track my order" and "Damaged chocolate", in both languages.
+    expect(await (await env.request('/settings')).text()).toContain('4 links are waiting for a translation.');
+    const list = await (await env.request('/links')).text();
+    expect(list).toContain('Links waiting for a translation');
+    expect(list).toContain('Damaged chocolate');
+    expect(list).toContain('How do I track my order?');
+    expect(list).toContain(`/knowledge-article/${PORTAL_ID}/editor/${german.id}/content`);
+
+    // Stop waiting for one: that link stays on the original.
+    await post('/links/remove', [['articleId', String(french.id)], ['targetId', '503']]);
+    expect((await env.store.allWaitingLinks(PORTAL_ID)).length).toBe(3);
+    expect(await (await env.request('/links?removed=1')).text()).toContain('no longer on this list');
+
+    // "Damaged chocolate" translated while updating links was off (as if made by hand); then "Update links now".
+    await env.saveSettings(STANDARD_SETTINGS.filter(([name]) => name !== 'translateLinks'));
+    await env.translate('kb-article', '503', ['de-ch']);
+    expect(String(version(env, 'kb-article', '502', 'de-ch')!.body)).toContain('/en/knowledge-base/damaged-chocolate#photos');
+    await env.saveSettings(STANDARD_SETTINGS);
+    const updated = await post('/links/update');
+    expect(updated.headers.get('location')).toBe('/links?updated=1');
+    const damaged = version(env, 'kb-article', '503', 'de-ch')!;
+    expect(String(version(env, 'kb-article', '502', 'de-ch')!.body)).toContain(`/de-ch/knowledge-base/${damaged.path}#photos`);
+    // Still waiting: the German link to "Track my order" and the French one; the one let go stays gone.
+    expect((await env.store.allWaitingLinks(PORTAL_ID)).map((w) => `${w.language}:${w.targetId}`).sort()).toEqual(['de-ch:501', 'fr-ch:501']);
+    // The link let go stays on the original, also once its article is translated.
+    await env.translate('kb-article', '503', ['fr-ch']);
+    expect(String(version(env, 'kb-article', '502', 'fr-ch')!.body)).toContain('/en/knowledge-base/damaged-chocolate#photos');
+  });
+
+  it('leaves links alone when the setting is off', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS.filter(([name]) => name !== 'translateLinks'));
+    await env.translate('kb-article', '501', ['de-ch']);
+    await env.translate('kb-article', '502', ['de-ch']);
+    expect(String(version(env, 'kb-article', '502', 'de-ch')!.body)).toContain('href="https://help.swiss-chocolate.example/en/knowledge-base/track-my-order"');
+    expect((await env.store.getAccount(PORTAL_ID))!.translateLinks).toBe(false);
   });
 
   it('is only offered when the account granted its scopes', async () => {

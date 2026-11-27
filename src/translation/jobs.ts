@@ -1,3 +1,4 @@
+import { KnowledgeBaseLinks } from './links.js';
 import type { HubSpotClient } from '../hubspot/client.js';
 import { getDraft, getItem, hasVariants, itemState, summary, type ContentSummary, type Item, type Kind } from '../hubspot/content.js';
 import { errorInfo, LocalizedError, type ErrorInfo } from '../i18n/error.js';
@@ -149,6 +150,7 @@ export async function runJob(deps: JobDeps, job: Job): Promise<Job> {
     await store.saveJob(job);
   });
   const { client, source, info, draft, itemLanguage } = prepared;
+  const links = kind === 'kb-article' && account.translateLinks ? new KnowledgeBaseLinks(client, store, account.accountId) : undefined;
 
   // The item's language, as Supertext knows it (the same for every target).
   let sourceLanguage: string;
@@ -187,6 +189,7 @@ export async function runJob(deps: JobDeps, job: Job): Promise<Job> {
         overwrite: job.overwrite,
         primaryLanguage: itemLanguage,
         translateUrls: account.translateUrls,
+        links,
       });
       Object.assign(item, result);
       if (result.targetId && result.state !== 'kept') {

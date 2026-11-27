@@ -128,6 +128,12 @@ export const it: Messages = {
   'settings.style.urls': "Tradurre gli indirizzi (URL) delle nuove versioni",
   'settings.style.urlsHelp':
     "Per esempio /it-ch/about-us diventa /it-ch/chi-siamo, per pagine, articoli del blog e articoli della knowledge base. Le versioni già esistenti mantengono il loro indirizzo, così i link pubblicati continuano a funzionare. Le lingue scritte con un altro alfabeto (come giapponese o russo) mantengono l’indirizzo originale.",
+  'settings.style.links': "Far puntare i link tra gli articoli della knowledge base agli articoli tradotti",
+  'settings.style.linksHelp':
+    "Un link da un articolo a un altro porta a quell’articolo nella stessa lingua. I link ad articoli non ancora tradotti vengono aggiornati automaticamente appena lo sono. Vengono modificate solo le bozze delle traduzioni create dall’app: una traduzione pubblicata ha poi una nuova bozza da pubblicare.",
+  'settings.style.waiting.one': "{count} link è in attesa di una traduzione.",
+  'settings.style.waiting.other': "{count} link sono in attesa di una traduzione.",
+  'settings.style.waitingList': "Vedi l’elenco",
   'settings.style.notOffered':
     'Supertext non offre una forma di cortesia formale o informale per {languages}; queste lingue vengono tradotte con l’impostazione predefinita di Supertext.',
   'settings.keyCheck.label': 'Verifica della chiave API:',
@@ -251,4 +257,19 @@ export const it: Messages = {
   'error.fileOtherSystem': 'Questo file appartiene a un altro sistema ({plugin}).',
   'error.fileNotFound': 'Il contenuto da cui è stato esportato questo file non esiste più.',
   'error.fileNoLanguage': 'Il sito non ha la lingua {language}.',
+  'links.heading': "Link in attesa di una traduzione",
+  'links.intro': "Articoli tradotti della knowledge base i cui link portano ancora a un originale, perché quell’articolo non ha ancora una versione nella loro lingua. Appena l’app lo traduce, questi link vengono aggiornati automaticamente.",
+  'links.off': "L’aggiornamento dei link è disattivato in Impostazioni → Traduzione, quindi nulla in questo elenco viene aggiornato.",
+  'links.updated.one': "I link di {count} traduzione sono stati aggiornati.",
+  'links.updated.other': "I link di {count} traduzioni sono stati aggiornati.",
+  'links.removed': "Il link resta sull’originale e non è più in questo elenco.",
+  'links.empty': "Nessun link in attesa: tutti i link tra articoli tradotti portano alla lingua giusta.",
+  'links.language': "Lingua",
+  'links.translation': "Traduzione",
+  'links.waitsFor': "Link a (non ancora tradotto)",
+  'links.gone': "Non più in HubSpot ({id})",
+  'links.remove': "Non attendere più",
+  'links.update': "Aggiorna i link ora",
+  'links.updateHelp': "Controlla di nuovo ogni traduzione di questo elenco e fa puntare i suoi link alle versioni che esistono ora, anche a quelle create a mano in HubSpot. Vengono modificate solo le bozze.",
+  'links.back': "Torna alle impostazioni",
 };

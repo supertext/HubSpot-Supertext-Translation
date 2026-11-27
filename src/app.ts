@@ -20,6 +20,8 @@ import { appUrl, type PageContext } from './views/layout.js';
 import { KeyCheckMessage, keyCheckText, SettingsPage } from './views/settings.js';
 import { ImportPage } from './views/import.js';
 import { TranslatePage, type ItemRow } from './views/translate.js';
+import { LinksPage, type WaitingRow } from './views/links.js';
+import { KnowledgeBaseLinks } from './translation/links.js';
 
 export interface AppDeps {
   config: Config;
@@ -401,6 +403,74 @@ export function createApp(deps: AppDeps) {
     }
   });
 
+  // --- Links waiting for a translation (Settings → Translation) ---------------------
+
+  /** HubSpot client and link helper for a page request. */
+  const linkHelper = (account: Account) => {
+    return new KnowledgeBaseLinks(hubspot(account), store, account.accountId);
+  };
+
+  app.get('/links', async (c) => {
+    const session = await current(c);
+    if (!session) return c.redirect('/', 302);
+    const t = tr(c);
+    const waiting = await store.allWaitingLinks(session.account.accountId);
+    const links = waiting.length ? linkHelper(session.account) : undefined;
+    let rows: WaitingRow[] = waiting;
+    if (links) {
+      try {
+        rows = [];
+        for (const w of waiting) rows.push({ ...w, article: await links.describe(w.articleId, true), target: await links.describe(w.targetId) });
+      } catch (error) {
+        console.warn('Waiting links: articles not read:', error instanceof Error ? error.message : error);
+        rows = waiting;
+      }
+    }
+    const updated = c.req.query('updated');
+    return c.html(
+      page(
+        LinksPage({
+          ctx: pageContext(t, 'settings', session),
+          account: session.account,
+          appBase: editorBase,
+          rows,
+          updated: updated !== undefined && /^\d+$/.test(updated) ? Number(updated) : undefined,
+          removed: c.req.query('removed') === '1',
+        }),
+      ),
+    );
+  });
+
+  app.post('/links/remove', async (c) => {
+    const session = await current(c);
+    if (!session) return c.redirect('/', 303);
+    const form = await c.req.parseBody();
+    if (!sessions.checkCsrf(session.cookie, String(form.csrf ?? ''))) return c.redirect('/?error=session', 303);
+    await store.removeWaitingLink(session.account.accountId, String(form.articleId ?? ''), String(form.targetId ?? ''));
+    return c.redirect('/links?removed=1', 303);
+  });
+
+  app.post('/links/update', async (c) => {
+    const session = await current(c);
+    if (!session) return c.redirect('/', 303);
+    const form = await c.req.parseBody();
+    if (!sessions.checkCsrf(session.cookie, String(form.csrf ?? ''))) return c.redirect('/?error=session', 303);
+    if (!session.account.translateLinks) return c.redirect('/links', 303);
+    const links = linkHelper(session.account);
+    const seen = new Set<string>();
+    let updated = 0;
+    for (const w of await store.allWaitingLinks(session.account.accountId)) {
+      if (seen.has(w.articleId)) continue;
+      seen.add(w.articleId);
+      try {
+        if ((await links.recheck(w.articleId, w.language)) === 'updated') updated++;
+      } catch (error) {
+        console.warn(`Links of article ${w.articleId} not updated:`, error instanceof Error ? error.message : error);
+      }
+    }
+    return c.redirect(`/links?updated=${updated}`, 303);
+  });
+
   // --- Settings ----------------------------------------------------------------
 
   app.get('/settings', async (c) => {
@@ -420,6 +490,7 @@ export function createApp(deps: AppDeps) {
           configResult: (['sent', 'off', 'failed'] as const).find((r) => r === c.req.query('config')),
           invalidCodes: c.req.query('invalid') || undefined,
           knowledgeBase: knowledgeBase(session.account),
+          waitingLinks: (await store.allWaitingLinks(session.account.accountId)).length,
           review: config.reviewUrl !== '',
           uiLanguage: (() => {
             const chosen = getCookie(c, 'st_locale') ?? '';
@@ -447,6 +518,7 @@ export function createApp(deps: AppDeps) {
     const tone = field('tone');
     account.tone = tone === 'more' || tone === 'less' ? tone : 'default';
     account.translateUrls = field('translateUrls') === '1';
+    account.translateLinks = field('translateLinks') === '1';
     const source = field('sourceLanguage');
     account.sourceLanguage = isLanguage(source) ? source : '';
     const chosen = form.target === undefined ? [] : Array.isArray(form.target) ? form.target : [form.target];

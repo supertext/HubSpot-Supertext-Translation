@@ -194,6 +194,43 @@ export function seed(): Record<'site-page' | 'landing-page' | 'blog-post' | 'ema
         metaDescription: 'Tracking your chocolate order',
         updatedAt: '2026-10-11T09:00:00Z',
       },
+      {
+        id: '502',
+        title: 'Returning an order',
+        subtitle: 'Send chocolate back within 14 days',
+        language: 'en',
+        state: 'PUBLISHED',
+        path: 'returning-an-order',
+        knowledgeBaseId: 'kb-1',
+        categoryId: 'c-1',
+        tagIds: [],
+        accessType: 'PUBLIC',
+        archivedInDashboard: false,
+        accessGroupIds: [],
+        // Links between articles, as editors write them: full, relative, with an anchor; and others.
+        body:
+          '<h2 id="before">Before you send it back</h2><p>Find the parcel with <a href="https://help.swiss-chocolate.example/en/knowledge-base/track-my-order">tracking</a> first.</p>' +
+          '<p>Damaged on arrival? See <a href="/en/knowledge-base/damaged-chocolate#photos">damaged chocolate</a>, <a href="#before">the first step</a> or <a href="https://www.swiss-chocolate.example/contact">our shop</a>.</p>',
+        metaDescription: 'How to return an order',
+        updatedAt: '2026-10-10T09:00:00Z',
+      },
+      {
+        id: '503',
+        title: 'Damaged chocolate',
+        subtitle: 'What to do when chocolate arrives melted or broken',
+        language: 'en',
+        state: 'PUBLISHED',
+        path: 'damaged-chocolate',
+        knowledgeBaseId: 'kb-1',
+        categoryId: 'c-1',
+        tagIds: [],
+        accessType: 'PUBLIC',
+        archivedInDashboard: false,
+        accessGroupIds: [],
+        body: '<h2 id="photos">Take photos</h2><p>Photos help us replace it. Then follow <a href="https://help.swiss-chocolate.example/en/knowledge-base/returning-an-order">returning an order</a>.</p>',
+        metaDescription: 'Melted or broken chocolate',
+        updatedAt: '2026-10-09T09:00:00Z',
+      },
     ],
   };
 }

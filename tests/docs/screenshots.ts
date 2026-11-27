@@ -163,10 +163,20 @@ async function main() {
   await page.waitForSelector('.job');
   await shot('import-results', page.locator('.job'));
 
+  // A knowledge base article that links to one not translated yet: its link waits (Settings → Links waiting for a translation).
+  await page.goto(`${appUrl}/?kind=kb-article&lang=en`);
+  await page.check('input[name="item"][value="502"]');
+  await page.uncheck('input[name="language"][value="de"]'); // the knowledge base has the Swiss languages only
+  await page.click('#translate-button');
+  await page.waitForURL(/item=502/, { timeout: 300_000 });
+  await page.waitForSelector('.job .notice.success', { timeout: 300_000 });
+  await page.goto(`${appUrl}/links`);
+  await shot('waiting-links', page.locator('main'));
+
   // Phones: every page must fit a 390 px wide screen (wide tables scroll inside their card).
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
   await phone.context().addCookies(await page.context().cookies());
-  for (const path of ['/?lang=en', '/?kind=email', '/import', '/settings']) {
+  for (const path of ['/?lang=en', '/?kind=email', '/import', '/links', '/settings']) {
     await phone.goto(`${appUrl}${path}`);
     const width = await phone.evaluate(() => document.documentElement.scrollWidth);
     if (width > 390) throw new Error(`${path} is ${width}px wide on a phone (390px screen)`);

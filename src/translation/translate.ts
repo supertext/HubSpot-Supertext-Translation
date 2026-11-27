@@ -11,6 +11,7 @@ import {
 import type { Extraction } from '../hubspot/extract.js';
 import type { Politeness, SupertextClient } from '../supertext/client.js';
 import type { JobItem } from '../store/store.js';
+import type { KnowledgeBaseLinks } from './links.js';
 import { slugify, slugWords, withLastPart } from './slug.js';
 
 /**
@@ -46,6 +47,8 @@ export interface TranslateArgs {
   primaryLanguage: string;
   /** Translate the address of a new version (Settings → Translation); not with an imported file. */
   translateUrls?: boolean;
+  /** Point links between articles to the same language (Settings → Translation); one per job. */
+  links?: KnowledgeBaseLinks;
 }
 
 /** Where an item keeps its address: a page's or post's slug, an article's path; emails have none. */
@@ -79,11 +82,34 @@ export async function translateItem(args: TranslateArgs): Promise<TranslateResul
           });
     if (words) slugPart = slugify(translated.pop() ?? '', args.language);
     extraction.apply(translated);
-    return fields();
+    const values = fields();
+    if (links && typeof values.body === 'string') {
+      // A link problem never costs the translation: the links then stay as they are.
+      try {
+        const result = await links.rewrite(values.body, args.language, existingId ? await links.ignored(existingId) : []);
+        values.body = result.html;
+        waiting = result.waiting;
+      } catch (error) {
+        console.warn(`Links of ${kind} ${String(source.id)} not updated:`, error instanceof Error ? error.message : error);
+      }
+    }
+    return values;
+  };
+  const links = kind === 'kb-article' ? args.links : undefined;
+  let waiting: string[] = [];
+  /** After writing: notes the links still waiting, fixes drafts that waited for this article. */
+  const linked = async (targetId: string) => {
+    if (!links) return;
+    try {
+      await links.translated(String(source.id), args.language, targetId, waiting);
+    } catch (error) {
+      console.warn(`Links waiting for ${kind} ${String(source.id)} not updated:`, error instanceof Error ? error.message : error);
+    }
   };
 
   if (existingId) {
     await updateDraft(client, kind, existingId, await translate());
+    await linked(existingId);
     return { state: 'updated', targetId: existingId };
   }
   // The language version first: if HubSpot refuses it (a blog or knowledge base without that
@@ -109,5 +135,6 @@ export async function translateItem(args: TranslateArgs): Promise<TranslateResul
       await updateDraft(client, kind, String(created.id), { [address]: translated }).catch(() => undefined);
     }
   }
+  await linked(String(created.id));
   return { state: 'created', targetId: String(created.id) };
 }
