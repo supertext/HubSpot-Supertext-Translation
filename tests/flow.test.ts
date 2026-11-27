@@ -206,6 +206,26 @@ describe('publishing right away', () => {
     expect(env.hubspot.requests.some((r) => r.path.includes('/marketing/') && r.path.endsWith('/push-live'))).toBe(false);
   });
 
+  it("schedules a version that was never published, and keeps it a draft with HubSpot's reason when HubSpot refuses", async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings([...STANDARD_SETTINGS, ['publishTranslations', '1']]);
+    await env.translate('site-page', '101', ['de-ch']);
+    const german = version(env, 'site-page', '101', 'de-ch')!;
+    const schedule = env.hubspot.requests.find((r) => r.method === 'POST' && r.path.endsWith('/site-pages/schedule'));
+    expect(schedule?.body).toMatchObject({ id: german.id });
+    expect(Date.parse(String((schedule?.body as { publishDate: string }).publishDate))).toBeGreaterThan(Date.now());
+
+    // A blog post without an author: HubSpot refuses to publish it.
+    const roasting = structuredClone(env.hubspot.draft('301')!);
+    env.hubspot.add('blog-post', { ...roasting, id: '399', slug: 'blog/no-author', blogAuthorId: undefined, translations: {} });
+    const { job, html } = await env.translate('blog-post', '399', ['de-ch']);
+    expect(job.items[0]).toMatchObject({ state: 'created', publishError: { code: expect.any(String) } });
+    expect(html).toContain('Saved as a draft, not published');
+    expect(html).toContain('must have an author');
+    expect(version(env, 'blog-post', '399', 'de-ch')?.state).toBe('DRAFT');
+  });
+
   it('leaves an article a draft when the account did not grant the publish scope', async () => {
     const env = setup();
     await env.connect();

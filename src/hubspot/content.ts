@@ -230,13 +230,26 @@ export const KB_PUBLISH_SCOPE = 'cms.knowledge_base.articles.publish';
 /** The kinds the app may publish (Settings → Publish translations right away). Emails are never sent. */
 export const canPublish = (kind: Kind): kind is Exclude<Kind, 'email'> => kind !== 'email';
 
+/** How far ahead a never-published page or post is scheduled (HubSpot wants a date in the future). */
+export const PUBLISH_DELAY_MS = 15_000;
+
 /**
- * Publishes the item's draft (`POST …/draft/push-live`): a new version goes live, an existing one
- * gets its draft as the live content. Never for emails (that would send them).
+ * Publishes the item's draft. Never for emails (that would send them).
+ *
+ * `POST …/draft/push-live` makes the draft the live content. For a page or post that was never
+ * published, that isn't enough (on a real account it stays a draft, 27 November 2026): it is then
+ * scheduled (`POST …/schedule`) a few seconds ahead, since HubSpot refuses a date that isn't in
+ * the future. HubSpot's own checks apply (a blog post needs an author and a featured image, or
+ * *featured image* turned off); its message comes back as the error. Articles are published by
+ * push-live.
  */
-export async function publishDraft(client: HubSpotClient, kind: Kind, id: string): Promise<void> {
+export async function publishDraft(client: HubSpotClient, kind: Kind, id: string, now: () => number = Date.now): Promise<void> {
   if (!canPublish(kind)) throw new Error('Emails are never sent by the app.');
   await client.request('POST', `${paths[kind]}/${encodeURIComponent(id)}/draft/push-live`);
+  if (kind === 'kb-article') return;
+  const item = await getItem(client, kind, id);
+  if (item && itemState(item) === 'published') return;
+  await client.request('POST', `${paths[kind]}/schedule`, { id, publishDate: new Date(now() + PUBLISH_DELAY_MS).toISOString() });
 }
 
 /** Removes a half-made language version (pages, posts and emails are archived; an article is deleted). */

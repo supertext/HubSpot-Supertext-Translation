@@ -4,6 +4,7 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Fixed: *Publish translations right away* left new page and blog post versions as drafts on a real HubSpot account: pushing the draft live only updates pages that are already published. A version that was never published is now scheduled to go live a few seconds later. HubSpot's own rules show as the reason when it refuses (a blog post needs an author and a featured image).
 ## 1.4.0 — 2026-11-27
 
 Batches, long lists, publishing right away and localized screenshots that stay.

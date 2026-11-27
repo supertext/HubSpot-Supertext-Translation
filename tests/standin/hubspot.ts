@@ -277,15 +277,31 @@ export function createHubSpotStandin(): HubSpotStandin {
         return json(view(entries.get(id)!, 'live'));
       }
 
-      // Publish the draft (pages, posts: 204; articles: the article). Emails have no such call.
+      // Push the draft live (pages, posts: 204; articles: the article, published). Emails have no such call.
+      // As on a real account (27 November 2026): a page or post that was never published stays a draft.
       const push = rest.match(/^\/([^/]+)\/draft\/push-live$/);
       if (request.method === 'POST' && push && kind !== 'email') {
         const target = entries.get(decodeURIComponent(push[1]));
         if (!target || target.kind !== kind || target.archived) return error(404, 'Not found', 'OBJECT_NOT_FOUND');
-        const live = kind === 'kb-article' ? { state: 'PUBLISHED' } : { currentState: 'PUBLISHED', state: 'PUBLISHED', currentlyPublished: true };
-        Object.assign(target.draft, live);
+        if (kind === 'kb-article') Object.assign(target.draft, { state: 'PUBLISHED' });
+        else Object.assign(target.draft, { currentState: target.live.currentState, state: target.live.state, currentlyPublished: target.live.currentlyPublished });
         target.live = structuredClone(target.draft);
         return kind === 'kb-article' ? json(view(target, 'live')) : new Response(null, { status: 204 });
+      }
+      // Schedule publishing (pages, posts). HubSpot's checks as seen on a real account (27 November 2026);
+      // the stand-in publishes at once instead of at the date.
+      if (request.method === 'POST' && rest === '/schedule' && kind !== 'email' && kind !== 'kb-article') {
+        const target = entries.get(String(body?.id ?? ''));
+        if (!target || target.kind !== kind || target.archived) return error(404, 'Not found', 'OBJECT_NOT_FOUND');
+        if (!(Date.parse(String(body?.publishDate ?? '')) > Date.now())) return error(400, 'Errors validating ContentScheduleRequest: publishDate must be in the future');
+        const post = target.draft;
+        if (kind === 'blog-post' && !post.blogAuthorId) return error(400, 'Scheduled or published blog posts must have an author', 'MISSING_NECESSARY_PUBLISH_VALUE');
+        if (kind === 'blog-post' && !post.featuredImage && post.useFeaturedImage !== false) {
+          return error(400, 'Scheduled or published blog posts must have a featured image', 'MISSING_NECESSARY_PUBLISH_VALUE');
+        }
+        Object.assign(target.draft, { currentState: 'PUBLISHED', state: 'PUBLISHED', currentlyPublished: true, publishDate: String(body?.publishDate) });
+        target.live = structuredClone(target.draft);
+        return new Response(null, { status: 204 });
       }
 
       // One item

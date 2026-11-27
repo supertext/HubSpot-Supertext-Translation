@@ -126,6 +126,7 @@ export function seed(): Record<'site-page' | 'landing-page' | 'blog-post' | 'ema
         state: 'PUBLISHED',
         currentlyPublished: true,
         slug: 'blog/roasting',
+        blogAuthorId: 'author-1',
         htmlTitle: 'How we roast our cocoa beans',
         metaDescription: 'A look inside our roasting room.',
         featuredImage: 'https://cdn.example.com/roaster.jpg',
