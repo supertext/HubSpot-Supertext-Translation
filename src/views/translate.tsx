@@ -129,7 +129,9 @@ export function TranslatePage(props: TranslatePageProps) {
                     <th>{t.t('translate.name')}</th>
                     <th>{t.t('translate.language')}</th>
                     {targets.map((code) => (
-                      <th>{languageName(code, t.locale)}</th>
+                      <th class="lang-code">
+                      <abbr title={languageName(code, t.locale)}>{code.toUpperCase()}</abbr>
+                    </th>
                     ))}
                   </tr>
                 </thead>

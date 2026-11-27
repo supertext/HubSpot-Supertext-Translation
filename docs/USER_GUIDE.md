@@ -7,7 +7,7 @@ For editors. Once the app is set up (see [INSTALLATION.md](INSTALLATION.md)), yo
 ## Translate
 
 1. Open the app and go to **Translate**.
-2. Under **Choose what to translate**, pick the kind of content — *Website pages*, *Landing pages*, *Blog posts*, *Marketing emails* or *Knowledge base* — and tick the item, or several (see [Translate many items at once](#translate-many-items-at-once)). The list shows each item's state in HubSpot and its language, and for each of your languages whether it has a version already (*Translated*, a link into HubSpot's editor) or not.
+2. Under **Choose what to translate**, pick the kind of content — *Website pages*, *Landing pages*, *Blog posts*, *Marketing emails* or *Knowledge base* — and tick the item, or several (see [Translate many items at once](#translate-many-items-at-once)). The list shows each item's state in HubSpot and its language, and for each of your languages whether it has a version already (*Translated*, a link into HubSpot's editor) or not. The language columns are headed by HubSpot's language codes (`DE-CH`, `FR-CH` …); point at one to see the language's name.
 3. Under **Choose the languages**, tick the languages. The code next to each (e.g. `de-CH`) is the variant Supertext translates into.
 4. Click **Translate into 2 languages with Supertext**.
 
@@ -19,7 +19,7 @@ For editors. Once the app is set up (see [INSTALLATION.md](INSTALLATION.md)), yo
 
 The list then shows the versions:
 
-![The page list after translating: About us is Translated in French (Switzerland) and German (Switzerland), Not translated in German and Italian (Switzerland)](images/translated-state.png)
+![The page list after translating: About us is Translated in the FR-CH and DE-CH columns, Not translated in DE and IT-CH](images/translated-state.png)
 
 Marketing emails work the same way; each language gets its own copy of the email:
 

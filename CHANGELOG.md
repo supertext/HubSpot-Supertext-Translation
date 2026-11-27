@@ -4,6 +4,7 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Changed: the language columns on the Translate page and in batch results are headed by the short language code (`DE-CH`), with the language's name as a tooltip, so many languages fit.
 - Added: a **History** tab with every translation, 50 per page, filtered by kind of content and *With failures* / *Running*; each opens its full result. *Recent translations* links to it, and the Translate page's result box shows the latest translation of the open tab (not of another kind).
 - Added: *Settings → Translation → Publish translations right away* (off by default): website pages, landing pages, blog posts and knowledge base articles are published as soon as they are translated, and updating a version publishes its new text. Marketing emails are never sent; they stay drafts. Publishing knowledge base articles needs a new optional HubSpot permission: accounts connected before need to connect HubSpot again. If HubSpot refuses to publish, the version stays a draft and the result says why.
 - Added: translate up to **50 items at once**: tick several pages, posts, emails or articles (or all on the page) and click *Translate 2 items into 3 languages with Supertext*. The items run one after the other; the result shows a row per item and a column per language, and an item that fails doesn't stop the others. Links between items of the same batch point to each other's new versions.

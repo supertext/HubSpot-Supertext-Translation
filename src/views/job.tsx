@@ -66,7 +66,9 @@ export function JobPanel(props: { t: Translator; job: Job; portalId: string; app
               <tr>
                 <th></th>
                 {job.languages.map((code) => (
-                  <th>{languageName(code, t.locale)}</th>
+                  <th class="lang-code">
+                      <abbr title={languageName(code, t.locale)}>{code.toUpperCase()}</abbr>
+                    </th>
                 ))}
               </tr>
             </thead>
