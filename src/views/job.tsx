@@ -1,27 +1,41 @@
 import { editorUrl } from '../hubspot/content.js';
 import type { MessageKey, Translator } from '../i18n/index.js';
 import type { Job, JobItem } from '../store/store.js';
-import { jobTotals } from '../translation/jobs.js';
+import { jobItemIds, jobSize, jobTitle, jobTotals } from '../translation/jobs.js';
 import { languageName } from '../translation/languages.js';
+
+/** The job's name: the item, or "About us and 4 more" for a batch. */
+export function jobName(t: Translator, job: Job): string {
+  const ids = jobItemIds(job);
+  const first = jobTitle(job, ids[0]) || ids[0];
+  return ids.length > 1 ? t.tn('job.batchName', ids.length - 1, { first }) : first;
+}
 
 /** Progress and results of a translation job (rendered on the server, refreshed by polling). */
 export function JobPanel(props: { t: Translator; job: Job; portalId: string; appBase: string }) {
   const { t, job } = props;
   const totals = jobTotals(job);
+  const ids = jobItemIds(job);
+  const batch = ids.length > 1;
+  const open = (item: JobItem) =>
+    item.state !== 'failed' &&
+    item.targetId && (
+      <a href={editorUrl(job.kind, props.portalId, item.targetId, props.appBase)} target="_blank" rel="noopener">
+        {t.t('job.open')}
+      </a>
+    );
   return (
     <div class="card job">
       <h2>
-        {t.t('job.heading')}: {job.itemTitle || job.itemId}
+        {t.t('job.heading')}: {jobName(t, job)}
       </h2>
       <p class="muted">{t.t(`kind.${job.kind}` as MessageKey)}</p>
       {job.status === 'running' && (
         <p class="progress" role="status">
           <span class="spinner" aria-hidden="true"></span>
-          {t.t('job.running', {
-            item: job.itemTitle || job.itemId,
-            completed: job.items.length,
-            total: job.languages.length,
-          })}
+          {batch
+            ? t.t('job.runningBatch', { completed: job.items.length, total: jobSize(job), items: ids.length })
+            : t.t('job.running', { item: job.itemTitle || job.itemId, completed: job.items.length, total: job.languages.length })}
         </p>
       )}
       {job.status === 'done' && (
@@ -30,7 +44,7 @@ export function JobPanel(props: { t: Translator; job: Job; portalId: string; app
       {job.status === 'failed' && job.error && (
         <div class="notice error">{t.t('job.failed', { reason: t.error(job.error) })}</div>
       )}
-      {job.items.length > 0 && (
+      {!batch && job.items.length > 0 && (
         <table class="results">
           <tbody>
             {job.items.map((item) => (
@@ -39,17 +53,65 @@ export function JobPanel(props: { t: Translator; job: Job; portalId: string; app
                 <td>
                   <ItemResult t={t} item={item} />
                 </td>
-                <td class="link">
-                  {item.state !== 'failed' && item.targetId && (
-                    <a href={editorUrl(job.kind, props.portalId, item.targetId, props.appBase)} target="_blank" rel="noopener">
-                      {t.t('job.open')}
-                    </a>
-                  )}
-                </td>
+                <td class="link">{open(item)}</td>
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+      {batch && job.items.length > 0 && (
+        <div class="table-scroll">
+          <table class="results batch">
+            <thead>
+              <tr>
+                <th></th>
+                {job.languages.map((code) => (
+                  <th>{languageName(code, t.locale)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ids
+                .filter((id) => job.items.some((item) => item.itemId === id))
+                .map((id) => {
+                  const results = job.items.filter((item) => item.itemId === id);
+                  const byLanguage = new Map(results.map((item) => [item.language, item]));
+                  // The same error for every language (the item couldn't be loaded): said once.
+                  const first = results[0];
+                  const same =
+                    results.length === job.languages.length &&
+                    results.every((item) => item.state === 'failed' && item.error?.code && item.error.code === first.error?.code);
+                  return (
+                    <tr>
+                      <td class="title">{jobTitle(job, id) || id}</td>
+                      {same ? (
+                        <td class="cell" colspan={job.languages.length}>
+                          <ItemResult t={t} item={first} />
+                        </td>
+                      ) : (
+                        job.languages.map((code) => {
+                          const item = byLanguage.get(code);
+                          return (
+                            <td class="cell">
+                              {item ? (
+                                <>
+                                  <ItemResult t={t} item={item} /> {open(item)}
+                                </>
+                              ) : job.status === 'running' ? (
+                                <span class="spinner" aria-hidden="true"></span>
+                              ) : (
+                                ''
+                              )}
+                            </td>
+                          );
+                        })
+                      )}
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
       )}
       {job.status === 'done' && totals.created + totals.updated > 0 && <p class="help">{t.t('job.review')}</p>}
     </div>
@@ -81,7 +143,7 @@ export function History(props: { t: Translator; jobs: Job[] }) {
               return (
                 <tr>
                   <td class="when">{date.format(new Date(job.createdAt))}</td>
-                  <td class="title">{job.itemTitle || job.itemId}</td>
+                  <td class="title">{jobName(t, job)}</td>
                   <td class="muted">{t.t(`kind.${job.kind}` as MessageKey)}</td>
                   <td>{job.languages.map((code) => code.toUpperCase()).join(', ')}</td>
                   <td>

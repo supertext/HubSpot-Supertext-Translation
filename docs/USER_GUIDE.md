@@ -7,7 +7,7 @@ For editors. Once the app is set up (see [INSTALLATION.md](INSTALLATION.md)), yo
 ## Translate
 
 1. Open the app and go to **Translate**.
-2. Under **Choose what to translate**, pick the kind of content — *Website pages*, *Landing pages*, *Blog posts*, *Marketing emails* or *Knowledge base* — and the item. The list shows each item's state in HubSpot and its language, and for each of your languages whether it has a version already (*Translated*, a link into HubSpot's editor) or not.
+2. Under **Choose what to translate**, pick the kind of content — *Website pages*, *Landing pages*, *Blog posts*, *Marketing emails* or *Knowledge base* — and tick the item, or several (see [Translate many items at once](#translate-many-items-at-once)). The list shows each item's state in HubSpot and its language, and for each of your languages whether it has a version already (*Translated*, a link into HubSpot's editor) or not.
 3. Under **Choose the languages**, tick the languages. The code next to each (e.g. `de-CH`) is the variant Supertext translates into.
 4. Click **Translate into 2 languages with Supertext**.
 
@@ -25,6 +25,25 @@ Marketing emails work the same way; each language gets its own copy of the email
 
 ![Marketing emails: the Autumn newsletter translated into Italian (Switzerland), French (Switzerland) and German (Switzerland), three new versions, and the About us page under Recent translations](images/email-results.png)
 
+## Translate many items at once
+
+Tick up to **50 items** of one kind and translate them in one go: the button says, for example, **Translate 2 items into 3 languages with Supertext**. The box at the top of the table ticks every item on the page. The items are translated one after the other, each into all the ticked languages; the **Translation** box shows a row per item and a column per language, with a link to each draft. An item that fails (it was deleted in HubSpot, it is itself a language version, …) shows why in its row and the others still run.
+
+![Translate with Supertext: the pages About us and Contact ticked, 2 items selected, and the button Translate 2 items into 3 languages with Supertext](images/translate-batch.png)
+
+![Translation of About us and 1 more: Done: 4 created, 2 updated, 0 kept, 0 failed; a row per page and a column per language, each with Open in HubSpot](images/batch-results.png)
+
+When the translation is done the page reloads with the same items ticked, so you can see their new versions in the list.
+
+### Long lists
+
+The list shows 50 items per page, the most recently changed first, with **Previous page** and **Next page** below it. To find items quickly:
+
+- **Search by name or URL**: finds items whose name, address (slug) or ID contains all the words you type, on all pages.
+- **Languages missing** shows only items that don't have a version in every one of your languages yet: the ones still to translate. **All languages done** shows the others.
+
+The app loads the list from HubSpot once and keeps it for a minute, so searching and paging are quick. After a translation it is loaded again; for changes made in HubSpot just now, click **Reload the list**. It lists up to 5,000 items per kind (the most recently changed); older ones are not shown.
+
 The app's pages are in English, German, French or Italian, in your browser's language unless you choose another one under **Settings → Interface language** (for this browser only). They work on a phone too: on a small screen the list of content scrolls sideways to show all your languages.
 
 ![The translate page in German: Blogbeiträge, the post How we roast our cocoa beans selected, Sprachen auswählen and the button In 3 Sprachen mit Supertext übersetzen](images/translate-page-de.png)
@@ -35,7 +54,7 @@ Instead of letting Supertext translate right away, you can download an item's te
 
 ### Export
 
-1. On **Translate**, choose the item and tick the languages, as for translating.
+1. On **Translate**, tick one item (a file holds one item) and the languages, as for translating.
 2. Under **3. Or: Export for translation**, choose the **File format**:
    - **XLIFF 1.2 (for translation tools)**: the better choice for translators and translation tools. One file holds all ticked languages; formatting and personalization tokens appear as protected tags the translator can move but not break.
    - **HTML (one language per file)**: for Supertext's web app or anyone who translates HTML. Tick exactly one language.
@@ -113,7 +132,7 @@ The app never changes the original.
 
 ## When something goes wrong
 
-The result shows the reason for each language that fails; the other languages still run. Authentication and limit problems stop the whole translation.
+The result shows the reason for each language that fails; the other languages (and, in a batch, the other items) still run. Authentication and limit problems stop the whole translation.
 
 | Message | What to do |
 | --- | --- |
@@ -126,6 +145,8 @@ The result shows the reason for each language that fails; the other languages st
 | *The blog has no “fr-ch” version in HubSpot yet …* | The blog needs that language first: an administrator adds a language variation of the blog in HubSpot (Settings → Content → Blog). Nothing was translated or paid for that language; translate again afterwards. |
 | *The knowledge base has no “it-ch” version in HubSpot yet …* | The knowledge base needs that language first: an administrator adds it in HubSpot (Settings → Content → Knowledge Base → *Add/edit multi-language variations*). Nothing was translated or paid for that language; translate again afterwards. |
 | *This is a language version of another item* | Translate the original (primary) instead. |
+| *The item no longer exists in HubSpot* | It was deleted or archived since the list was loaded; click **Reload the list**. |
+| *Select at most 50 items at a time.* | Untick some items, or translate them in several runs. |
 | *The item has no language in HubSpot …* | Set the page's language in HubSpot, or ask your administrator to set the language of your content. |
 | *HubSpot refused the request …* | Your HubSpot subscription may not include this; tell your administrator. |
 | *Too many requests* | Wait a moment and start again. Languages already done are kept. |

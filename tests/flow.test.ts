@@ -163,6 +163,112 @@ describe('website pages', () => {
   });
 });
 
+describe('batches', () => {
+  it('translates several items in one job, and an item that fails does not stop the others', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    await env.translate('site-page', '101', ['de-ch']);
+    const german = version(env, 'site-page', '101', 'de-ch')!;
+
+    const started = await env.api('POST', '/api/jobs', { kind: 'site-page', itemIds: ['101', '102', '999', german.id], languages: ['de-ch', 'fr-ch'] });
+    const { id } = (await started.json()) as { id: string };
+    await env.settle();
+    const job = (await env.store.getJob(PORTAL_ID, id))!;
+    expect(job.status).toBe('done');
+    expect(job.itemIds).toEqual(['101', '102', '999', german.id]);
+    expect(job.titles).toMatchObject({ '101': 'About us', '102': 'Contact' });
+    const results = job.items.map((item) => `${item.itemId} ${item.language} ${item.state} ${item.error?.code ?? ''}`.trim());
+    expect(results).toEqual([
+      '101 de-ch kept',
+      '101 fr-ch created',
+      '102 de-ch created',
+      '102 fr-ch created',
+      '999 de-ch failed itemMissing',
+      '999 fr-ch failed itemMissing',
+      `${german.id} de-ch failed isTranslation`,
+      `${german.id} fr-ch failed isTranslation`,
+    ]);
+    const { html } = (await (await env.api('GET', `/api/jobs/${id}`)).json()) as { html: string };
+    expect(html).toContain('Translation: About us and 3 more');
+    expect(html).toContain('Done: 3 created, 0 updated, 1 kept, 4 failed.');
+    // The same error for every language of an item: said once.
+    expect(html.match(/The item no longer exists in HubSpot\./g)?.length).toBe(1);
+    expect(version(env, 'site-page', '102', 'fr-ch')?.state).toBe('DRAFT');
+
+    // The page reloads with the job's items checked and the new versions listed.
+    const list = await (await env.request(`/?kind=site-page&job=${id}`)).text();
+    expect(list).toMatch(/value="102"[^>]*checked/);
+    expect(list).not.toContain('Not translated');
+    // A later visit starts with nothing checked.
+    expect(await (await env.request('/?kind=site-page')).text()).not.toMatch(/name="item"[^>]*checked/);
+  });
+
+  it('refuses more than 50 items, or items that are not IDs', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    const many = Array.from({ length: 51 }, (_, index) => String(2000 + index));
+    const refused = await env.api('POST', '/api/jobs', { kind: 'site-page', itemIds: many, languages: ['de-ch'] });
+    expect(refused.status).toBe(400);
+    expect(await refused.json()).toMatchObject({ error: { code: 'tooMany' } });
+    const odd = await env.api('POST', '/api/jobs', { kind: 'site-page', itemIds: ['101', '../x'], languages: ['de-ch'] });
+    expect(odd.status).toBe(400);
+    expect(env.supertext.documents.length).toBe(0);
+  });
+});
+
+describe('long lists', () => {
+  const addPages = (env: ReturnType<typeof setup>, count: number) => {
+    for (let n = 1; n <= count; n++) {
+      env.hubspot.add('site-page', {
+        id: String(5000 + n),
+        name: `Product ${n}`,
+        slug: `products/item-${n}`,
+        language: 'en',
+        state: 'DRAFT',
+        updated: `2026-01-01T00:00:${String(n % 60).padStart(2, '0')}Z`,
+        widgets: {},
+      });
+    }
+  };
+
+  it('loads every item in pages of 100, then searches, filters and pages without asking HubSpot again', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    addPages(env, 230);
+    const lists = () => env.hubspot.requests.filter((r) => r.method === 'GET' && /\/site-pages$/.test(r.path)).length;
+
+    const first = await (await env.request('/?kind=site-page')).text();
+    expect(lists()).toBe(3); // 233 pages (one a language version): 100 + 100 + 33
+    expect(first.match(/name="item"/g)?.length).toBe(50);
+    expect(first).toContain('Page 1 of 5 (232 items)');
+    expect(first).toContain('href="/?kind=site-page&amp;page=2"');
+
+    const last = await (await env.request('/?kind=site-page&page=5')).text();
+    expect(last.match(/name="item"/g)?.length).toBe(32);
+    expect(last).toContain('Previous page');
+
+    const found = await (await env.request('/?kind=site-page&q=item-117')).text();
+    expect(found.match(/name="item"/g)?.length).toBe(1);
+    expect(found).toContain('Product 117');
+    expect(lists()).toBe(3); // kept for a minute
+
+    await env.translate('site-page', '101', ['de-ch', 'fr-ch']);
+    const before = lists();
+    const complete = await (await env.request('/?kind=site-page&show=complete')).text();
+    expect(lists()).toBe(before + 3); // the job's new versions: loaded again
+    expect(complete.match(/name="item"/g)?.length).toBe(1);
+    expect(complete).toContain('About us');
+    const missing = await (await env.request('/?kind=site-page&show=missing&page=9')).text();
+    expect(missing).toContain('Page 5 of 5 (231 items)');
+
+    await env.request('/?kind=site-page&refresh=1');
+    expect(lists()).toBe(before + 6);
+  });
+});
+
 describe('landing pages', () => {
   it('keeps HubL personalization tokens and leaves forms alone', async () => {
     const env = setup();

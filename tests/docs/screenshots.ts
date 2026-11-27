@@ -118,7 +118,7 @@ async function main() {
 
   // Results after translating.
   await page.click('#translate-button');
-  await page.waitForURL(/item=101/, { timeout: 300_000 });
+  await page.waitForURL(/[?&]job=/, { timeout: 300_000 });
   await page.waitForSelector('.job .notice.success', { timeout: 300_000 });
   await shot('translate-results', page.locator('.job'));
   await shot('translated-state', page.locator('table.items'));
@@ -132,7 +132,7 @@ async function main() {
   await page.check('input[name="item"][value="401"]');
   await page.uncheck('input[name="language"][value="de"]');
   await page.click('#translate-button');
-  await page.waitForURL(/item=401/, { timeout: 300_000 });
+  await page.waitForURL(/[?&]job=/, { timeout: 300_000 });
   await page.waitForSelector('.job .notice.success', { timeout: 300_000 });
   await shot('email-results', page.locator('main'));
 
@@ -169,14 +169,18 @@ async function main() {
   await page.check('input[name="item"][value="502"]');
   await page.uncheck('input[name="language"][value="de"]'); // the knowledge base has the Swiss languages only
   await page.click('#translate-button');
-  await page.waitForURL(/item=502/, { timeout: 300_000 });
+  await page.waitForURL(/[?&]job=/, { timeout: 300_000 });
   await page.waitForSelector('.job .notice.success', { timeout: 300_000 });
-  // Then the contact page: the links to it now point to its translations.
+  // Then a batch: "About us" and the contact page in one job. The links to the contact page now point to its translations.
   await page.goto(`${appUrl}/?kind=site-page&lang=en`);
+  await page.check('input[name="item"][value="101"]');
   await page.check('input[name="item"][value="102"]');
+  await page.uncheck('input[name="language"][value="de"]');
+  await shot('translate-batch', page.locator('#translate-form'));
   await page.click('#translate-button');
-  await page.waitForURL(/item=102/, { timeout: 300_000 });
+  await page.waitForURL(/[?&]job=/, { timeout: 300_000 });
   await page.waitForSelector('.job .notice', { timeout: 300_000 });
+  await shot('batch-results', page.locator('.job'));
   await page.goto(`${appUrl}/links`);
   await shot('links', page.locator('main'));
 

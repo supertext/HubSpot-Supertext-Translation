@@ -85,6 +85,8 @@ export interface Translation {
 export type ResultState = 'created' | 'updated' | 'kept' | 'failed';
 
 export interface JobItem {
+  /** The item this result is for (batches; jobs before 1.4 had one item: the job's `itemId`). */
+  itemId?: string;
   language: string;
   state: ResultState;
   targetId?: string;
@@ -96,8 +98,13 @@ export interface Job {
   accountId: string;
   status: 'running' | 'done' | 'failed';
   kind: Kind;
+  /** The first item (the only one before batches). */
   itemId: string;
   itemTitle: string;
+  /** All items of a batch, in order (undefined: just `itemId`). */
+  itemIds?: string[];
+  /** Item ID → name, filled in as the items are loaded. */
+  titles?: Record<string, string>;
   languages: string[];
   overwrite: boolean;
   items: JobItem[];

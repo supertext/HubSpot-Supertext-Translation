@@ -8,10 +8,13 @@ import { hubspotCode, sameLanguage, supertextSource, supertextTarget, supportsPo
 import { translateItem } from './translate.js';
 
 /**
- * A translation job: one item into one or more languages, one after the other
- * (Supertext limits requests per second). Runs in the web process; progress is
- * saved after every language so the page can poll it.
+ * A translation job: one item, or a batch of up to {@link MAX_BATCH} items of one kind, into one
+ * or more languages, one after the other (Supertext limits requests per second). Runs in the web
+ * process; progress is saved after every language so the page can poll it.
  */
+
+/** Most items one job translates. */
+export const MAX_BATCH = 50;
 
 export interface JobDeps {
   store: Store;
@@ -20,17 +23,20 @@ export interface JobDeps {
   supertext: (account: Account) => Pick<SupertextClient, 'translateSegments' | 'forReview'>;
   /** Supertext rejected the key (HTTP 401/403) during a translation: the Commando Center hears of it once. */
   onAuthenticationFailed?: (account: Account, httpStatus: number) => void;
+  /** An item of the account got new versions (the Translate page's list is loaded again). */
+  onChanged?: (accountId: string, kind: Kind) => void;
 }
 
 export interface JobRequest {
   accountId: string;
   kind: Kind;
-  itemId: string;
+  /** The items, in order (duplicates dropped, at most {@link MAX_BATCH}). */
+  itemIds: string[];
   languages: string[];
   overwrite: boolean;
 }
 
-/** Errors that make every further language fail too: stop the job. */
+/** Errors that make every further item and language fail too: stop the job. */
 const FATAL = new Set([
   'noApiKey',
   'auth',
@@ -40,33 +46,39 @@ const FATAL = new Set([
   'hubspotAuth',
   'hubspotForbidden',
   'hubspotUnreachable',
-  'itemMissing',
-  'isTranslation',
-  'noSourceLanguage',
 ]);
+
+/** Errors about one item (every language of it fails): the batch goes on with the next item. */
+const ITEM_FATAL = new Set(['itemMissing', 'isTranslation', 'noSourceLanguage', 'unsupportedLanguage']);
+
+/** The job's items, in order. */
+export const jobItemIds = (job: Job): string[] => job.itemIds ?? [job.itemId];
 
 /** Items with a job running, so the same item isn't translated twice at once. */
 const running = new Map<string, Promise<Job>>();
 
 /** Starts the job and returns at once; `done` resolves when it has finished. */
 export async function startJob(deps: JobDeps, request: JobRequest): Promise<{ job: Job; done: Promise<Job> }> {
-  const key = `${request.accountId}|${request.kind}|${request.itemId}`;
+  const itemIds = [...new Set(request.itemIds)].slice(0, MAX_BATCH);
+  if (itemIds.length === 0) throw new LocalizedError('Select an item and at least one language.', 'select');
+  const keys = itemIds.map((id) => `${request.accountId}|${request.kind}|${id}`);
   const job: Job = {
     id: newJobId(),
     accountId: request.accountId,
     status: 'running',
     kind: request.kind,
-    itemId: request.itemId,
+    itemId: itemIds[0],
     itemTitle: '',
+    ...(itemIds.length > 1 ? { itemIds, titles: {} } : {}),
     languages: [...new Set(request.languages)],
     overwrite: request.overwrite,
     items: [],
     createdAt: new Date().toISOString(),
   };
   await deps.store.saveJob(job);
-  const previous = running.get(key) ?? Promise.resolve(undefined);
-  const done = previous
-    .catch(() => undefined)
+  // Waits for the jobs that are translating any of these items.
+  const previous = Promise.all(keys.map((key) => (running.get(key) ?? Promise.resolve(undefined)).catch(() => undefined)));
+  const done: Promise<Job> = previous
     .then(() => runJob(deps, job))
     .catch(async (error) => {
       console.error('Supertext: job failed', error);
@@ -77,9 +89,10 @@ export async function startJob(deps: JobDeps, request: JobRequest): Promise<{ jo
       return job;
     })
     .finally(() => {
-      if (running.get(key) === done) running.delete(key);
+      for (const key of keys) if (running.get(key) === done) running.delete(key);
+      deps.onChanged?.(job.accountId, job.kind);
     });
-  running.set(key, done);
+  for (const key of keys) running.set(key, done);
   return { job, done };
 }
 
@@ -144,24 +157,71 @@ export async function runJob(deps: JobDeps, job: Job): Promise<Job> {
   if (!account) throw new LocalizedError('HubSpot is not connected.', 'notConnected');
   const supertext = deps.supertext(account);
   const { kind } = job;
+  const ids = jobItemIds(job);
+  const batch = ids.length > 1;
+  // One links helper for the whole batch: later items link to the versions made for earlier ones.
+  const links = linksFor(deps.hubspot(account), store, account);
 
-  const prepared = await prepareItem(deps, account, kind, job.itemId, async (name) => {
-    job.itemTitle = name;
+  for (const itemId of ids) {
+    const outcome = await translateOne(deps, account, supertext, job, itemId, links, batch);
+    if (outcome) {
+      // Stopped: the whole job (account errors), or a job of a single item that couldn't be loaded.
+      if (FATAL.has(outcome.code ?? '') || !batch) return finish(store, job, 'failed', outcome);
+    }
+  }
+  return finish(store, job, 'done');
+}
+
+/**
+ * Translates one item of the job into its languages, adding a result per language. Returns the
+ * error that stopped it (every language of the item failed with it), or undefined.
+ */
+async function translateOne(
+  deps: JobDeps,
+  account: Account,
+  supertext: Pick<SupertextClient, 'translateSegments' | 'forReview'>,
+  job: Job,
+  itemId: string,
+  links: ReturnType<typeof linksFor>,
+  batch: boolean,
+): Promise<ErrorInfo | undefined> {
+  const { store } = deps;
+  const { kind } = job;
+  const result = (language: string): JobItem => (batch ? { itemId, language, state: 'kept' } : { language, state: 'kept' });
+  /** An error about the item in a batch: every remaining language of it fails with `failure`. */
+  const failRest = async (failure: ErrorInfo) => {
+    if (!batch || FATAL.has(failure.code ?? '')) return failure;
+    const done = new Set(job.items.filter((item) => (item.itemId ?? job.itemId) === itemId).map((item) => item.language));
+    for (const language of job.languages) {
+      if (!done.has(language)) job.items.push({ ...result(language), state: 'failed', error: failure });
+    }
     await store.saveJob(job);
-  });
-  const { client, source, info, draft, itemLanguage } = prepared;
-  const links = linksFor(client, store, account);
+    return failure;
+  };
 
-  // The item's language, as Supertext knows it (the same for every target).
+  let prepared: PreparedItem;
   let sourceLanguage: string;
   try {
-    sourceLanguage = supertextSource(itemLanguage, account.languageCodes);
+    prepared = await prepareItem(deps, account, kind, itemId, async (name) => {
+      if (itemId === job.itemId) job.itemTitle = name;
+      if (job.titles) job.titles[itemId] = name;
+      await store.saveJob(job);
+    });
+    // The item's language, as Supertext knows it (the same for every target).
+    try {
+      sourceLanguage = supertextSource(prepared.itemLanguage, account.languageCodes);
+    } catch (error) {
+      throw fromSdk(error);
+    }
   } catch (error) {
-    throw fromSdk(error);
+    const failure = errorInfo(error);
+    if (!batch || FATAL.has(failure.code ?? '') || ITEM_FATAL.has(failure.code ?? '')) return failRest(failure);
+    throw error;
   }
+  const { client, source, info, draft, itemLanguage } = prepared;
 
   for (const language of job.languages) {
-    const item: JobItem = { language, state: 'kept' };
+    const item = result(language);
     try {
       if (sameLanguage(language, itemLanguage)) {
         throw new LocalizedError('This is the language of the item itself.', 'sameLanguage');
@@ -173,7 +233,7 @@ export async function runJob(deps: JobDeps, job: Job): Promise<Job> {
         throw fromSdk(error); // unsupportedLanguage: nothing is sent for this language
       }
       const existingId = await existingVersion(prepared, kind, language);
-      const result = await translateItem({
+      const written = await translateItem({
         client,
         // Translation review on for this language: through the review service, else directly.
         supertext: supertext.forReview(account.reviewLanguages.includes(language)),
@@ -191,13 +251,13 @@ export async function runJob(deps: JobDeps, job: Job): Promise<Job> {
         translateUrls: account.translateUrls,
         links,
       });
-      Object.assign(item, result);
-      if (result.targetId && result.state !== 'kept') {
+      Object.assign(item, written);
+      if (written.targetId && written.state !== 'kept') {
         await store.saveTranslation(account.accountId, {
           kind,
           sourceId: info.id,
           language,
-          targetId: result.targetId,
+          targetId: written.targetId,
           updatedAt: new Date().toISOString(),
         });
       }
@@ -211,13 +271,13 @@ export async function runJob(deps: JobDeps, job: Job): Promise<Job> {
       }
       if (failure.code && FATAL.has(failure.code)) {
         job.items.push(item);
-        return finish(store, job, 'failed', failure);
+        return failure;
       }
     }
     job.items.push(item);
     await store.saveJob(job);
   }
-  return finish(store, job, 'done');
+  return undefined;
 }
 
 async function finish(store: Store, job: Job, status: Job['status'], error?: ErrorInfo): Promise<Job> {
@@ -229,6 +289,12 @@ async function finish(store: Store, job: Job, status: Job['status'], error?: Err
 }
 
 /** Totals for the summary line. */
+/** Results the job will have when it's done (items × languages). */
+export const jobSize = (job: Job): number => jobItemIds(job).length * job.languages.length;
+
+/** The item's name in the job ('' if not loaded yet). */
+export const jobTitle = (job: Job, itemId: string): string => job.titles?.[itemId] ?? (itemId === job.itemId ? job.itemTitle : '');
+
 export function jobTotals(job: Job): { created: number; updated: number; kept: number; failed: number } {
   const count = (state: JobItem['state']) => job.items.filter((item) => item.state === state).length;
   return { created: count('created'), updated: count('updated'), kept: count('kept'), failed: count('failed') };

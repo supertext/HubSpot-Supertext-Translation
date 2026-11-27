@@ -1,15 +1,27 @@
-import { editorUrl, type ContentSummary, type Kind } from '../hubspot/content.js';
+import { editorUrl, type Kind } from '../hubspot/content.js';
 import type { ErrorInfo } from '../i18n/error.js';
 import type { MessageKey } from '../i18n/index.js';
 import type { Account, Job } from '../store/store.js';
+import { ITEM_FILTERS, type CatalogRow, type ItemFilter } from '../translation/catalog.js';
 import { languageName, resolvedTarget } from '../translation/languages.js';
 import { History, JobPanel } from './job.js';
 import { ApiKeyHelp, appUrl, Layout, Notice, splitTemplate, type PageContext } from './layout.js';
 
-export interface ItemRow {
-  item: ContentSummary;
-  /** Language (HubSpot code) → ID of its version. */
-  versions: Record<string, string>;
+export type ItemRow = CatalogRow;
+
+/** One page of the list (searched and filtered). */
+export interface ItemList {
+  rows: ItemRow[];
+  /** Items matching the search and filter. */
+  matching: number;
+  /** All translatable items loaded. */
+  total: number;
+  /** Items per filter (with the search). */
+  counts: Record<ItemFilter, number>;
+  /** False: HubSpot has more than the list loads (the most recently updated ones are listed). */
+  complete: boolean;
+  page: number;
+  pages: number;
 }
 
 export interface TranslatePageProps {
@@ -19,12 +31,16 @@ export interface TranslatePageProps {
   /** The kinds offered (the knowledge base only with its scopes). */
   kinds: readonly Kind[];
   kind: Kind;
-  rows?: ItemRow[];
-  /** Cursor of the next page, if there is one. */
-  after?: string;
-  /** This isn't the first page. */
-  paged: boolean;
-  selected?: string;
+  list?: ItemList;
+  /** Search text. */
+  query: string;
+  filter: ItemFilter;
+  /** Most items one job translates. */
+  maxBatch: number;
+  /** Most items the list loads. */
+  maxListed: number;
+  /** Items checked (the last job's). */
+  selected: string[];
   job?: Job;
   history: Job[];
   error?: ErrorInfo;
@@ -34,10 +50,24 @@ export interface TranslatePageProps {
 }
 
 export function TranslatePage(props: TranslatePageProps) {
-  const { ctx, account, rows, kind } = props;
+  const { ctx, account, list, kind } = props;
+  const rows = list?.rows;
   const { t } = ctx;
   const heading = t.t('translate.heading');
   const targets = account.targets;
+  const selected = new Set(props.selected);
+  /** This list with other search, filter or page (the kind stays). */
+  const listUrl = (change: { q?: string; show?: ItemFilter; page?: number; refresh?: boolean }) => {
+    const q = change.q ?? props.query;
+    const show = change.show ?? props.filter;
+    return appUrl('/', {
+      kind,
+      ...(q ? { q } : {}),
+      ...(show !== 'all' ? { show } : {}),
+      ...(change.page && change.page > 1 ? { page: String(change.page) } : {}),
+      ...(change.refresh ? { refresh: '1' } : {}),
+    });
+  };
 
   return (
     <Layout ctx={ctx} title={heading}>
@@ -47,8 +77,9 @@ export function TranslatePage(props: TranslatePageProps) {
       {!props.hasKey && <NoKey ctx={ctx} />}
       {targets.length === 0 && <NoLanguages ctx={ctx} />}
 
+      {targets.length > 0 && <form id="search-form" method="get" action="/" hidden></form>}
       {targets.length > 0 && (
-        <form id="translate-form" class="card" data-kind={kind}>
+        <form id="translate-form" class="card" data-kind={kind} data-max={String(props.maxBatch)}>
           <h2>{t.t('translate.step1')}</h2>
           <nav class="kinds" aria-label={t.t('translate.step1')}>
             {props.kinds.map((k) => (
@@ -59,14 +90,42 @@ export function TranslatePage(props: TranslatePageProps) {
           </nav>
           {props.kbMissing && <Notice tone="info">{t.t('translate.kbMissing')}</Notice>}
           {props.error && <Notice tone="error">{t.error(props.error)}</Notice>}
-          {rows && rows.length === 0 && <p class="muted">{t.t('translate.empty')}</p>}
-          {rows && rows.length > 0 && (
+          {list && (list.total > 0 || props.query) && (
+            <div class="list-tools">
+              <div class="search">
+                <input type="hidden" name="kind" value={kind} form="search-form" />
+                {props.filter !== 'all' && <input type="hidden" name="show" value={props.filter} form="search-form" />}
+                <label for="search" class="visually-hidden">
+                  {t.t('translate.search')}
+                </label>
+                <input type="search" id="search" name="q" value={props.query} placeholder={t.t('translate.search')} form="search-form" />
+                <button type="submit" form="search-form">
+                  {t.t('translate.searchButton')}
+                </button>
+                {props.query && <a href={listUrl({ q: '' })}>{t.t('translate.clearSearch')}</a>}
+              </div>
+              <nav class="filters" aria-label={t.t('translate.filter')}>
+                {ITEM_FILTERS.map((filter) => (
+                  <a href={listUrl({ show: filter })} class={filter === props.filter ? 'active' : ''}>
+                    {t.t(`translate.filter.${filter}` as MessageKey)} ({list.counts[filter]})
+                  </a>
+                ))}
+              </nav>
+            </div>
+          )}
+          {list && !list.complete && <p class="help">{t.t('translate.limited', { max: props.maxListed.toLocaleString(t.locale) })}</p>}
+          {rows && rows.length === 0 && (
+            <p class="muted">{t.t(list && list.total > 0 ? 'translate.noMatch' : 'translate.empty')}</p>
+          )}
+          {rows && rows.length > 0 && list && (
             <>
               <div class="table-scroll">
               <table class="items">
                 <thead>
                   <tr>
-                    <th class="check"></th>
+                    <th class="check">
+                      <input type="checkbox" id="select-all" title={t.t('translate.selectAll')} aria-label={t.t('translate.selectAll')} />
+                    </th>
                     <th>{t.t('translate.name')}</th>
                     <th>{t.t('translate.language')}</th>
                     {targets.map((code) => (
@@ -78,13 +137,7 @@ export function TranslatePage(props: TranslatePageProps) {
                   {rows.map(({ item, versions }) => (
                     <tr>
                       <td class="check">
-                        <input
-                          type="radio"
-                          name="item"
-                          value={item.id}
-                          id={`i-${item.id}`}
-                          checked={item.id === props.selected}
-                        />
+                        <input type="checkbox" name="item" value={item.id} id={`i-${item.id}`} checked={selected.has(item.id)} />
                       </td>
                       <td class="title">
                         <label for={`i-${item.id}`}>{item.name}</label>
@@ -110,9 +163,23 @@ export function TranslatePage(props: TranslatePageProps) {
               </table>
               </div>
               <div class="pager">
+                <span
+                  id="selection-count"
+                  class="muted"
+                  role="status"
+                  data-one={t.t('translate.selected.one')}
+                  data-other={t.t('translate.selected.other')}
+                  data-too-many={t.t('translate.tooMany', { max: String(props.maxBatch) })}
+                ></span>
                 <span class="spacer"></span>
-                {props.paged && <a href={appUrl('/', { kind })}>{t.t('translate.firstPage')}</a>}
-                {props.after && <a href={appUrl('/', { kind, after: props.after })}>{t.t('translate.nextPage')}</a>}
+                {list.pages > 1 && (
+                  <span class="muted">{t.t('translate.page', { page: String(list.page), pages: String(list.pages), count: String(list.matching) })}</span>
+                )}
+                {list.page > 1 && <a href={listUrl({ page: list.page - 1 })}>{t.t('translate.previousPage')}</a>}
+                {list.page < list.pages && <a href={listUrl({ page: list.page + 1 })}>{t.t('translate.nextPage')}</a>}
+                <a href={listUrl({ page: list.page, refresh: true })} title={t.t('translate.reloadHelp')}>
+                  {t.t('translate.reload')}
+                </a>
               </div>
             </>
           )}
@@ -159,6 +226,8 @@ export function TranslatePage(props: TranslatePageProps) {
                   data-label={t.t('translate.submit')}
                   data-label-one={t.t('translate.submitCount.one')}
                   data-label-other={t.t('translate.submitCount.other')}
+                  data-batch-one={t.t('translate.submitBatch.one')}
+                  data-batch-other={t.t('translate.submitBatch.other')}
                   data-starting={t.t('translate.starting')}
                   data-select={t.t('translate.selectSomething')}
                 >
@@ -187,6 +256,7 @@ export function TranslatePage(props: TranslatePageProps) {
                   id="export-button"
                   data-select={t.t('translate.selectSomething')}
                   data-one={t.t('export.oneLanguage')}
+                  data-one-item={t.t('export.oneItem')}
                 >
                   {t.t('export.download')}
                 </button>

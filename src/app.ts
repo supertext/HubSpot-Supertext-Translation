@@ -4,7 +4,7 @@ import type { ApiKeyCheck } from 'supertext-sdk/v1';
 import { SESSION_COOKIE, Sessions, STATE_COOKIE } from './auth/session.js';
 import type { Config } from './config.js';
 import { authorizeUrl, exchangeCode, HubSpotClient, type OAuthOptions } from './hubspot/client.js';
-import { hasVariants, isKind, KINDS, listItems, type Kind } from './hubspot/content.js';
+import { isKind, KINDS, MAX_LISTED, type Kind } from './hubspot/content.js';
 import { TokenManager } from './hubspot/tokens.js';
 import { errorInfo, LocalizedError, type ErrorInfo } from './i18n/error.js';
 import { localeFromRequest, translator, type Translator } from './i18n/index.js';
@@ -12,16 +12,19 @@ import { Reporting } from './reporting.js';
 import { defaultAccount, type Account, type Store } from './store/store.js';
 import { SupertextClient } from './supertext/client.js';
 import { exportItem, importFile, MAX_UPLOAD_BYTES, tooLarge, type ImportResult } from './translation/files.js';
-import { startJob, type JobDeps } from './translation/jobs.js';
+import { Catalog, filterRows, ITEM_FILTERS, type ItemFilter } from './translation/catalog.js';
+import { jobItemIds, MAX_BATCH, startJob, type JobDeps } from './translation/jobs.js';
 import { hubspotCode, isLanguage, resolvedTarget, supertextCodeOf, supertextSource } from './translation/languages.js';
 import { ConnectPage } from './views/connect.js';
 import { JobPanel } from './views/job.js';
 import { appUrl, type PageContext } from './views/layout.js';
 import { KeyCheckMessage, keyCheckText, SettingsPage } from './views/settings.js';
 import { ImportPage } from './views/import.js';
-import { TranslatePage, type ItemRow } from './views/translate.js';
+import { TranslatePage } from './views/translate.js';
 import { LINK_FILTERS, LinksPage, type LinkFilter, type LinkRow } from './views/links.js';
 import { ContentLinks, LINK_TARGETS } from './translation/links.js';
+
+type ItemRowList = NonNullable<Parameters<typeof TranslatePage>[0]['list']>;
 
 export interface AppDeps {
   config: Config;
@@ -34,7 +37,8 @@ export interface AppDeps {
   now?: () => number;
 }
 
-const PAGE_SIZE = 25;
+/** Items per page on the Translate page (as many as one batch takes). */
+const PAGE_SIZE = 50;
 /** The scope that lets the app write knowledge base articles (Service Hub Professional+). */
 export const KB_SCOPE = 'cms.knowledge_base.articles.write';
 
@@ -69,20 +73,23 @@ export function services(deps: AppDeps) {
       fetch: deps.fetch,
     });
   const reporting = new Reporting({ config, store: deps.store, fetch: deps.fetch, onTask: deps.onJob });
+  const catalog = new Catalog(deps.now);
   const jobDeps: JobDeps = {
     store: deps.store,
     hubspot,
     supertext,
+    // New versions: the Translate page's list is loaded again.
+    onChanged: (accountId, kind) => catalog.forget(accountId, kind),
     onAuthenticationFailed: (account, status) => void reporting.inBackground(account, 'authenticationFailed', status),
   };
-  return { oauth, hubspot, supertext, jobDeps, reporting };
+  return { oauth, hubspot, supertext, jobDeps, reporting, catalog };
 }
 
 export function createApp(deps: AppDeps) {
   const { config, store } = deps;
   const app = new Hono();
   const sessions = new Sessions(config.sessionSecret || config.hubspotClientSecret || 'local-development-only');
-  const { oauth, hubspot, jobDeps, reporting } = services(deps);
+  const { oauth, hubspot, jobDeps, reporting, catalog } = services(deps);
   /** Back-end requests that run the app's code: the reporter notices upgrades and changed keys (in the background). */
   const onRequest = (account: Account) => void reporting.inBackground(account, 'onRequest');
   const hasKey = (account: Account) => Boolean(account.apiKey || config.supertextApiKey);
@@ -163,34 +170,39 @@ export function createApp(deps: AppDeps) {
     const requested = c.req.query('kind') ?? '';
     const kind: Kind = isKind(requested) ? requested : 'site-page';
     const kbMissing = kind === 'kb-article' && !knowledgeBase(account);
-    const after = c.req.query('after') || undefined;
-    let rows: ItemRow[] | undefined;
-    let next: string | undefined;
+    const query = (c.req.query('q') ?? '').trim().slice(0, 100);
+    const requestedFilter = c.req.query('show') as ItemFilter | undefined;
+    const filter: ItemFilter = requestedFilter && ITEM_FILTERS.includes(requestedFilter) ? requestedFilter : 'all';
+    let rows: ItemRowList | undefined;
     let error: ErrorInfo | undefined;
     if (account.targets.length > 0 && !kbMissing) {
       try {
-        const list = await listItems(hubspot(account), kind, { limit: PAGE_SIZE, after });
-        const records = hasVariants(kind) ? undefined : await store.translations(account.accountId, kind);
-        const made = new Set([...(records?.values() ?? [])].flatMap((languages) => Object.values(languages)));
-        next = list.after;
-        rows = list.items
-          .filter((item) => !item.isVariant && !made.has(item.id))
-          .map((item) => {
-            const known = records ? (records.get(item.id) ?? {}) : item.translations;
-            const versions: Record<string, string> = {};
-            for (const code of account.targets) {
-              const id = known[code] ?? known[hubspotCode(code)];
-              if (id) versions[code] = id;
-            }
-            return { item, versions };
-          });
+        const list = await catalog.rows(hubspot(account), store, account, kind, c.req.query('refresh') === '1');
+        const matching = filterRows(list.rows, account.targets, query, filter);
+        const pages = Math.max(1, Math.ceil(matching.length / PAGE_SIZE));
+        const pageNumber = Math.min(pages, Math.max(1, Number.parseInt(c.req.query('page') ?? '1', 10) || 1));
+        rows = {
+          rows: matching.slice((pageNumber - 1) * PAGE_SIZE, pageNumber * PAGE_SIZE),
+          matching: matching.length,
+          total: list.rows.length,
+          counts: Object.fromEntries(
+            ITEM_FILTERS.map((each) => [each, filterRows(list.rows, account.targets, query, each).length]),
+          ) as Record<ItemFilter, number>,
+          complete: list.complete,
+          page: pageNumber,
+          pages,
+        };
       } catch (caught) {
         console.error('Supertext: could not load the HubSpot content', caught);
         error = errorInfo(caught);
       }
     }
     const history = await store.recentJobs(account.accountId, 6);
-    const latest = history[0];
+    // `?job=`: the job that just finished (the page reloads with it), else the latest.
+    const asked = /^[\w-]{1,64}$/.test(c.req.query('job') ?? '') ? await store.getJob(account.accountId, c.req.query('job')!) : undefined;
+    const latest = asked ?? history[0];
+    // Checked: `?item=`, or the items of the job the page reloaded with (never just the latest job's).
+    const selected = c.req.query('item') ? [c.req.query('item') as string] : asked?.kind === kind ? jobItemIds(asked) : [];
     return c.html(
       page(
         TranslatePage({
@@ -199,12 +211,14 @@ export function createApp(deps: AppDeps) {
           hasKey: hasKey(account),
           kinds: kbMissing ? [...kinds, 'kb-article'] : kinds,
           kind,
-          rows,
-          after: next,
-          paged: Boolean(after),
-          selected: c.req.query('item') ?? (latest?.kind === kind ? latest.itemId : undefined),
+          list: rows,
+          query,
+          filter,
+          maxBatch: MAX_BATCH,
+          maxListed: MAX_LISTED,
+          selected,
           job: latest,
-          history: history.slice(1),
+          history: history.filter((job) => job.id !== latest?.id).slice(0, 5),
           error,
           kbMissing,
           appBase: editorBase,
@@ -270,11 +284,23 @@ export function createApp(deps: AppDeps) {
     const session = await apiSession(c, true);
     if (session instanceof Response) return session;
     const { account } = session;
-    const body = (await c.req.json().catch(() => ({}))) as { kind?: string; itemId?: string; languages?: string[]; overwrite?: boolean };
+    const body = (await c.req.json().catch(() => ({}))) as {
+      kind?: string;
+      itemId?: string;
+      itemIds?: string[];
+      languages?: string[];
+      overwrite?: boolean;
+    };
     const languages = (body.languages ?? []).filter((code) => typeof code === 'string' && account.targets.includes(code));
     const kind = typeof body.kind === 'string' && isKind(body.kind) ? body.kind : undefined;
-    if (!kind || !body.itemId || typeof body.itemId !== 'string' || languages.length === 0) {
+    // `itemIds` (a batch), or `itemId` (one item, as before 1.4).
+    const requested = Array.isArray(body.itemIds) ? body.itemIds : body.itemId !== undefined ? [body.itemId] : [];
+    const itemIds = [...new Set(requested.filter((id): id is string => typeof id === 'string' && /^[\w-]{1,40}$/.test(id)))];
+    if (!kind || itemIds.length === 0 || itemIds.length !== requested.length || languages.length === 0) {
       return c.json({ error: { message: 'Select an item and at least one language.', code: 'select' } }, 400);
+    }
+    if (itemIds.length > MAX_BATCH) {
+      return c.json({ error: errorInfo(new LocalizedError(`Select at most ${MAX_BATCH} items.`, 'tooMany')) }, 400);
     }
     if (kind === 'kb-article' && !knowledgeBase(account)) {
       return c.json({ error: { message: 'The knowledge base is not connected.', code: 'hubspotForbidden' } }, 400);
@@ -286,7 +312,7 @@ export function createApp(deps: AppDeps) {
     const { job, done } = await startJob(jobDeps, {
       accountId: account.accountId,
       kind,
-      itemId: body.itemId,
+      itemIds,
       languages,
       overwrite: Boolean(body.overwrite),
     });

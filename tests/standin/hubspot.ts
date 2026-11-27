@@ -41,6 +41,8 @@ export interface HubSpotStandin {
   setState(id: string, state: string): void;
   /** Changes fields of an item, live and draft (an editor's change in HubSpot). */
   edit(id: string, fields: Record<string, unknown>): void;
+  /** Adds an item (a primary), as creating it in HubSpot would. */
+  add(kind: Kind, item: Item): void;
 }
 
 const PATHS: [Kind, RegExp][] = [
@@ -124,6 +126,9 @@ export function createHubSpotStandin(): HubSpotStandin {
     withoutKnowledgeBase: () => {
       kb = false;
     },
+    add: (kind, item) => {
+      entries.set(item.id, { kind, live: item, draft: structuredClone(item), archived: false, group: item.id });
+    },
     edit: (id, fields) => {
       const entry = entries.get(id);
       if (entry) for (const item of [entry.live, entry.draft]) Object.assign(item, structuredClone(fields));
@@ -191,7 +196,8 @@ export function createHubSpotStandin(): HubSpotStandin {
         const all = [...entries.values()]
           .filter((e) => e.kind === kind && !e.archived)
           .sort((a, b) => String(b.live.updated ?? b.live.updatedAt ?? '').localeCompare(String(a.live.updated ?? a.live.updatedAt ?? '')));
-        const limit = Number(url.searchParams.get('limit')) || 20;
+        // HubSpot returns at most 100 per page.
+        const limit = Math.min(100, Number(url.searchParams.get('limit')) || 20);
         const offset = Number(url.searchParams.get('after')) || 0;
         const page = all.slice(offset, offset + limit).map((e) => view(e, 'live'));
         return json({

@@ -11,6 +11,7 @@ Translate your HubSpot content with [Supertext](https://www.supertext.com) AI: w
 - **Hosted app** (Node.js on Railway), installed in HubSpot with OAuth. Nothing to install on your website.
 - **Five kinds of content:** website pages, landing pages, blog posts, marketing emails and (with Service Hub Professional or Enterprise) knowledge base articles.
 - **Drafts only:** nothing is published or sent; the original is never changed.
+- **Batches:** tick up to 50 pages, posts, emails or articles and translate them into all your languages in one go. Long lists have search, a *Languages missing* filter and pages of 50.
 - Translates titles, meta descriptions, subject lines, preview text, rich text and the text fields of modules; keeps layout, images, links, forms and **HubL / personalization tokens** (`{{ contact.firstname }}`).
 - **Links follow the language** (beta, off by default): links between pages, blog posts and knowledge base articles (and from emails to them) point to the version in the same language, in any order of translation; a list shows every link and the ones still waiting for a translation. New versions also get their **address in their language** (`/de-ch/about-us` → `/de-ch/ueber-uns`).
 - Existing language versions get a fresh translation of their drafts; untick *Update existing versions* to keep them.

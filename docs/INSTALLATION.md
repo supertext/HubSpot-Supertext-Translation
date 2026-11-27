@@ -171,6 +171,9 @@ Nothing to do: the app runs on Supertext's servers and is updated there. The set
 | *Too many requests to Supertext / HubSpot* | The rate limit was still exceeded after 4 automatic retries. Wait a moment and start again. |
 | *Your Supertext translation limit is exceeded* | Your Supertext plan's volume is used up. |
 | *The app restarted during the translation* | Start the translation again; languages already done are kept. |
+| *Select at most 50 items at a time.* | A batch takes up to 50 items; translate more in several runs. |
+| An item made in HubSpot a moment ago isn't in the list | The list is kept for a minute: click **Reload the list** below it. |
+| *The list shows the 5,000 most recently updated items* | The account has more items of this kind than the list loads; older ones aren't listed on the Translate page. Saving an item in HubSpot moves it to the top of the list. |
 
 ## Privacy and security
 

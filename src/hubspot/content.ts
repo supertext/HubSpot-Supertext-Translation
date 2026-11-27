@@ -38,6 +38,8 @@ export interface ContentSummary {
   translations: Record<string, string>;
   /** The item is itself a language version of another one. */
   isVariant: boolean;
+  /** URL slug (pages, posts, articles), for searching. */
+  slug?: string;
   updatedAt?: string;
 }
 
@@ -96,6 +98,7 @@ export function summary(kind: Kind, item: Item): ContentSummary {
     state: itemState(item),
     translations: hasVariants(kind) ? translationMap(item.translations, str(item.id)) : {},
     isVariant: Boolean(primary) && primary !== str(item.id),
+    slug: str(item.slug) || undefined,
     updatedAt: str(item.updated || item.updatedAt) || undefined,
   };
 }
@@ -117,6 +120,28 @@ export async function listItems(client: HubSpotClient, kind: Kind, options: { li
   );
   const items = (data.results ?? []).map((item) => summary(kind, item));
   return { items, total: data.total ?? items.length, after: data.paging?.next?.after || undefined };
+}
+
+/** Most items the Translate page lists of one kind (pages of 100 from HubSpot). */
+export const MAX_LISTED = 5000;
+
+/**
+ * All items of a kind, most recently updated first, in pages of 100, up to `max`.
+ * `complete` is false when there were more.
+ */
+export async function listAllItems(
+  client: HubSpotClient,
+  kind: Kind,
+  max = MAX_LISTED,
+): Promise<{ items: ContentSummary[]; complete: boolean }> {
+  const items: ContentSummary[] = [];
+  let after: string | undefined;
+  do {
+    const page = await listItems(client, kind, { limit: 100, after });
+    items.push(...page.items);
+    after = page.after;
+  } while (after && items.length < max);
+  return { items: items.slice(0, max), complete: !after && items.length <= max };
 }
 
 /** The item (metadata and language versions), or undefined if it doesn't exist (any more). */

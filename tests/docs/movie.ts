@@ -84,7 +84,7 @@ await kit.say('Supertext translates the content.', {
   },
 });
 kit.pause();
-await page.waitForURL(/item=101/, { timeout: 60_000 });
+await page.waitForURL(/[?&]job=/, { timeout: 60_000 });
 await page.locator('.job .notice.success').waitFor();
 await page.locator('.job').evaluate((el) => el.scrollIntoView({ block: 'center' }));
 await page.waitForTimeout(600);

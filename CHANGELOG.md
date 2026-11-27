@@ -4,6 +4,9 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Added: translate up to **50 items at once**: tick several pages, posts, emails or articles (or all on the page) and click *Translate 2 items into 3 languages with Supertext*. The items run one after the other; the result shows a row per item and a column per language, and an item that fails doesn't stop the others. Links between items of the same batch point to each other's new versions.
+- Added: long lists on the Translate page: all items are loaded (not only the latest 25), 50 per page with *Previous page* / *Next page*, **search by name or URL**, and the filters *Languages missing* and *All languages done*. The list is kept for a minute (*Reload the list* loads it again at once) and reloaded after each translation.
+- Changed: after a translation the page reloads with that job and its items ticked; opening the Translate page later starts with nothing ticked.
 - Changed: *Point links to the translated pages, posts and articles* is marked **Beta** (in the settings and on the Links page) and is off by default for new accounts; accounts that already saved the setting keep their choice.
 - Added: *Update links now* explains what it does in a tooltip.
 - Changed: the list of links between translations has its own **Links** tab in the top bar (before, it was only linked from the settings).

@@ -159,11 +159,13 @@ check('settings: Test connection against the real API', (await page.locator('#te
 await page.screenshot({ path: `${artifacts}settings.png`, fullPage: true });
 
 // --- Translating on the Translate page ------------------------------------------------------
-async function translate(label: string, kind: Kind, id: string, languages: string[], overwrite: boolean, expect: string): Promise<void> {
-  const tag = `${label}: ${kind} ${id}`;
+async function translate(label: string, kind: Kind, id: string | string[], languages: string[], overwrite: boolean, expect: string): Promise<void> {
+  const ids = Array.isArray(id) ? id : [id];
+  const tag = `${label}: ${kind} ${ids.join('+')}`;
   await page.goto(`${appUrl}/?kind=${kind}&lang=en`);
   await page.locator('#translate-form').waitFor();
-  await page.check(`input[name="item"][value="${id}"]`);
+  // A batch: several items checked, one job.
+  for (const each of ids) await page.check(`input[name="item"][value="${each}"]`);
   for (const code of Object.keys(TARGETS)) {
     const box = page.locator(`input[name="language"][value="${code}"]`);
     if (!check(`${tag}: ${code} offered`, (await box.count()) === 1)) continue;
@@ -174,10 +176,10 @@ async function translate(label: string, kind: Kind, id: string, languages: strin
   else await page.uncheck('#overwrite');
   const started = Date.now();
   await page.click('#translate-button');
-  // The page polls the job and reloads with ?item=… when it has finished.
-  await page.waitForURL(new RegExp(`item=${id}`), { timeout: 20 * 60_000 });
+  // The page polls the job and reloads with ?job=… when it has finished.
+  await page.waitForURL(/[?&]job=/, { timeout: 20 * 60_000 });
   await page.locator('.job').waitFor();
-  await page.screenshot({ path: `${artifacts}${label}-${kind}-${id}.png`, fullPage: true });
+  await page.screenshot({ path: `${artifacts}${label}-${kind}-${ids.join('+')}.png`, fullPage: true });
   console.log(`${tag}: ${Math.round((Date.now() - started) / 1000)} s`);
   const summary = ((await page.locator('.job .notice').first().textContent()) ?? '').replace(/\s+/g, ' ').trim();
   check(`${tag}: ${expect}`, summary === expect, summary);
@@ -292,17 +294,29 @@ for (const lang of ['de-ch', 'fr-ch', 'it-ch']) {
   check(`links ${lang}: "Damaged chocolate" links to the translated "Returning an order"`, damaged[0] === `${KB_URL}${address('502')}`, damaged[0]);
 }
 
-// --- Again with "Update existing versions": the same drafts, updated in place ------------------
-const again = ITEMS[0];
-const countBefore = hubspot.items(again.kind).length;
-await translate('second-run', again.kind, again.id, again.languages, true, `Done: 0 created, ${again.languages.length} updated, 0 kept, 0 failed.`);
-check('updating makes no new items', hubspot.items(again.kind).length === countBefore, `${countBefore} → ${hubspot.items(again.kind).length}`);
-const updated = versions(again.kind, again.id);
-for (const lang of again.languages) {
-  const tag = `updated ${again.kind} ${again.id} → ${TARGETS[lang]}`;
-  const list = updated.get(lang) ?? [];
-  if (check(`${tag}: same draft updated in place`, list.length === 1 && list[0].id === firstIds.get(`${again.id}:${lang}`))) {
-    checkVersion(tag, again.kind, sources.get(again.id)!, list[0], lang);
+// --- Again with "Update existing versions", as one batch: the same drafts, updated in place ----
+const again = ITEMS.filter((item) => item.kind === 'site-page');
+const pageLanguages = again[0].languages;
+const countBefore = hubspot.items('site-page').length;
+await translate(
+  'second-run',
+  'site-page',
+  again.map((item) => item.id),
+  pageLanguages,
+  true,
+  `Done: 0 created, ${again.length * pageLanguages.length} updated, 0 kept, 0 failed.`,
+);
+check('batch: the job names both pages', /About us and 1 more/.test((await page.locator('.job h2').textContent()) ?? ''));
+check('batch: both pages stay checked after the reload', (await page.locator('input[name="item"]:checked').count()) === again.length);
+check('updating makes no new items', hubspot.items('site-page').length === countBefore, `${countBefore} → ${hubspot.items('site-page').length}`);
+for (const item of again) {
+  const updated = versions(item.kind, item.id);
+  for (const lang of item.languages) {
+    const tag = `updated ${item.kind} ${item.id} → ${TARGETS[lang]}`;
+    const list = updated.get(lang) ?? [];
+    if (check(`${tag}: same draft updated in place`, list.length === 1 && list[0].id === firstIds.get(`${item.id}:${lang}`))) {
+      checkVersion(tag, item.kind, sources.get(item.id)!, list[0], lang);
+    }
   }
 }
 

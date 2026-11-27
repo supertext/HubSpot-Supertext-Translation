@@ -33,18 +33,47 @@
     var overwrite = document.getElementById('overwrite');
     var warning = document.getElementById('overwrite-warning');
     var hint = document.getElementById('overwrite-hint');
+    var selectAll = document.getElementById('select-all');
+    var selection = document.getElementById('selection-count');
+    var max = Number(form.getAttribute('data-max')) || 50;
+    var plural = function (count, one, other) {
+      return new Intl.PluralRules(locale).select(count) === 'one' ? one : other;
+    };
     var updateButton = function () {
       var count = checked(form, 'language').length;
+      var items = checked(form, 'item').length;
       var label = button.getAttribute('data-label');
       if (count > 0) {
-        var plural = new Intl.PluralRules(locale).select(count) === 'one' ? 'data-label-one' : 'data-label-other';
-        label = button.getAttribute(plural).replace('{count}', String(count));
+        var name = items > 1 ? plural(count, 'data-batch-one', 'data-batch-other') : plural(count, 'data-label-one', 'data-label-other');
+        label = button.getAttribute(name).replace('{count}', String(count)).replace('{items}', String(items));
       }
       button.textContent = label;
+      if (selection) {
+        var tooMany = items > max;
+        selection.classList.toggle('too-many', tooMany);
+        selection.textContent = tooMany
+          ? selection.getAttribute('data-too-many')
+          : items > 0
+            ? selection.getAttribute(plural(items, 'data-one', 'data-other')).replace('{count}', String(items))
+            : '';
+      }
+      if (selectAll) {
+        var boxes = form.querySelectorAll('input[name="item"]');
+        selectAll.checked = boxes.length > 0 && items === boxes.length;
+        selectAll.indeterminate = items > 0 && items < boxes.length;
+      }
     };
     form.addEventListener('change', function (event) {
-      if (event.target && event.target.name === 'language') updateButton();
+      if (event.target && (event.target.name === 'language' || event.target.name === 'item')) updateButton();
     });
+    if (selectAll) {
+      selectAll.addEventListener('change', function () {
+        Array.prototype.forEach.call(form.querySelectorAll('input[name="item"]'), function (input) {
+          input.checked = selectAll.checked;
+        });
+        updateButton();
+      });
+    }
     if (overwrite) {
       overwrite.addEventListener('change', function () {
         warning.hidden = !overwrite.checked;
@@ -53,11 +82,15 @@
     }
     form.addEventListener('submit', function (event) {
       event.preventDefault();
-      var item = checked(form, 'item')[0];
+      var items = checked(form, 'item');
       var kind = form.getAttribute('data-kind');
       var languages = checked(form, 'language');
-      if (!item || languages.length === 0) {
+      if (items.length === 0 || languages.length === 0) {
         message.textContent = button.getAttribute('data-select');
+        return;
+      }
+      if (items.length > max) {
+        message.textContent = selection ? selection.getAttribute('data-too-many') : '';
         return;
       }
       message.textContent = '';
@@ -65,7 +98,7 @@
       button.textContent = button.getAttribute('data-starting');
       api('POST', '/api/jobs', {
         kind: kind,
-        itemId: item,
+        itemIds: items,
         languages: languages,
         overwrite: Boolean(overwrite && overwrite.checked),
       }).then(function (result) {
@@ -75,9 +108,16 @@
           message.textContent = (result.json.error && result.json.error.message) || 'Error';
           return;
         }
-        poll(result.json.id, function () {
-          // Reload so the list shows the new versions.
-          window.location.href = '/?kind=' + encodeURIComponent(kind) + '&item=' + encodeURIComponent(item);
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        var id = result.json.id;
+        poll(id, function () {
+          // Reload so the list shows the new versions (same search, filter and page; the job's items stay checked).
+          var params = new URLSearchParams(window.location.search);
+          params.delete('item');
+          params.delete('refresh');
+          params.set('kind', kind);
+          params.set('job', id);
+          window.location.href = '/?' + params.toString();
         });
       });
     });
@@ -88,11 +128,16 @@
     var exportMessage = document.getElementById('export-message');
     if (exportButton) {
       exportButton.addEventListener('click', function () {
-        var item = checked(form, 'item')[0];
+        var selected = checked(form, 'item');
+        var item = selected[0];
         var languages = checked(form, 'language');
         var format = checked(form, 'format')[0] || 'xliff';
         if (!item || languages.length === 0) {
           exportMessage.textContent = exportButton.getAttribute('data-select');
+          return;
+        }
+        if (selected.length > 1) {
+          exportMessage.textContent = exportButton.getAttribute('data-one-item');
           return;
         }
         if (format === 'html' && languages.length !== 1) {

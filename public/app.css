@@ -60,7 +60,7 @@ code { font: 12px/1 ui-monospace, Menlo, monospace; background: var(--bg); paddi
 
 .field { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; max-width: 460px; }
 .field > span { font-weight: 600; font-size: 13px; }
-input[type=text], input[type=password], input:not([type]), select {
+input[type=text], input[type=password], input[type=search], input:not([type]), select {
   font: inherit; color: var(--text); border: 1px solid #c8cbc8; border-radius: 10px; padding: 8px 12px; background: #fff; min-height: 42px;
 }
 input:focus, select:focus { outline: 3px solid var(--mint); outline-offset: 0; border-color: var(--text); }
@@ -91,6 +91,16 @@ th.check, td.check { width: 36px; }
 td.when { white-space: nowrap; color: var(--muted); font-size: 13px; }
 td.link { text-align: right; white-space: nowrap; }
 .pager { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
+.pager .warning-text, #selection-count.too-many { color: var(--orange); font-weight: 600; }
+.list-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 0 0 12px; }
+.list-tools .search { display: flex; align-items: center; gap: 8px; }
+.list-tools .search input { min-width: 240px; }
+.filters { display: flex; flex-wrap: wrap; gap: 12px; font-size: 14px; }
+.filters a { color: var(--muted); }
+.filters a.active { color: var(--text); font-weight: 600; text-decoration: underline; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+table.batch td.cell { white-space: normal; font-size: 13px; }
+table.batch th { font-size: 13px; }
 
 .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; white-space: nowrap; text-decoration: none; }
 .badge.none { background: var(--bg); color: var(--muted); }
@@ -187,7 +197,10 @@ body { overflow-x: hidden; }
   .card { padding: 20px 16px; border-radius: 12px; }
   .connect { margin: 8px auto; }
   .field { max-width: none; }
-  input[type=text], input[type=password], input:not([type]), select { font-size: 16px; width: 100%; }
+  input[type=text], input[type=password], input[type=search], input:not([type]), select { font-size: 16px; width: 100%; }
+  .list-tools .search { flex-wrap: wrap; }
+  .list-tools .search input { flex: 1 1 100%; }
+  .pager { flex-wrap: wrap; gap: 10px 16px; }
   .actions { flex-wrap: wrap; }
   .actions button, .actions .button { flex: 1 1 auto; justify-content: center; }
   .languages { flex-direction: column; gap: 8px; }
