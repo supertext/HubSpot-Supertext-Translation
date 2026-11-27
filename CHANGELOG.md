@@ -4,18 +4,23 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
-- Added: updating a translation keeps its **localized screenshots**: an image the translation has of its own stays as long as the original's image in that place doesn't change. When the original's image is replaced, the translation gets the new one and the result says *1 image to check*. The **Links** tab is now **Links/Images**, with an *Images* list: every image in the translations, original beside translation, *To check* / *Own image* / *Same as the original*, and *Mark as checked*.
-- Added: *Settings → HubSpot → Connect HubSpot again*: grants new permissions (such as publishing knowledge base articles) and keeps the API key, settings and history.
-- Changed: the Translate page marks each language with an icon instead of text: a green check opens the version in HubSpot, a dashed circle means not translated; the language's name and the state are in the tooltip, with a legend under the list.
-- Changed: the language columns on the Translate page and in batch results are headed by the short language code (`DE-CH`), with the language's name as a tooltip, so many languages fit.
-- Added: a **History** tab with every translation, 50 per page, filtered by kind of content and *With failures* / *Running*; each opens its full result. *Recent translations* links to it, and the Translate page's result box shows the latest translation of the open tab (not of another kind).
-- Added: *Settings → Translation → Publish translations right away* (off by default): website pages, landing pages, blog posts and knowledge base articles are published as soon as they are translated, and updating a version publishes its new text. Marketing emails are never sent; they stay drafts. Publishing knowledge base articles needs a new optional HubSpot permission: accounts connected before need to connect HubSpot again. If HubSpot refuses to publish, the version stays a draft and the result says why.
+## 1.4.0 — 2026-11-27
+
+Batches, long lists, publishing right away and localized screenshots that stay.
+
 - Added: translate up to **50 items at once**: tick several pages, posts, emails or articles (or all on the page) and click *Translate 2 items into 3 languages with Supertext*. The items run one after the other; the result shows a row per item and a column per language, and an item that fails doesn't stop the others. Links between items of the same batch point to each other's new versions.
 - Added: long lists on the Translate page: all items are loaded (not only the latest 25), 50 per page with *Previous page* / *Next page*, **search by name or URL**, and the filters *Languages missing* and *All languages done*. The list is kept for a minute (*Reload the list* loads it again at once) and reloaded after each translation.
+- Added: *Settings → Translation → Publish translations right away* (off by default): website pages, landing pages, blog posts and knowledge base articles are published as soon as they are translated, and updating a version publishes its new text. Marketing emails are never sent; they stay drafts. Publishing knowledge base articles needs a new optional HubSpot permission: accounts connected before need to connect HubSpot again. If HubSpot refuses to publish, the version stays a draft and the result says why.
+- Added: updating a translation keeps its **localized screenshots**: an image the translation has of its own stays as long as the original's image in that place doesn't change. When the original's image is replaced, the translation gets the new one and the result says *1 image to check*. The **Links** tab is now **Links/Images**, with an *Images* list: every image in the translations, original beside translation, *To check* / *Own image* / *Same as the original*, and *Mark as checked*.
+- Added: a **History** tab with every translation, 50 per page, filtered by kind of content and *With failures* / *Running*; each opens its full result. *Recent translations* links to it, and the Translate page's result box shows the latest translation of the open tab (not of another kind).
+- Added: *Settings → HubSpot → Connect HubSpot again*: grants new permissions (such as publishing knowledge base articles) and keeps the API key, settings and history.
+- Added: *Update links now* explains what it does in a tooltip.
+- Changed: the Translate page marks each language with an icon instead of text: a green check opens the version in HubSpot, a dashed circle means not translated; the language's name and the state are in the tooltip, with a legend under the list.
+- Changed: the language columns on the Translate page and in batch results are headed by the short language code (`DE-CH`), with the language's name as a tooltip, so many languages fit.
 - Changed: after a translation the page reloads with that job and its items ticked; opening the Translate page later starts with nothing ticked.
 - Changed: *Point links to the translated pages, posts and articles* is marked **Beta** (in the settings and on the Links page) and is off by default for new accounts; accounts that already saved the setting keep their choice.
-- Added: *Update links now* explains what it does in a tooltip.
 - Changed: the list of links between translations has its own **Links** tab in the top bar (before, it was only linked from the settings).
+
 ## 1.3.0 — 2026-11-27
 
 Links that follow the language, and translated addresses.

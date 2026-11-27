@@ -114,7 +114,7 @@ Everything is a **draft**: nothing is visible on your website or sent to anyone 
 
 ## Existing versions
 
-Languages that have a version already get a **fresh translation**: **Update existing versions** is ticked when the page opens, and the warning under it reminds you that changes made by hand in HubSpot are replaced. A published page keeps its live version until you publish the new draft. To keep the versions you have (for example after editing a translation by hand), untick it: those languages are then **kept** (*Version exists, kept*) and only missing languages are translated.
+Languages that have a version already get a **fresh translation**: **Update existing versions** is ticked when the page opens, and the warning under it reminds you that changes made by hand in HubSpot are replaced (images a version has of its own stay, see below). A published page keeps its live version until you publish the new draft. To keep the versions you have (for example after editing a translation by hand), untick it: those languages are then **kept** (*Version exists, kept*) and only missing languages are translated.
 
 ![Update existing versions ticked, as it is when the page opens, with the warning that the drafts of the existing versions will be replaced, including changes made by hand in HubSpot](images/overwrite-warning.png)
 

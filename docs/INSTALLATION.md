@@ -44,7 +44,7 @@ The app asks HubSpot for:
 | --- | --- |
 | `content` | Read website pages, landing pages, blog posts and marketing emails, and create their language versions as drafts |
 | `cms.knowledge_base.articles.read`, `cms.knowledge_base.articles.write` (optional) | Read knowledge base articles and create their translations. Left out if the account doesn't have the knowledge base. |
-| `cms.knowledge_base.articles.publish` (optional) | Publish article translations, only with *Publish translations right away* on. Accounts connected before 28 November 2026 don't have it: connect HubSpot again to grant it. |
+| `cms.knowledge_base.articles.publish` (optional) | Publish article translations, only with *Publish translations right away* on. Accounts connected before version 1.4 don't have it: connect HubSpot again to grant it. |
 
 Everyone in your team who connects the same HubSpot account shares its settings. The connection stays until you disconnect it in the app or uninstall the app in HubSpot (Settings → Integrations → Connected apps).
 
@@ -105,7 +105,7 @@ Turn it on per language that is translated **into**: **Settings → Languages**,
 
 - Translations into that language then go through Supertext's review service instead of directly to Supertext. It answers exactly like Supertext and passes everything on with your API key, so billing, languages, formal/informal and error messages stay the same. The other languages keep going directly to Supertext.
 - The review service keeps every translation of your account. A text it has translated before gets the same translation again (without a new Supertext call), and once a reviewer has corrected it, the corrected text.
-- **Corrections arrive with the next translation:** after a review, translate the items into that language again with *Update existing versions* ticked to write the corrections into the drafts. As always, updating overwrites manual changes in the version's draft.
+- **Corrections arrive with the next translation:** after a review, translate the items into that language again with *Update existing versions* ticked to write the corrections into the drafts. As always, updating overwrites manual changes in the version's draft, except images it has of its own (see the user guide → *Localized screenshots stay*).
 - Reviewers get a review link for your site from Supertext; nothing to set up in HubSpot.
 - The review service works with keys of the **live** Supertext API.
 - *Export for translation* and *Import translation* don't use the review service. The API key check (and *Test connection*) still goes directly to Supertext.
@@ -141,7 +141,7 @@ Nothing to do: the app runs on Supertext's servers and is updated there. The set
 
 ## Connecting again
 
-**Settings → HubSpot → Connect HubSpot again** goes through HubSpot's connection screen once more and keeps everything: the API key, the settings, the languages, the history and the links. Use it when the app asks for a permission it didn't have yet: the knowledge base after it was added to your HubSpot subscription, or publishing articles for *Publish translations right away* (accounts connected before 28 November 2026). The settings say *Publishing articles is not allowed yet* when that is the case.
+**Settings → HubSpot → Connect HubSpot again** goes through HubSpot's connection screen once more and keeps everything: the API key, the settings, the languages, the history and the links. Use it when the app asks for a permission it didn't have yet: the knowledge base after it was added to your HubSpot subscription, or publishing articles for *Publish translations right away* (accounts connected before version 1.4). The settings say *Publishing articles is not allowed yet* when that is the case.
 
 ## Disconnecting
 
