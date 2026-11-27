@@ -5,6 +5,7 @@ import { errorInfo, LocalizedError, type ErrorInfo } from '../i18n/error.js';
 import { fromSdk, type SupertextClient } from '../supertext/client.js';
 import { newJobId, type Account, type Job, type JobItem, type Store } from '../store/store.js';
 import { hubspotCode, sameLanguage, supertextSource, supertextTarget, supportsPoliteness } from './languages.js';
+import { imageBook } from './images.js';
 import { publishMode, translateItem } from './translate.js';
 
 /**
@@ -251,6 +252,7 @@ async function translateOne(
         translateUrls: account.translateUrls,
         links,
         publish: publishMode(account, kind),
+        images: imageBook(store, account.accountId, kind, language, info.id),
       });
       Object.assign(item, written);
       if (written.targetId && written.state !== 'kept') {

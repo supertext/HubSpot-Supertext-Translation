@@ -4,6 +4,7 @@ import {
   canPublish,
   createVersion,
   extractItem,
+  getDraft,
   KB_PUBLISH_SCOPE,
   publishDraft,
   removeItem,
@@ -15,6 +16,7 @@ import type { Extraction } from '../hubspot/extract.js';
 import { errorInfo, LocalizedError } from '../i18n/error.js';
 import type { Politeness, SupertextClient } from '../supertext/client.js';
 import type { Account, JobItem } from '../store/store.js';
+import { mergeImages, recordOf, type ImageRecord } from './images.js';
 import type { ContentLinks, RewriteResult } from './links.js';
 import { slugify, slugWords, withLastPart } from './slug.js';
 
@@ -60,6 +62,14 @@ export interface TranslateArgs {
    * Ignored for emails.
    */
   publish?: boolean | 'noScope';
+  /** The image records of versions (Links/Images): an update keeps the version's own images. */
+  images?: ImageBook;
+}
+
+/** Where a version's image record is kept (the store, for one account). */
+export interface ImageBook {
+  load(targetId: string): Promise<ImageRecord[] | undefined>;
+  save(targetId: string, records: ImageRecord[]): Promise<void>;
 }
 
 /** Where an item keeps its address: a page's or post's slug, an article's path; emails have none. */
@@ -71,7 +81,7 @@ export function publishMode(account: Pick<Account, 'publishTranslations' | 'scop
   return kind === 'kb-article' && !account.scopes.includes(KB_PUBLISH_SCOPE) ? 'noScope' : true;
 }
 
-export type TranslateResult = Pick<JobItem, 'state' | 'targetId' | 'published' | 'publishError'>;
+export type TranslateResult = Pick<JobItem, 'state' | 'targetId' | 'published' | 'publishError' | 'imagesToCheck'>;
 
 /**
  * Publishes a version the app has just written, if the account wants that. Publishing never fails
@@ -148,9 +158,18 @@ async function write(args: TranslateArgs): Promise<TranslateResult> {
   };
 
   if (existingId) {
-    await updateDraft(client, kind, existingId, await translate());
+    const values = await translate();
+    let records: ImageRecord[] | undefined;
+    if (args.images) {
+      // The version's own images (localized screenshots) stay where the original's didn't change.
+      const current = await getDraft(client, kind, existingId);
+      records = mergeImages(values, current, await args.images.load(existingId));
+    }
+    await updateDraft(client, kind, existingId, values);
+    if (records) await args.images!.save(existingId, records);
     await linked(existingId);
-    return { state: 'updated', targetId: existingId };
+    const toCheck = records?.filter((record) => record.status === 'check').length ?? 0;
+    return { state: 'updated', targetId: existingId, ...(toCheck ? { imagesToCheck: toCheck } : {}) };
   }
   // The language version first: if HubSpot refuses it (a blog or knowledge base without that
   // language, an existing variant), nothing is sent to Supertext and nothing is paid for.
@@ -162,6 +181,7 @@ async function write(args: TranslateArgs): Promise<TranslateResult> {
   try {
     const values = await translate();
     if (Object.keys(values).length > 0) await updateDraft(client, kind, String(created.id), values);
+    await args.images?.save(String(created.id), recordOf(values));
   } catch (error) {
     // Don't leave an untranslated copy behind.
     await removeItem(client, kind, String(created.id)).catch(() => undefined);

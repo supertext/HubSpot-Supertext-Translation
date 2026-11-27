@@ -4,6 +4,7 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Added: updating a translation keeps its **localized screenshots**: an image the translation has of its own stays as long as the original's image in that place doesn't change. When the original's image is replaced, the translation gets the new one and the result says *1 image to check*. The **Links** tab is now **Links/Images**, with an *Images* list: every image in the translations, original beside translation, *To check* / *Own image* / *Same as the original*, and *Mark as checked*.
 - Added: *Settings → HubSpot → Connect HubSpot again*: grants new permissions (such as publishing knowledge base articles) and keeps the API key, settings and history.
 - Changed: the Translate page marks each language with an icon instead of text: a green check opens the version in HubSpot, a dashed circle means not translated; the language's name and the state are in the tooltip, with a legend under the list.
 - Changed: the language columns on the Translate page and in batch results are headed by the short language code (`DE-CH`), with the language's name as a tooltip, so many languages fit.

@@ -25,6 +25,7 @@ src/
     languages.ts          HubSpot language codes, Supertext mapping, names
     slug.ts               translated addresses: a slug's words, ASCII slugs per language, the version's prefix kept
     links.ts              links between pages, posts, articles (and from emails): pointed to the same language, waiting ones fixed later
+    images.ts             images in translations: image slots of the written fields, the record per version, keeping a version's own images on updates
   supertext/
     client.ts             the app's layer over the Supertext SDK: one client per account (forReview(): the review service client for languages with Translation review), SDK error codes → app errors
   store/
@@ -86,6 +87,22 @@ Lists: `limit=100&sort=-updatedAt&archived=false`, cursor `paging.next.after` (H
 9. **Errors:** Supertext authentication and limit and HubSpot authentication/permission stop the job (`FATAL`). Item problems (`itemMissing`, `isTranslation`, `noSourceLanguage`, an unsupported source language) stop a single-item job as before; in a batch they fail every language of that item (shown once in its row) and the next item runs. Anything else (e.g. a blog without the language's variant, `INVALID_LANGUAGE_PAIR`) fails only that language. Jobs still running when the app restarts are marked *interrupted* on the next start.
 
 10. **Publishing** (*Publish translations right away*, `Account.publishTranslations`, off by default; `publishMode` and `published()` in `translate.ts`): after a version is written (created or updated, address and links included; not when kept), `POST …/{id}/draft/push-live` (`publishDraft` in `content.ts`; pages and posts answer 204, articles the article) publishes it. Never for emails (`canPublish`): a marketing email can't be published without sending it, so copies stay drafts. Articles need the optional scope `cms.knowledge_base.articles.publish` (HubSpot's docs for 2027-03-beta); without it (accounts connected before it was asked for) `publish` is `'noScope'` and the result gets `publishError` `kbPublishScope`. Publishing never fails the translation: a refusal is stored as `JobItem.publishError` (the result shows *Saved as a draft, not published: …*) and `published: true` marks success (*New version (published)*, *Updated and published*). Imported translation files follow the same setting. With link updates on, `ContentLinks.recheck` publishes a version whose links it fixed only if that version is already live (`itemState` *published*), so a draft someone keeps unpublished stays a draft. **Not yet checked on a real account:** whether `push-live` on a language variant that was never published makes it live (HubSpot's docs describe it as pushing the draft to the live page).
+
+## Images in translations
+
+`images.ts` keeps localized screenshots on updates. An image *slot* is where an image sits in the fields a translation writes: an `<img>` in an HTML string (`postBody#0`, `widgets.rich_text.body.html#2`: the field's path and the image's index in it) or one of HubSpot's image field objects (a `src` plus `alt`/`width`/…, keyed by its path). Every write stores the version's record (`Store.saveImages`, table `version_images`: account, kind, version, language, original, `images` JSON of `{slot, originalSrc, src, status, reason}`). On an update (`mergeImages`, before `PATCH …/draft`), per slot of the translated values, with the version's current draft:
+
+| Record / draft | Result |
+| --- | --- |
+| original unchanged, version has its own image | its own kept (whole `<img>` tag or object, with the new alt text): `own` |
+| original changed, version still had the old original | the new original: `same` |
+| original changed, version had its own | the new original: `check` (`originalChanged`) |
+| still `check` and unchanged since | stays `check` |
+| no record (written before 1.4), version's image differs | its own kept: `check` (`noRecord`) |
+| the version's slots don't match the record (images added or removed by hand) | the originals; those that change `check` (`layoutChanged`) |
+| a slot new in the original | the original's: `same` |
+
+New versions are recorded with every image `same`. `JobItem.imagesToCheck` counts `check` slots (shown as *1 image to check*, linking to `/images?status=check`). `GET /images` (*Links/Images → Images*, the same tab as `/links`) lists every recorded image, *To check* first, 50 per page, filtered by status, with thumbnails (only `http(s)` addresses) and the version's draft title. `POST /images/checked` (*Mark as checked*) reads the version's draft and sets the slot to `same` or `own` with the image it has now. Fields the app doesn't write (a post's `featuredImage`, templates) keep their own images anyway.
 
 ## History
 

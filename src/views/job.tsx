@@ -121,7 +121,7 @@ export function JobPanel(props: { t: Translator; job: Job; portalId: string; app
 }
 
 /** What happened to one language version: created/updated (draft or published), kept, failed. */
-export function ItemResult(props: { t: Translator; item: Pick<JobItem, 'state' | 'error' | 'published' | 'publishError'> }) {
+export function ItemResult(props: { t: Translator; item: Pick<JobItem, 'state' | 'error' | 'published' | 'publishError' | 'imagesToCheck'> }) {
   const { t, item } = props;
   if (item.state === 'failed') {
     return <span class="result failed">{item.error ? t.error(item.error) : ''}</span>;
@@ -131,6 +131,14 @@ export function ItemResult(props: { t: Translator; item: Pick<JobItem, 'state' |
     <>
       <span class={`result ${item.state}`}>{label}</span>
       {item.publishError && <span class="result failed"> {t.t('job.notPublished', { reason: t.error(item.publishError) })}</span>}
+      {(item.imagesToCheck ?? 0) > 0 && (
+        <>
+          {' '}
+          <a class="images-to-check" href="/images?status=check">
+            {t.tn('job.imagesToCheck', item.imagesToCheck ?? 0)}
+          </a>
+        </>
+      )}
     </>
   );
 }

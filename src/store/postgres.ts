@@ -3,7 +3,8 @@ import type { ReporterState } from 'supertext-plugin-health';
 import type { Tokens } from '../hubspot/client.js';
 import type { Kind } from '../hubspot/content.js';
 import type { ErrorInfo } from '../i18n/error.js';
-import { defaultAccount, type Account, type Job, type JobQuery, type Secrets, type Store, type Translation, type LinkStatus } from './store.js';
+import type { ImageRecord } from '../translation/images.js';
+import { defaultAccount, type Account, type Job, type JobQuery, type Secrets, type VersionImages, type Store, type Translation, type LinkStatus } from './store.js';
 
 /**
  * PostgreSQL store (the shared Railway Postgres; its own database, created on
@@ -50,6 +51,15 @@ CREATE TABLE IF NOT EXISTS content_links (
   PRIMARY KEY (account_id, kind, item_id, target_kind, target_id)
 );
 CREATE INDEX IF NOT EXISTS content_links_target ON content_links (account_id, language, target_kind, target_id);
+CREATE TABLE IF NOT EXISTS version_images (
+  account_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  item_id TEXT NOT NULL,
+  language TEXT NOT NULL,
+  source_id TEXT NOT NULL,
+  images JSONB NOT NULL,
+  PRIMARY KEY (account_id, kind, item_id)
+);
 CREATE INDEX IF NOT EXISTS translation_jobs_account ON translation_jobs (account_id, created_at DESC);
 `;
 
@@ -143,7 +153,7 @@ export class PostgresStore implements Store {
   }
 
   async deleteAccount(accountId: string) {
-    for (const table of ['accounts', 'translations', 'translation_jobs', 'content_links']) {
+    for (const table of ['accounts', 'translations', 'translation_jobs', 'content_links', 'version_images']) {
       await this.pool.query(`DELETE FROM ${table} WHERE account_id = $1`, [accountId]);
     }
   }
@@ -176,6 +186,33 @@ export class PostgresStore implements Store {
         [accountId, kind, itemId, language, link.targetKind, link.targetId, link.status, link.href ?? null],
       );
     }
+  }
+
+  async saveImages(accountId: string, record: VersionImages) {
+    await this.pool.query(
+      `INSERT INTO version_images (account_id, kind, item_id, language, source_id, images) VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (account_id, kind, item_id) DO UPDATE SET language = $4, source_id = $5, images = $6`,
+      [accountId, record.kind, record.itemId, record.language, record.sourceId, JSON.stringify(record.images)],
+    );
+  }
+
+  async imagesOf(accountId: string, kind: Kind, itemId: string) {
+    const { rows } = await this.pool.query('SELECT images FROM version_images WHERE account_id = $1 AND kind = $2 AND item_id = $3', [accountId, kind, itemId]);
+    return rows[0] ? (rows[0].images as ImageRecord[]) : undefined;
+  }
+
+  async allImages(accountId: string) {
+    const { rows } = await this.pool.query(
+      'SELECT kind, item_id, language, source_id, images FROM version_images WHERE account_id = $1 ORDER BY language, item_id',
+      [accountId],
+    );
+    return rows.map((row) => ({
+      kind: row.kind as Kind,
+      itemId: String(row.item_id),
+      language: String(row.language),
+      sourceId: String(row.source_id),
+      images: row.images as ImageRecord[],
+    }));
   }
 
   async allLinks(accountId: string) {

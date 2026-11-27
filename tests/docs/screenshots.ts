@@ -171,6 +171,13 @@ async function main() {
   await page.click('#translate-button');
   await page.waitForURL(/[?&]job=/, { timeout: 300_000 });
   await page.waitForSelector('.job .notice.success', { timeout: 300_000 });
+  // A localized screenshot in the German "About us": the batch below keeps it (Links/Images → Images).
+  const germanAbout = hubspot.items('site-page').find((item) => item.translatedFromId === '101' && item.language === 'de-ch');
+  if (germanAbout) {
+    const widgets = structuredClone((hubspot.draft(String(germanAbout.id)) as any).widgets);
+    widgets.hero_image.body.img.src = 'https://cdn.example.com/workshop-de.jpg';
+    hubspot.edit(String(germanAbout.id), { widgets });
+  }
   // Then a batch: "About us" and the contact page in one job. The links to the contact page now point to its translations.
   await page.goto(`${appUrl}/?kind=site-page&lang=en`);
   await page.check('input[name="item"][value="101"]');
@@ -183,6 +190,15 @@ async function main() {
   await shot('batch-results', page.locator('.job'));
   await page.goto(`${appUrl}/links`);
   await shot('links', page.locator('main'));
+  // The sample images don't exist: drawn placeholders (a workshop photo, its German screenshot).
+  await page.route('https://cdn.example.com/**', (route) => {
+    const name = new URL(route.request().url()).pathname.split('/').pop() ?? '';
+    const german = /-de\./.test(name);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="192" height="128"><rect width="192" height="128" fill="${german ? '#78ffaf' : '#e8eeec'}"/><rect x="16" y="16" width="160" height="12" rx="6" fill="#003230" opacity=".25"/><rect x="16" y="40" width="110" height="10" rx="5" fill="#003230" opacity=".18"/><text x="96" y="100" font-family="Arial" font-size="26" font-weight="700" text-anchor="middle" fill="#003230">${german ? 'DE' : 'EN'}</text></svg>`;
+    return route.fulfill({ contentType: 'image/svg+xml', body: svg });
+  });
+  await page.goto(`${appUrl}/images?lang=en`);
+  await shot('images', page.locator('main'));
 
   // History: every translation, filtered by kind and outcome.
   await page.goto(`${appUrl}/history?lang=en`);
@@ -191,7 +207,7 @@ async function main() {
   // Phones: every page must fit a 390 px wide screen (wide tables scroll inside their card).
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
   await phone.context().addCookies(await page.context().cookies());
-  for (const path of ['/?lang=en', '/?kind=email', '/import', '/links', '/history', '/settings']) {
+  for (const path of ['/?lang=en', '/?kind=email', '/import', '/links', '/images', '/history', '/settings']) {
     await phone.goto(`${appUrl}${path}`);
     const width = await phone.evaluate(() => document.documentElement.scrollWidth);
     if (width > 390) throw new Error(`${path} is ${width}px wide on a phone (390px screen)`);

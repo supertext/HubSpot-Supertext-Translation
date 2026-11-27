@@ -297,6 +297,11 @@ for (const lang of ['de-ch', 'fr-ch', 'it-ch']) {
 // --- Again with "Update existing versions", as one batch: the same drafts, updated in place ----
 const again = ITEMS.filter((item) => item.kind === 'site-page');
 const pageLanguages = again[0].languages;
+// A localized screenshot in the German "About us": the update below must keep it.
+const germanAbout = firstIds.get('101:de-ch') ?? '';
+const localized = structuredClone((hubspot.draft(germanAbout) as any).widgets);
+localized.hero_image.body.img.src = 'https://cdn.example.com/workshop-de.jpg';
+hubspot.edit(germanAbout, { widgets: localized });
 const countBefore = hubspot.items('site-page').length;
 await translate(
   'second-run',
@@ -308,6 +313,9 @@ await translate(
 );
 check('batch: the job names both pages', /About us and 1 more/.test((await page.locator('.job h2').textContent()) ?? ''));
 check('batch: both pages stay checked after the reload', (await page.locator('input[name="item"]:checked').count()) === again.length);
+check('images: the localized screenshot is kept on the update', (hubspot.draft(germanAbout) as any)?.widgets?.hero_image?.body?.img?.src === 'https://cdn.example.com/workshop-de.jpg');
+await page.goto(`${appUrl}/images?status=own&lang=en`);
+check('images: the Images tab lists it as its own image', (await page.locator('table.images tbody tr').count()) === 1, String(await page.locator('table.images tbody tr').count()));
 check('updating makes no new items', hubspot.items('site-page').length === countBefore, `${countBefore} → ${hubspot.items('site-page').length}`);
 for (const item of again) {
   const updated = versions(item.kind, item.id);

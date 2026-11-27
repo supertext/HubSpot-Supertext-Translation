@@ -1,3 +1,4 @@
+import type { ImageRecord } from '../translation/images.js';
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { ReporterState } from 'supertext-plugin-health';
 import type { Tokens } from '../hubspot/client.js';
@@ -101,6 +102,8 @@ export interface JobItem {
   published?: boolean;
   /** Publishing failed (or wasn't possible): the version stayed a draft. */
   publishError?: ErrorInfo;
+  /** Images to check after an update (Links/Images): the original's image changed, or the version's couldn't be matched. */
+  imagesToCheck?: number;
 }
 
 export interface Job {
@@ -131,6 +134,17 @@ export interface Job {
  * ("Keep the original link").
  */
 export type LinkStatus = 'translated' | 'waiting' | 'kept';
+
+/** A version's images as the app wrote them (Links/Images); see translation/images.ts. */
+export interface VersionImages {
+  kind: Kind;
+  /** The version. */
+  itemId: string;
+  language: string;
+  /** Its original. */
+  sourceId: string;
+  images: ImageRecord[];
+}
 
 export interface ContentLink {
   kind: Kind;
@@ -166,6 +180,12 @@ export interface Store {
   saveLinks(accountId: string, kind: Kind, itemId: string, language: string, links: { targetKind: Kind; targetId: string; status: 'translated' | 'waiting'; href?: string }[]): Promise<void>;
   /** All links of the account, sorted by language, translation and target. */
   allLinks(accountId: string): Promise<ContentLink[]>;
+  /** Replaces a version's image record (written with every translation of it). */
+  saveImages(accountId: string, record: VersionImages): Promise<void>;
+  /** A version's image record, or undefined if the app never recorded one (written before 1.4). */
+  imagesOf(accountId: string, kind: Kind, itemId: string): Promise<ImageRecord[] | undefined>;
+  /** Every version's image record. */
+  allImages(accountId: string): Promise<VersionImages[]>;
   /** The translations in `language` with a link waiting for `targetId` to be translated. */
   waitingFor(accountId: string, language: string, targetKind: Kind, targetId: string): Promise<{ kind: Kind; itemId: string }[]>;
   /** "Keep the original link" (true) or "Point to the translation" again (false, then `waiting` until checked). */
@@ -239,6 +259,7 @@ export class MemoryStore implements Store {
   private readonly jobs = new Map<string, Job>();
   /** accountId → links. */
   private readonly links = new Map<string, ContentLink[]>();
+  private readonly images = new Map<string, VersionImages[]>();
 
   async getAccount(accountId: string) {
     const account = this.accounts.get(accountId);
@@ -273,6 +294,7 @@ export class MemoryStore implements Store {
     this.accounts.delete(accountId);
     this.records.delete(accountId);
     this.links.delete(accountId);
+    this.images.delete(accountId);
     for (const [id, job] of this.jobs) if (job.accountId === accountId) this.jobs.delete(id);
   }
 
@@ -296,6 +318,20 @@ export class MemoryStore implements Store {
       fresh.push({ kind, itemId, language, ...link });
     }
     this.links.set(accountId, [...all.filter((l) => !mine(l)), ...kept, ...fresh]);
+  }
+
+  async saveImages(accountId: string, record: VersionImages) {
+    const list = (this.images.get(accountId) ?? []).filter((r) => !(r.kind === record.kind && r.itemId === record.itemId));
+    this.images.set(accountId, [...list, structuredClone(record)]);
+  }
+
+  async imagesOf(accountId: string, kind: Kind, itemId: string) {
+    const found = (this.images.get(accountId) ?? []).find((r) => r.kind === kind && r.itemId === itemId);
+    return found ? structuredClone(found.images) : undefined;
+  }
+
+  async allImages(accountId: string) {
+    return structuredClone(this.images.get(accountId) ?? []);
   }
 
   async allLinks(accountId: string) {

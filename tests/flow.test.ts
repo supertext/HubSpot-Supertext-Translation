@@ -297,6 +297,52 @@ describe('connecting again', () => {
   });
 });
 
+describe('images in translations', () => {
+  it("keeps a translation's localized screenshot on updates, and marks it to check when the original's changes", async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    await env.translate('site-page', '101', ['de-ch']);
+    const german = version(env, 'site-page', '101', 'de-ch')!;
+    const hero = (id: string) => (env.hubspot.draft(id) as any).widgets.hero_image.body.img;
+    expect(hero(german.id).src).toBe('https://cdn.example.com/workshop.jpg');
+    expect((await env.store.imagesOf(PORTAL_ID, 'site-page', german.id))?.map((i) => i.status)).toEqual(['same']);
+
+    // An editor puts a localized screenshot in the German version.
+    const widgets = structuredClone((env.hubspot.draft(german.id) as any).widgets);
+    widgets.hero_image.body.img.src = 'https://cdn.example.com/workshop-de.jpg';
+    env.hubspot.edit(german.id, { widgets });
+    const kept = await env.translate('site-page', '101', ['de-ch'], true);
+    expect(kept.job.items[0]).toMatchObject({ state: 'updated' });
+    expect(kept.job.items[0].imagesToCheck).toBeUndefined();
+    expect(hero(german.id)).toMatchObject({ src: 'https://cdn.example.com/workshop-de.jpg', alt: 'Unsere Werkstatt in Bern' });
+
+    // The original's screenshot is replaced: the German one gets the new one, marked to check.
+    const original = structuredClone((env.hubspot.draft('101') as any).widgets);
+    original.hero_image.body.img.src = 'https://cdn.example.com/workshop-2027.jpg';
+    env.hubspot.edit('101', { widgets: original });
+    const replaced = await env.translate('site-page', '101', ['de-ch'], true);
+    expect(replaced.job.items[0].imagesToCheck).toBe(1);
+    expect(replaced.html).toContain('1 image to check');
+    expect(hero(german.id).src).toBe('https://cdn.example.com/workshop-2027.jpg');
+
+    const list = await (await env.request('/images?status=check')).text();
+    expect(list).toContain('Links/Images');
+    expect(list).toContain('To check (1)');
+    expect(list).toContain('image was replaced, so the translation got the new one');
+    expect(list).toContain('Über uns');
+    const csrf = await env.csrf();
+    const marked = await env.request('/images/checked', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ csrf, kind: 'site-page', itemId: german.id, slot: 'widgets.hero_image.body.img', status: 'check' }).toString(),
+    });
+    expect(marked.headers.get('location')).toBe('/images?checked=1&status=check');
+    expect((await env.store.imagesOf(PORTAL_ID, 'site-page', german.id))?.[0]).toMatchObject({ status: 'same', src: 'https://cdn.example.com/workshop-2027.jpg' });
+    expect(await (await env.request('/links')).text()).toMatch(/Images \(\d+\)/);
+  });
+});
+
 describe('history', () => {
   it('lists every translation, 50 per page, filtered by kind and outcome, each one opening its results', async () => {
     const env = setup();

@@ -4,7 +4,7 @@ import type { ApiKeyCheck } from 'supertext-sdk/v1';
 import { SESSION_COOKIE, Sessions, STATE_COOKIE } from './auth/session.js';
 import type { Config } from './config.js';
 import { authorizeUrl, exchangeCode, HubSpotClient, type OAuthOptions } from './hubspot/client.js';
-import { isKind, KINDS, MAX_LISTED, type Kind } from './hubspot/content.js';
+import { getDraft, getItem, isKind, KINDS, MAX_LISTED, summary, type Kind } from './hubspot/content.js';
 import { TokenManager } from './hubspot/tokens.js';
 import { errorInfo, LocalizedError, type ErrorInfo } from './i18n/error.js';
 import { localeFromRequest, translator, type Translator } from './i18n/index.js';
@@ -21,6 +21,8 @@ import { appUrl, type PageContext } from './views/layout.js';
 import { KeyCheckMessage, keyCheckText, SettingsPage } from './views/settings.js';
 import { ImportPage } from './views/import.js';
 import { TranslatePage } from './views/translate.js';
+import { IMAGE_FILTERS, ImagesPage, type ImageFilter, type ImageRow } from './views/images.js';
+import { imageAt } from './translation/images.js';
 import { HISTORY_OUTCOMES, HistoryPage, JobPage, type HistoryOutcome } from './views/history.js';
 import { LINK_FILTERS, LinksPage, type LinkFilter, type LinkRow } from './views/links.js';
 import { ContentLinks, LINK_TARGETS } from './translation/links.js';
@@ -520,9 +522,89 @@ export function createApp(deps: AppDeps) {
           pages,
           updated: updated !== undefined && /^\d+$/.test(updated) ? Number(updated) : undefined,
           changed: c.req.query('changed') === '1',
+          imageCount: (await store.allImages(session.account.accountId)).reduce((sum, v) => sum + v.images.length, 0),
         }),
       ),
     );
+  });
+
+  // Images in translations (Links/Images → Images).
+  app.get('/images', async (c) => {
+    const session = await current(c);
+    if (!session) return c.redirect('/', 302);
+    const t = tr(c);
+    const { account } = session;
+    const all: ImageRow[] = (await store.allImages(account.accountId)).flatMap((version) =>
+      version.images.map((image) => ({ kind: version.kind, itemId: version.itemId, language: version.language, ...image })),
+    );
+    const status = c.req.query('status');
+    const filter: ImageFilter = IMAGE_FILTERS.includes(status as ImageFilter) ? (status as ImageFilter) : 'all';
+    const counts = Object.fromEntries(IMAGE_FILTERS.map((f) => [f, f === 'all' ? all.length : all.filter((i) => i.status === f).length])) as Record<ImageFilter, number>;
+    // To check first, then by language and item.
+    const order = { check: 0, own: 1, same: 2 } as const;
+    const filtered = (filter === 'all' ? all : all.filter((i) => i.status === filter)).sort(
+      (a, b) => order[a.status] - order[b.status] || a.language.localeCompare(b.language) || a.itemId.localeCompare(b.itemId),
+    );
+    const pages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+    const pageNumber = Math.min(pages, Math.max(1, Number(c.req.query('page')) || 1));
+    const rows = filtered.slice((pageNumber - 1) * PER_PAGE, pageNumber * PER_PAGE);
+    // The versions' titles, one read per version shown.
+    const titles = new Map<string, string | undefined>();
+    const client = hubspot(account);
+    for (const row of rows) {
+      const key = `${row.kind}:${row.itemId}`;
+      if (titles.has(key)) continue;
+      try {
+        // The draft's name: the translated one, also before the version is published.
+        const item = await getItem(client, row.kind, row.itemId);
+        titles.set(key, item ? summary(row.kind, await getDraft(client, row.kind, row.itemId)).name : undefined);
+      } catch (error) {
+        console.warn('Images: item not read:', error instanceof Error ? error.message : error);
+        titles.set(key, row.itemId);
+      }
+    }
+    return c.html(
+      page(
+        ImagesPage({
+          ctx: pageContext(t, 'links', session),
+          account,
+          appBase: editorBase,
+          rows: rows.map((row) => ({ ...row, title: titles.get(`${row.kind}:${row.itemId}`) })),
+          filter,
+          counts,
+          linkCount: (await store.allLinks(account.accountId)).length,
+          page: pageNumber,
+          pages,
+          checked: c.req.query('checked') === '1',
+        }),
+      ),
+    );
+  });
+
+  // "Mark as checked": the image now in the version's draft decides between "same" and "own".
+  app.post('/images/checked', async (c) => {
+    const session = await current(c);
+    if (!session) return c.redirect('/', 303);
+    const form = await c.req.parseBody();
+    if (!sessions.checkCsrf(session.cookie, String(form.csrf ?? ''))) return c.redirect('/?error=session', 303);
+    const { account } = session;
+    const kind = String(form.kind ?? '');
+    const itemId = String(form.itemId ?? '');
+    const slot = String(form.slot ?? '');
+    const back = IMAGE_FILTERS.includes(String(form.status ?? '') as ImageFilter) && form.status !== 'all' ? `&status=${String(form.status)}` : '';
+    if (!isKind(kind)) return c.redirect('/images', 303);
+    const version = (await store.allImages(account.accountId)).find((v) => v.kind === kind && v.itemId === itemId);
+    const image = version?.images.find((i) => i.slot === slot);
+    if (!version || !image) return c.redirect('/images', 303);
+    let now = image.src;
+    try {
+      now = imageAt(await getDraft(hubspot(account), kind, itemId), slot) ?? image.src;
+    } catch (error) {
+      console.warn('Images: draft not read:', error instanceof Error ? error.message : error);
+    }
+    Object.assign(image, { src: now, status: now === image.originalSrc ? 'same' : 'own', reason: undefined });
+    await store.saveImages(account.accountId, version);
+    return c.redirect(`/images?checked=1${back}`, 303);
   });
 
   app.post('/links/keep', async (c) => {

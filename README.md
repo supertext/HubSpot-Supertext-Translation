@@ -14,7 +14,7 @@ Translate your HubSpot content with [Supertext](https://www.supertext.com) AI: w
 - **Batches:** tick up to 50 pages, posts, emails or articles and translate them into all your languages in one go. Long lists have search, a *Languages missing* filter and pages of 50.
 - Translates titles, meta descriptions, subject lines, preview text, rich text and the text fields of modules; keeps layout, images, links, forms and **HubL / personalization tokens** (`{{ contact.firstname }}`).
 - **Links follow the language** (beta, off by default): links between pages, blog posts and knowledge base articles (and from emails to them) point to the version in the same language, in any order of translation; a list shows every link and the ones still waiting for a translation. New versions also get their **address in their language** (`/de-ch/about-us` → `/de-ch/ueber-uns`).
-- Existing language versions get a fresh translation of their drafts; untick *Update existing versions* to keep them.
+- Existing language versions get a fresh translation of their drafts, keeping their own localized screenshots (*Links/Images* shows every image); untick *Update existing versions* to keep them as they are.
 - **Translation files:** *Export for translation* as XLIFF 1.2 (for translation tools) or HTML, and *Import translation* of the translated file, with a summary of what was imported.
 - The app's pages are in English, German, French and Italian.
 

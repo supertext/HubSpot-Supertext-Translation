@@ -2,6 +2,7 @@ import { editorUrl, type Kind } from '../hubspot/content.js';
 import type { MessageKey } from '../i18n/index.js';
 import type { Account, LinkStatus } from '../store/store.js';
 import { languageName } from '../translation/languages.js';
+import { LinksImagesTabs } from './images.js';
 import { appUrl, Layout, Notice, type PageContext } from './layout.js';
 
 export interface LinkRow {
@@ -34,6 +35,8 @@ export interface LinksPageProps {
   /** After "Update links now": translations whose links changed. */
   updated?: number;
   changed?: boolean;
+  /** Images recorded in translations (the Images tab). */
+  imageCount: number;
 }
 
 /**
@@ -54,6 +57,7 @@ export function LinksPage(props: LinksPageProps) {
   );
   return (
     <Layout ctx={ctx} title={heading}>
+      <LinksImagesTabs t={t} active="links" links={props.counts.all} images={props.imageCount} />
       <h1>
         {heading} <span class="badge beta">{t.t('beta')}</span>
       </h1>

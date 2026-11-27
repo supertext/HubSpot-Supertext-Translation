@@ -120,6 +120,14 @@ Languages that have a version already get a **fresh translation**: **Update exis
 
 An email copy that was sent already is never changed: the next translation makes a new copy.
 
+### Localized screenshots stay
+
+Images are the exception to "changes made by hand are replaced". If you put your own image into a translation (a screenshot of the German interface in the German article, say), updating that translation keeps it, as long as the original's image in that place hasn't changed. If the original's image was replaced in the meantime, the translation gets the new one and the result says *1 image to check*: open **Links/Images → Images**, filter *To check*, replace the image in HubSpot if needed and click **Mark as checked**.
+
+![Images in translations: per image the language, the translation (Über uns, À propos de nous, Chi siamo), the original's image beside the translation's, and the status Own image or Same as the original; filters All, To check, Own image, Same as the original](images/images.png)
+
+The page shows every image in the translations the app wrote: *Same as the original*, *Own image* (kept on updates) or *To check*, with the reason. An image added to the original simply appears in the translation on its next update. If images were added to or removed from a translation by hand, the app can't tell which is which: that update gives it the original's images and marks those that changed *to check*. Translations made before this (before 1.4) have no record yet: on their first update, an image that differs from the original's is kept and marked *to check*.
+
 ## Review and publish
 
 Open the version in HubSpot (the *Open in HubSpot* link, or HubSpot's own lists), check the texts, the page title and meta description, the URL (a new version gets an address in its language, such as `/de-ch/ueber-uns` for `/about-us`, unless your administrator turned that off; check it before publishing, since it is hard to change once the page is live) and, for emails, the subject line, preview text and recipients. Then publish or send it as usual.

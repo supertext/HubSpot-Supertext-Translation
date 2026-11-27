@@ -8,6 +8,7 @@ import { PLUGIN_NAME } from '../reporting.js';
 import type { Account, ResultState } from '../store/store.js';
 import { existingVersion, prepareItem, type JobDeps, type PreparedItem } from './jobs.js';
 import { resolvedTarget, sameLanguage, supertextSource } from './languages.js';
+import { imageBook } from './images.js';
 import { publishMode, translateItem } from './translate.js';
 
 /**
@@ -137,6 +138,8 @@ export interface ImportResult {
   published?: boolean;
   /** Publishing failed: the version stayed a draft. */
   publishError?: ErrorInfo;
+  /** Images to check (Links/Images). */
+  imagesToCheck?: number;
 }
 
 export interface ImportRequest {
@@ -277,6 +280,7 @@ async function importJob(
     produce,
     links: linksFor(item.client, deps.store, account),
     publish: publishMode(account, ref.kind),
+    images: imageBook(deps.store, account.accountId, ref.kind, ref.language, item.info.id),
   });
   if (written.targetId && written.state !== 'kept') {
     await deps.store.saveTranslation(account.accountId, {
@@ -292,6 +296,7 @@ async function importJob(
     state: written.state as Exclude<ResultState, 'failed'>,
     targetId: written.targetId,
     published: written.published,
+    imagesToCheck: written.imagesToCheck,
     publishError: written.publishError,
   };
 }
