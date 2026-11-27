@@ -113,17 +113,31 @@ export function JobPanel(props: { t: Translator; job: Job; portalId: string; app
           </table>
         </div>
       )}
-      {job.status === 'done' && totals.created + totals.updated > 0 && <p class="help">{t.t('job.review')}</p>}
+      {job.status === 'done' && <ReviewHint t={t} items={job.items} />}
     </div>
   );
 }
 
-function ItemResult(props: { t: Translator; item: JobItem }) {
+/** What happened to one language version: created/updated (draft or published), kept, failed. */
+export function ItemResult(props: { t: Translator; item: Pick<JobItem, 'state' | 'error' | 'published' | 'publishError'> }) {
   const { t, item } = props;
   if (item.state === 'failed') {
     return <span class="result failed">{item.error ? t.error(item.error) : ''}</span>;
   }
-  return <span class={`result ${item.state}`}>{t.t(`job.${item.state}`)}</span>;
+  const label = item.published && item.state !== 'kept' ? t.t(item.state === 'created' ? 'job.createdPublished' : 'job.updatedPublished') : t.t(`job.${item.state}`);
+  return (
+    <>
+      <span class={`result ${item.state}`}>{label}</span>
+      {item.publishError && <span class="result failed"> {t.t('job.notPublished', { reason: t.error(item.publishError) })}</span>}
+    </>
+  );
+}
+
+/** The line under the results: review the drafts, or check the published versions. */
+export function ReviewHint(props: { t: Translator; items: Pick<JobItem, 'state' | 'published'>[] }) {
+  const written = props.items.filter((item) => item.state === 'created' || item.state === 'updated');
+  if (written.length === 0) return <></>;
+  return <p class="help">{props.t.t(written.every((item) => item.published) ? 'job.reviewPublished' : 'job.review')}</p>;
 }
 
 /** The last translations, newest first. */

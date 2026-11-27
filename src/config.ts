@@ -42,7 +42,7 @@ export interface Config {
 export const REVIEW_URL = 'https://localizationreview-production.up.railway.app/v1/';
 
 export const DEFAULT_SCOPES = 'oauth content';
-export const DEFAULT_OPTIONAL_SCOPES = 'cms.knowledge_base.articles.read cms.knowledge_base.articles.write';
+export const DEFAULT_OPTIONAL_SCOPES = 'cms.knowledge_base.articles.read cms.knowledge_base.articles.write cms.knowledge_base.articles.publish';
 
 const trimSlash = (value: string) => value.replace(/\/+$/, '');
 

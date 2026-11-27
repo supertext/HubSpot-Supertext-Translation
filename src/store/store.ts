@@ -45,6 +45,11 @@ export interface Account {
    * item is translated, and later, when an item it links to gets its translation. Beta, off by default.
    */
   translateLinks: boolean;
+  /**
+   * Publish each translation right away (pages, posts, articles; emails are never sent). Off by
+   * default: every version is a draft to review and publish in HubSpot.
+   */
+  publishTranslations: boolean;
   /** "Send version information to Supertext" (SUPERTEXT_VERSION_REPORTS=0 turns it off for all accounts). */
   versionReports: boolean;
   /** The Commando Center reporter's state (Plugin Health's ReporterState JSON); see reporting.ts. */
@@ -68,6 +73,7 @@ export const defaultAccount = (accountId: string): Account => ({
   translateUrls: true,
   // Beta (November 2026): off until an administrator turns it on.
   translateLinks: false,
+  publishTranslations: false,
   versionReports: true,
   reporter: null,
   connectedAt: new Date().toISOString(),
@@ -91,6 +97,10 @@ export interface JobItem {
   state: ResultState;
   targetId?: string;
   error?: ErrorInfo;
+  /** Published right away (Settings → Publish translations right away). */
+  published?: boolean;
+  /** Publishing failed (or wasn't possible): the version stayed a draft. */
+  publishError?: ErrorInfo;
 }
 
 export interface Job {

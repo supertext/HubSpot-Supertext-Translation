@@ -3,7 +3,7 @@
   "type": "app",
   "config": {
     "name": "Supertext Translation",
-    "description": "Translate website pages, landing pages, blog posts, marketing emails and knowledge base articles with Supertext AI. Each language becomes a draft version in HubSpot for you to review and publish.",
+    "description": "Translate website pages, landing pages, blog posts, marketing emails and knowledge base articles with Supertext AI. Each language becomes a draft version in HubSpot for you to review and publish, or is published right away if you choose.",
     "distribution": "marketplace",
     "auth": {
       "type": "oauth",
@@ -12,7 +12,7 @@
         "http://localhost:8080/oauth/callback"
       ],
       "requiredScopes": ["oauth", "content"],
-      "optionalScopes": ["cms.knowledge_base.articles.read", "cms.knowledge_base.articles.write"],
+      "optionalScopes": ["cms.knowledge_base.articles.read", "cms.knowledge_base.articles.write", "cms.knowledge_base.articles.publish"],
       "conditionallyRequiredScopes": []
     },
     "permittedUrls": { "fetch": [], "iframe": [], "img": [] },

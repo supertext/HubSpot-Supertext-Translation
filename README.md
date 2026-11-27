@@ -1,6 +1,6 @@
 # Supertext Translation for HubSpot
 
-Translate your HubSpot content with [Supertext](https://www.supertext.com) AI: website pages, landing pages, blog posts, marketing emails and knowledge base articles. Each language becomes its own version in HubSpot, saved as a draft for you to review and publish. Pages and blog posts become HubSpot language variants of the original (one multi-language group); emails get one copy per language; articles a linked translation.
+Translate your HubSpot content with [Supertext](https://www.supertext.com) AI: website pages, landing pages, blog posts, marketing emails and knowledge base articles. Each language becomes its own version in HubSpot, saved as a draft for you to review and publish (or published right away, if you choose). Pages and blog posts become HubSpot language variants of the original (one multi-language group); emails get one copy per language; articles a linked translation.
 
 ![Demo: the website page About us picked on the Translate page, German ticked, Translate with Supertext, and the German draft created in HubSpot](docs/images/demo.gif)
 
@@ -10,7 +10,7 @@ Translate your HubSpot content with [Supertext](https://www.supertext.com) AI: w
 
 - **Hosted app** (Node.js on Railway), installed in HubSpot with OAuth. Nothing to install on your website.
 - **Five kinds of content:** website pages, landing pages, blog posts, marketing emails and (with Service Hub Professional or Enterprise) knowledge base articles.
-- **Drafts only:** nothing is published or sent; the original is never changed.
+- **Drafts by default:** every version is a draft to review; *Publish translations right away* publishes pages, posts and articles instead. Emails are never sent; the original is never changed.
 - **Batches:** tick up to 50 pages, posts, emails or articles and translate them into all your languages in one go. Long lists have search, a *Languages missing* filter and pages of 50.
 - Translates titles, meta descriptions, subject lines, preview text, rich text and the text fields of modules; keeps layout, images, links, forms and **HubL / personalization tokens** (`{{ contact.firstname }}`).
 - **Links follow the language** (beta, off by default): links between pages, blog posts and knowledge base articles (and from emails to them) point to the version in the same language, in any order of translation; a list shows every link and the ones still waiting for a translation. New versions also get their **address in their language** (`/de-ch/about-us` → `/de-ch/ueber-uns`).

@@ -74,6 +74,8 @@ export const fr: Messages = {
   'translate.overwriteHint': 'Sans cette option, les langues qui ont déjà une version sont conservées.',
   'translate.overwriteWarning':
     'Les brouillons des versions existantes seront remplacés, y compris les modifications faites à la main dans HubSpot. Leurs pages publiées restent jusqu’à ce que vous publiiez les nouveaux brouillons.',
+  'translate.publishNotice': 'Les traductions sont publiées immédiatement (Paramètres → Traduction). Les e-mails marketing restent des brouillons.',
+  'translate.overwriteWarningPublish': 'Les versions existantes seront remplacées et publiées immédiatement, y compris les modifications faites à la main dans HubSpot.',
   'translate.submit': 'Traduire avec Supertext',
   'translate.submitCount.one': 'Traduire dans {count} langue avec Supertext',
   'translate.submitCount.other': 'Traduire dans {count} langues avec Supertext',
@@ -95,6 +97,10 @@ export const fr: Messages = {
   'job.running': 'Traduction de « {item} »… {completed} sur {total}',
   'job.done': 'Terminé : {created} créés, {updated} mis à jour, {kept} conservés, {failed} en échec.',
   'job.failed': 'La traduction s’est arrêtée : {reason}',
+  'job.createdPublished': 'Nouvelle version (publiée)',
+  'job.updatedPublished': 'Mise à jour et publiée',
+  'job.notPublished': 'Enregistrée comme brouillon, non publiée : {reason}',
+  'job.reviewPublished': 'Les versions publiées sont en ligne. Vérifiez-les dans HubSpot.',
   'job.created': 'Nouvelle version (brouillon)',
   'job.updated': 'Brouillon mis à jour',
   'job.kept': 'Version existante, conservée',
@@ -151,6 +157,9 @@ export const fr: Messages = {
     "Par exemple, /fr-ch/about-us devient /fr-ch/a-propos-de-nous, pour les pages, les articles de blog et les articles de la base de connaissances. Les versions existantes gardent leur adresse, pour que les liens publiés restent valables. Les langues écrites dans un autre alphabet (japonais ou russe, par exemple) gardent l’adresse d’origine.",
   'settings.style.links': "Faire pointer les liens vers les pages, articles de blog et articles traduits",
   'settings.style.linksHelp': "Un lien d’une traduction vers une autre page de site web, landing page, un article de blog ou un article de la base de connaissances mène à ce contenu dans la même langue, quel que soit leur type (une page vers un article, un e-mail vers une page…). Les liens vers des contenus pas encore traduits sont mis à jour automatiquement dès qu’ils le sont. Seuls les brouillons des traductions créées par l’application sont modifiés : une traduction publiée a alors un nouveau brouillon à publier. Tant qu’il s’agit d’une bêta, la fonction reste désactivée jusqu’à ce que vous l’activiez.",
+  'settings.style.publish': 'Publier les traductions immédiatement',
+  'settings.style.publishHelp': 'Désactivé (recommandé) : chaque traduction est un brouillon dans HubSpot que vous vérifiez et publiez. Activé : les pages de site web, landing pages, articles de blog et articles de la base de connaissances sont publiés dès qu’ils sont traduits, et la mise à jour d’une version publie aussi le nouveau texte. Les e-mails marketing ne sont jamais envoyés : ils restent toujours des brouillons.',
+  'settings.style.publishKbScope': 'Pour publier les articles de la base de connaissances, connectez de nouveau HubSpot et autorisez la publication. D’ici là, les articles restent des brouillons.',
   'settings.style.linkCount': "{all} liens entre traductions, dont {waiting} en attente d’une traduction.",
   'settings.style.waitingList': "Voir la liste",
   'settings.style.notOffered':
@@ -232,6 +241,7 @@ export const fr: Messages = {
   'error.interrupted': 'L’app a redémarré pendant la traduction. Relancez-la ; les langues terminées sont conservées.',
   'error.session': 'Votre session a expiré. Connectez HubSpot à nouveau.',
   'error.tooMany': 'Sélectionnez au plus 50 contenus à la fois.',
+  'error.kbPublishScope': 'Pour publier les articles de la base de connaissances, connectez de nouveau HubSpot et autorisez la publication.',
   'error.select': 'Sélectionnez un contenu et au moins une langue.',
   'keyCheck.ok': 'Clé API vérifiée : la connexion à Supertext fonctionne.',
   'keyCheck.invalid':

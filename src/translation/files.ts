@@ -8,7 +8,7 @@ import { PLUGIN_NAME } from '../reporting.js';
 import type { Account, ResultState } from '../store/store.js';
 import { existingVersion, prepareItem, type JobDeps, type PreparedItem } from './jobs.js';
 import { resolvedTarget, sameLanguage, supertextSource } from './languages.js';
-import { translateItem } from './translate.js';
+import { publishMode, translateItem } from './translate.js';
 
 /**
  * Translation files (the Supertext SDK's `TranslationFiles`): *Export for translation* writes one
@@ -133,6 +133,10 @@ export interface ImportResult {
   invalid?: number;
   missing?: number;
   error?: ErrorInfo;
+  /** Published right away (Settings → Publish translations right away). */
+  published?: boolean;
+  /** Publishing failed: the version stayed a draft. */
+  publishError?: ErrorInfo;
 }
 
 export interface ImportRequest {
@@ -272,6 +276,7 @@ async function importJob(
     primaryLanguage: item.itemLanguage,
     produce,
     links: linksFor(item.client, deps.store, account),
+    publish: publishMode(account, ref.kind),
   });
   if (written.targetId && written.state !== 'kept') {
     await deps.store.saveTranslation(account.accountId, {
@@ -282,6 +287,12 @@ async function importJob(
       updatedAt: new Date().toISOString(),
     });
   }
-  return { ...counts, state: written.state as Exclude<ResultState, 'failed'>, targetId: written.targetId };
+  return {
+    ...counts,
+    state: written.state as Exclude<ResultState, 'failed'>,
+    targetId: written.targetId,
+    published: written.published,
+    publishError: written.publishError,
+  };
 }
 

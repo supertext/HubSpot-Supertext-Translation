@@ -78,6 +78,8 @@ export const en = {
   'translate.overwriteHint': 'Without this option, languages that have a version already are kept.',
   'translate.overwriteWarning':
     "The drafts of the existing versions will be replaced, including changes made by hand in HubSpot. Their published pages stay until you publish the new drafts.",
+  'translate.publishNotice': 'Translations are published right away (Settings → Translation). Marketing emails stay drafts.',
+  'translate.overwriteWarningPublish': 'The existing versions will be replaced and published right away, including changes made by hand in HubSpot.',
   'translate.submit': 'Translate with Supertext',
   'translate.submitCount.one': 'Translate into {count} language with Supertext',
   'translate.submitCount.other': 'Translate into {count} languages with Supertext',
@@ -102,6 +104,10 @@ export const en = {
   'job.running': 'Translating “{item}”… {completed} of {total}',
   'job.done': 'Done: {created} created, {updated} updated, {kept} kept, {failed} failed.',
   'job.failed': 'The translation stopped: {reason}',
+  'job.createdPublished': 'New version (published)',
+  'job.updatedPublished': 'Updated and published',
+  'job.notPublished': 'Saved as a draft, not published: {reason}',
+  'job.reviewPublished': 'The published versions are live. Check them in HubSpot.',
   'job.created': 'New version (draft)',
   'job.updated': 'Draft updated',
   'job.kept': 'Version exists, kept',
@@ -159,6 +165,9 @@ export const en = {
     "For example /de-ch/about-us becomes /de-ch/ueber-uns, for pages, blog posts and knowledge base articles. Versions that exist already keep their address, so published links don't break. Languages written in other scripts (such as Japanese or Russian) keep the original address.",
   'settings.style.links': "Point links to the translated pages, posts and articles",
   'settings.style.linksHelp': "A link from a translation to another website page, landing page, blog post or knowledge base article points to that item in the same language, whatever kind either of them is (a page to an article, an email to a page …). Links to items that aren't translated yet are updated automatically once they are. Only the drafts of translations the app made are changed: a published translation then has a new draft to publish. While it is a beta, it is off until you turn it on.",
+  'settings.style.publish': 'Publish translations right away',
+  'settings.style.publishHelp': 'Off (recommended): every translation is a draft in HubSpot for you to review and publish. On: website pages, landing pages, blog posts and knowledge base articles are published as soon as they are translated, and updating a version publishes the new text too. Marketing emails are never sent: they always stay drafts.',
+  'settings.style.publishKbScope': 'To publish knowledge base articles, connect HubSpot again and allow publishing. Until then, articles stay drafts.',
   'settings.style.linkCount': "{all} links between translations, {waiting} of them waiting for a translation.",
   'settings.style.waitingList': "See the list",
   'settings.style.notOffered':
@@ -241,6 +250,7 @@ export const en = {
   'error.interrupted': 'The app restarted during the translation. Start it again; finished languages are kept.',
   'error.session': 'Your session has expired. Connect HubSpot again.',
   'error.tooMany': 'Select at most 50 items at a time.',
+  'error.kbPublishScope': 'To publish knowledge base articles, connect HubSpot again and allow publishing.',
   'error.select': 'Select an item and at least one language.',
   'keyCheck.ok': 'API key checked: the connection to Supertext works.',
   'keyCheck.invalid':

@@ -1,3 +1,4 @@
+import { KB_PUBLISH_SCOPE } from '../hubspot/content.js';
 import type { ApiKeyCheck } from 'supertext-sdk/v1';
 import type { Translator } from '../i18n/index.js';
 import type { Account } from '../store/store.js';
@@ -265,6 +266,14 @@ export function SettingsPage(props: SettingsPageProps) {
             {t.t('settings.style.urls')}
           </label>
           <p class="help">{t.t('settings.style.urlsHelp')}</p>
+          <label class="inline">
+            <input type="checkbox" name="publishTranslations" value="1" checked={account.publishTranslations} />
+            {t.t('settings.style.publish')}
+          </label>
+          <p class="help">{t.t('settings.style.publishHelp')}</p>
+          {account.publishTranslations &&
+            account.scopes.includes('cms.knowledge_base.articles.write') &&
+            !account.scopes.includes(KB_PUBLISH_SCOPE) && <p class="help warning-text">{t.t('settings.style.publishKbScope')}</p>}
           <label class="inline">
             <input type="checkbox" name="translateLinks" value="1" checked={account.translateLinks} />
             {t.t('settings.style.links')} <span class="badge beta">{t.t('beta')}</span>

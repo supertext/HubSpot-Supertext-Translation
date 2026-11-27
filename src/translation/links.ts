@@ -18,7 +18,7 @@
 // anything else (other sites, #anchors on the same page, mailto:, HubL) are left alone.
 
 import type { HubSpotClient } from '../hubspot/client.js';
-import { basePath, getDraft, getItem, updateDraft, type Item, type Kind } from '../hubspot/content.js';
+import { basePath, canPublish, getDraft, getItem, itemState, KB_PUBLISH_SCOPE, publishDraft, updateDraft, type Item, type Kind } from '../hubspot/content.js';
 import type { Account, Store } from '../store/store.js';
 
 /** Kinds a link can point to (emails have no address of their own). */
@@ -61,7 +61,7 @@ export function linksFor(client: HubSpotClient, store: Store, account: Account):
   if (!account.translateLinks) return undefined;
   // The knowledge base only with its scopes (see app.ts → knowledgeBase).
   const kinds = LINK_TARGETS.filter((kind) => kind !== 'kb-article' || account.scopes.includes('cms.knowledge_base.articles.write'));
-  return new ContentLinks(client, store, account.accountId, kinds);
+  return new ContentLinks(client, store, account.accountId, kinds, account.publishTranslations ? account.scopes : undefined);
 }
 
 export class ContentLinks {
@@ -78,6 +78,8 @@ export class ContentLinks {
     private readonly accountId: string,
     /** The kinds the account can read (the knowledge base only with its scopes). */
     private readonly kinds: readonly Kind[] = LINK_TARGETS,
+    /** Set when the account publishes translations right away (its scopes): fixed links of a published version go live too. */
+    private readonly publishScopes?: readonly string[],
   ) {}
 
   private remember(kind: Kind, item: Item): Entry {
@@ -271,7 +273,17 @@ export class ContentLinks {
     for (const name of LINK_FIELDS[kind]) if (draft[name] !== undefined && draft[name] !== null) values[name] = structuredClone(draft[name]);
     const result = await this.rewrite(values, language, await this.store.keptLinks(this.accountId, kind, itemId));
     const changed = Object.fromEntries(Object.entries(values).filter(([name, value]) => JSON.stringify(value) !== JSON.stringify(draft[name])));
-    if (Object.keys(changed).length) await updateDraft(this.client, kind, itemId, changed);
+    if (Object.keys(changed).length) {
+      await updateDraft(this.client, kind, itemId, changed);
+      // Publishing right away: a version that is live gets its fixed links live too (a draft stays a draft).
+      const live = await getItem(this.client, kind, itemId);
+      const mayPublish = kind !== 'kb-article' || this.publishScopes?.includes(KB_PUBLISH_SCOPE);
+      if (this.publishScopes && mayPublish && canPublish(kind) && live && itemState(live) === 'published') {
+        await publishDraft(this.client, kind, itemId).catch((error) =>
+          console.warn(`Supertext: links of ${kind} ${itemId} not published:`, error instanceof Error ? error.message : error),
+        );
+      }
+    }
     await this.store.saveLinks(this.accountId, kind, itemId, language, result.links);
     return Object.keys(changed).length ? 'updated' : 'unchanged';
   }

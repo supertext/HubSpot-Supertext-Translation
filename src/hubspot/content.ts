@@ -224,6 +224,21 @@ export function updateDraft(client: HubSpotClient, kind: Kind, id: string, field
   return client.json<Item>('PATCH', `${paths[kind]}/${encodeURIComponent(id)}/draft`, fields);
 }
 
+/** The scope HubSpot requires to publish a knowledge base article (optional at install). */
+export const KB_PUBLISH_SCOPE = 'cms.knowledge_base.articles.publish';
+
+/** The kinds the app may publish (Settings → Publish translations right away). Emails are never sent. */
+export const canPublish = (kind: Kind): kind is Exclude<Kind, 'email'> => kind !== 'email';
+
+/**
+ * Publishes the item's draft (`POST …/draft/push-live`): a new version goes live, an existing one
+ * gets its draft as the live content. Never for emails (that would send them).
+ */
+export async function publishDraft(client: HubSpotClient, kind: Kind, id: string): Promise<void> {
+  if (!canPublish(kind)) throw new Error('Emails are never sent by the app.');
+  await client.request('POST', `${paths[kind]}/${encodeURIComponent(id)}/draft/push-live`);
+}
+
 /** Removes a half-made language version (pages, posts and emails are archived; an article is deleted). */
 export async function removeItem(client: HubSpotClient, kind: Kind, id: string): Promise<void> {
   if (kind === 'kb-article') {

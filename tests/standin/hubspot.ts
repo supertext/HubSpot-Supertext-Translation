@@ -57,7 +57,7 @@ const KB_LANGUAGES = ['en', 'de-ch', 'fr-ch', 'it-ch'];
 export const KB_URL = 'https://help.swiss-chocolate.example';
 /** The website's address: pages and posts are at `${SITE_URL}/${slug}`. */
 export const SITE_URL = 'https://www.swiss-chocolate.example';
-const KB_SCOPES = ['cms.knowledge_base.articles.read', 'cms.knowledge_base.articles.write'];
+const KB_SCOPES = ['cms.knowledge_base.articles.read', 'cms.knowledge_base.articles.write', 'cms.knowledge_base.articles.publish'];
 
 export function createHubSpotStandin(): HubSpotStandin {
   const entries = new Map<string, Entry>();
@@ -275,6 +275,17 @@ export function createHubSpotStandin(): HubSpotStandin {
         }
         entries.set(id, { kind, live: article, draft: structuredClone(article), archived: false, group: primary ? primary.group : id });
         return json(view(entries.get(id)!, 'live'));
+      }
+
+      // Publish the draft (pages, posts: 204; articles: the article). Emails have no such call.
+      const push = rest.match(/^\/([^/]+)\/draft\/push-live$/);
+      if (request.method === 'POST' && push && kind !== 'email') {
+        const target = entries.get(decodeURIComponent(push[1]));
+        if (!target || target.kind !== kind || target.archived) return error(404, 'Not found', 'OBJECT_NOT_FOUND');
+        const live = kind === 'kb-article' ? { state: 'PUBLISHED' } : { currentState: 'PUBLISHED', state: 'PUBLISHED', currentlyPublished: true };
+        Object.assign(target.draft, live);
+        target.live = structuredClone(target.draft);
+        return kind === 'kb-article' ? json(view(target, 'live')) : new Response(null, { status: 204 });
       }
 
       // One item

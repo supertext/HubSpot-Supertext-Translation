@@ -320,6 +320,21 @@ for (const item of again) {
   }
 }
 
+// --- Publish translations right away (off by default): the blog post again, now published -----
+await page.goto(`${appUrl}/settings?lang=en`);
+check('settings: Publish translations right away is off by default', !(await page.locator('input[name="publishTranslations"]').isChecked()));
+await page.check('input[name="publishTranslations"]');
+await page.click('button.primary');
+await page.waitForSelector('.notice.success');
+const post = ITEMS.find((item) => item.kind === 'blog-post')!;
+await translate('publish', post.kind, post.id, post.languages, true, `Done: 0 created, ${post.languages.length} updated, 0 kept, 0 failed.`);
+check('publish: the results say published', (await page.locator('.job .result.updated').allTextContents()).every((text) => text.trim() === 'Updated and published'));
+for (const lang of post.languages) {
+  const id = firstIds.get(`${post.id}:${lang}`) ?? '';
+  const live = hubspot.draft(id);
+  check(`publish: blog post → ${TARGETS[lang]} is published`, live?.state === 'PUBLISHED' && live?.currentlyPublished === true, String(live?.state));
+}
+
 await browser.close();
 if (failures.length) {
   console.error(`\n${failures.length} check(s) failed:\n- ${failures.join('\n- ')}`);

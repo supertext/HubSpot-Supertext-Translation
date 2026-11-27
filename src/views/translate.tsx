@@ -214,8 +214,9 @@ export function TranslatePage(props: TranslatePageProps) {
                 {t.t('translate.overwriteHint')}
               </p>
               <div id="overwrite-warning" class="notice warning">
-                {t.t('translate.overwriteWarning')}
+                {t.t(account.publishTranslations && kind !== 'email' ? 'translate.overwriteWarningPublish' : 'translate.overwriteWarning')}
               </div>
+              {account.publishTranslations && <Notice tone="info">{t.t('translate.publishNotice')}</Notice>}
 
               <div class="actions">
                 <button

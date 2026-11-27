@@ -5,6 +5,7 @@ import type { Account } from '../store/store.js';
 import type { ImportResult } from '../translation/files.js';
 import { languageName } from '../translation/languages.js';
 import { Layout, Notice, type PageContext } from './layout.js';
+import { ItemResult, ReviewHint } from './job.js';
 
 export interface ImportPageProps {
   ctx: PageContext;
@@ -67,7 +68,9 @@ export function ImportPage(props: ImportPageProps) {
                     ) : (
                       <ul class="counts">
                         {result.state && (
-                          <li class={`result ${result.state}`}>{t.t(`job.${result.state}` as MessageKey)}</li>
+                          <li>
+                            <ItemResult t={t} item={{ ...result, state: result.state }} />
+                          </li>
                         )}
                         <li>{t.t('import.ok', { count: result.imported ?? 0 })}</li>
                         {(result.sourceChanged ?? 0) > 0 && <li>{t.t('import.changed', { count: result.sourceChanged ?? 0 })}</li>}
@@ -88,7 +91,7 @@ export function ImportPage(props: ImportPageProps) {
               ))}
             </tbody>
           </table>
-          {results.some((r) => r.state === 'created' || r.state === 'updated') && <p class="help">{t.t('job.review')}</p>}
+          <ReviewHint t={t} items={results.flatMap((r) => (r.state ? [{ state: r.state, published: r.published }] : []))} />
         </section>
       )}
     </Layout>

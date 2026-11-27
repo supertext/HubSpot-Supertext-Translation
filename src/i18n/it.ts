@@ -74,6 +74,8 @@ export const it: Messages = {
   'translate.overwriteHint': 'Senza questa opzione, le lingue che hanno già una versione restano invariate.',
   'translate.overwriteWarning':
     'Le bozze delle versioni esistenti verranno sostituite, comprese le modifiche fatte a mano in HubSpot. Le loro pagine pubblicate restano finché non pubblica le nuove bozze.',
+  'translate.publishNotice': 'Le traduzioni vengono pubblicate subito (Impostazioni → Traduzione). Le e-mail di marketing restano bozze.',
+  'translate.overwriteWarningPublish': 'Le versioni esistenti verranno sostituite e pubblicate subito, comprese le modifiche fatte a mano in HubSpot.',
   'translate.submit': 'Traduci con Supertext',
   'translate.submitCount.one': 'Traduci in {count} lingua con Supertext',
   'translate.submitCount.other': 'Traduci in {count} lingue con Supertext',
@@ -95,6 +97,10 @@ export const it: Messages = {
   'job.running': 'Traduzione di «{item}»… {completed} di {total}',
   'job.done': 'Fatto: {created} create, {updated} aggiornate, {kept} mantenute, {failed} non riuscite.',
   'job.failed': 'La traduzione si è interrotta: {reason}',
+  'job.createdPublished': 'Nuova versione (pubblicata)',
+  'job.updatedPublished': 'Aggiornata e pubblicata',
+  'job.notPublished': 'Salvata come bozza, non pubblicata: {reason}',
+  'job.reviewPublished': 'Le versioni pubblicate sono online. Le controlli in HubSpot.',
   'job.created': 'Nuova versione (bozza)',
   'job.updated': 'Bozza aggiornata',
   'job.kept': 'Versione esistente, mantenuta',
@@ -151,6 +157,9 @@ export const it: Messages = {
     "Per esempio /it-ch/about-us diventa /it-ch/chi-siamo, per pagine, articoli del blog e articoli della knowledge base. Le versioni già esistenti mantengono il loro indirizzo, così i link pubblicati continuano a funzionare. Le lingue scritte con un altro alfabeto (come giapponese o russo) mantengono l’indirizzo originale.",
   'settings.style.links': "Far puntare i link alle pagine, ai post e agli articoli tradotti",
   'settings.style.linksHelp': "Un link da una traduzione a un’altra pagina del sito, landing page, post del blog o articolo della knowledge base porta a quel contenuto nella stessa lingua, qualunque sia il tipo (una pagina a un articolo, un’e-mail a una pagina …). I link a contenuti non ancora tradotti vengono aggiornati automaticamente appena lo sono. Vengono modificate solo le bozze delle traduzioni create dall’app: una traduzione pubblicata ha poi una nuova bozza da pubblicare. Finché è in beta, resta disattivato finché non lo attiva.",
+  'settings.style.publish': 'Pubblica subito le traduzioni',
+  'settings.style.publishHelp': 'Disattivato (consigliato): ogni traduzione è una bozza in HubSpot che Lei controlla e pubblica. Attivato: pagine del sito, landing page, post del blog e articoli della knowledge base vengono pubblicati appena tradotti, e aggiornando una versione si pubblica anche il nuovo testo. Le e-mail di marketing non vengono mai inviate: restano sempre bozze.',
+  'settings.style.publishKbScope': 'Per pubblicare gli articoli della knowledge base, colleghi di nuovo HubSpot e consenta la pubblicazione. Fino ad allora gli articoli restano bozze.',
   'settings.style.linkCount': "{all} link tra traduzioni, di cui {waiting} in attesa di una traduzione.",
   'settings.style.waitingList': "Vedi l’elenco",
   'settings.style.notOffered':
@@ -233,6 +242,7 @@ export const it: Messages = {
     'L’app è stata riavviata durante la traduzione. La avvii di nuovo; le lingue completate vengono mantenute.',
   'error.session': 'La Sua sessione è scaduta. Colleghi di nuovo HubSpot.',
   'error.tooMany': 'Selezioni al massimo 50 contenuti alla volta.',
+  'error.kbPublishScope': 'Per pubblicare gli articoli della knowledge base, colleghi di nuovo HubSpot e consenta la pubblicazione.',
   'error.select': 'Selezioni un contenuto e almeno una lingua.',
   'keyCheck.ok': 'Chiave API verificata: la connessione a Supertext funziona.',
   'keyCheck.invalid':

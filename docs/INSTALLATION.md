@@ -15,7 +15,7 @@ Supertext Translation is an app that runs on Supertext's servers and connects to
 | Marketing emails | A copy of the email per language (*Autumn newsletter · DE-CH*), with the language set |
 | Knowledge base articles | A translation of the article, linked to it (Service Hub Professional or Enterprise) |
 
-You review the drafts in HubSpot and publish or send them as usual. The app never publishes or sends anything and never changes the original.
+You review the drafts in HubSpot and publish or send them as usual. If you prefer, [*Publish translations right away*](#3-settings) publishes pages, posts and articles as soon as they are translated (off by default). The app never sends an email and never changes the original.
 
 ## Requirements
 
@@ -44,6 +44,7 @@ The app asks HubSpot for:
 | --- | --- |
 | `content` | Read website pages, landing pages, blog posts and marketing emails, and create their language versions as drafts |
 | `cms.knowledge_base.articles.read`, `cms.knowledge_base.articles.write` (optional) | Read knowledge base articles and create their translations. Left out if the account doesn't have the knowledge base. |
+| `cms.knowledge_base.articles.publish` (optional) | Publish article translations, only with *Publish translations right away* on. Accounts connected before 28 November 2026 don't have it: connect HubSpot again to grant it. |
 
 Everyone in your team who connects the same HubSpot account shares its settings. The connection stays until you disconnect it in the app or uninstall the app in HubSpot (Settings → Integrations → Connected apps).
 
@@ -51,7 +52,7 @@ Everyone in your team who connects the same HubSpot account shares its settings.
 
 Enter the API key, choose your languages and click **Save**. Saving checks the API key automatically (free of charge, nothing is translated) and shows the result under the key: *API key checked: the connection to Supertext works.* means everything is in place. **Test connection** runs the same check again, also for a key you have typed but not saved yet.
 
-<img src="images/settings.png" alt="Supertext settings: the saved API key with links to create a Supertext account and generate the key, the API key check result and Test connection, both saying the connection to Supertext works; the language of the content (English); German with the Supertext language German (Germany) (de-DE) in its dropdown, Italian (Switzerland), French (Switzerland) and German (Switzerland) ticked with Italian (Switzerland) (it-CH), French (Switzerland) (fr-CH) and German (Switzerland) (de-CH) preselected; the Translation review column with only German (Switzerland) ticked; the form of address and Translate the addresses (URLs) of new versions and Point links to the translated pages, posts and articles (marked Beta), both ticked; Send version information to Supertext with the Send configuration to Supertext button; the interface language (automatic); the connected account swiss-chocolate.example with the knowledge base connected; and the version 0.1.0" width="720">
+<img src="images/settings.png" alt="Supertext settings: the saved API key with links to create a Supertext account and generate the key, the API key check result and Test connection, both saying the connection to Supertext works; the language of the content (English); German with the Supertext language German (Germany) (de-DE) in its dropdown, Italian (Switzerland), French (Switzerland) and German (Switzerland) ticked with Italian (Switzerland) (it-CH), French (Switzerland) (fr-CH) and German (Switzerland) (de-CH) preselected; the Translation review column with only German (Switzerland) ticked; the form of address, Translate the addresses (URLs) of new versions (ticked), Publish translations right away (not ticked) and Point links to the translated pages, posts and articles (marked Beta, ticked); Send version information to Supertext with the Send configuration to Supertext button; the interface language (automatic); the connected account swiss-chocolate.example with the knowledge base connected; and the version 0.1.0" width="720">
 
 <img src="images/settings-code-search.png" alt="The Supertext code of German being searched: ger typed in the field, the list shows Suggested: German (Austria) de-AT, German (Germany) de-DE (the current choice, in bold), German (Switzerland) de-CH, Swiss German (Bern) and Swiss German (Zürich)" width="640">
 
@@ -65,6 +66,7 @@ Enter the API key, choose your languages and click **Save**. Saving checks the A
 | Translation review | off | A checkbox per language, next to its *Supertext code*: translations into a ticked language go through Supertext's review service, see [Translation review](#translation-review). |
 | Form of address | Let Supertext decide | *Formal* (German "Sie", French "vous") or *Informal* ("du", "tu"). Sent only for languages where Supertext offers it; the page names the ticked languages that don't have it, which are translated with Supertext's default. |
 | Translate the addresses (URLs) of new versions | On | Under *Translation*. A new version gets an address in its language: `/de-ch/about-us` becomes `/de-ch/ueber-uns`, `/de-ch/blog/how-we-roast-our-cocoa-beans` becomes `/de-ch/blog/wie-wir-unsere-kakaobohnen-roesten` (pages, blog posts, knowledge base articles; emails have none). Versions that exist already keep theirs, so published links don't break. Languages in other scripts (Japanese, Russian …) keep the original address. Off: every version keeps the original's address with HubSpot's language prefix. |
+| Publish translations right away | Off | Under *Translation*. Off (recommended): every version is a draft to review and publish in HubSpot. On: website pages, landing pages, blog posts and knowledge base articles are published as soon as they are translated (also imported translation files), and *Update existing versions* publishes the new text of an existing version too; with link updates on, a published translation whose links are fixed later is published again. Marketing emails are never sent: they stay drafts. Articles need the publish scope (see *Connect HubSpot*); without it they stay drafts and the result says *not published*. If HubSpot refuses to publish, the version stays a draft and the result gives HubSpot's reason. |
 | Point links to the translated pages, posts and articles (beta) | Off | Under *Translation*. See [Links between translations](#links-between-translations-beta). A beta for now. Off: links in translations keep pointing to the originals, and none are recorded. |
 | Send version information to Supertext | On | See *Version information* below. |
 | Interface language | Automatic | The language of the app's own pages: your browser's language, or English, Deutsch, Français or Italiano. Saved for this browser only, so each colleague can choose their own; it doesn't change which languages your content is translated into. |
@@ -93,7 +95,7 @@ Items can be translated in any order. A link to an item that has no version in t
 - **Keep the original link** leaves a waiting link on the original for good, also when that item is translated later. *Wait for the translation* undoes it.
 - **Update links now** checks the translations with waiting links again, for example after items were translated by hand in HubSpot.
 
-Only the drafts of translations the app made are changed, and only their links (an editor's other changes stay). A published translation then has a new draft to publish.
+Only the drafts of translations the app made are changed, and only their links (an editor's other changes stay). A published translation then has a new draft to publish (with *Publish translations right away* on, the app publishes it).
 
 ## Translation review
 
@@ -170,6 +172,8 @@ Nothing to do: the app runs on Supertext's servers and is updated there. The set
 | *Supertext doesn't translate into …* | Check the language's Supertext code under Settings → Languages. |
 | *Too many requests to Supertext / HubSpot* | The rate limit was still exceeded after 4 automatic retries. Wait a moment and start again. |
 | *Your Supertext translation limit is exceeded* | Your Supertext plan's volume is used up. |
+| *Saved as a draft, not published: To publish knowledge base articles, connect HubSpot again …* | The account was connected before the app could publish articles. Connect HubSpot again (Settings → *Connect HubSpot*) and allow it. |
+| *Saved as a draft, not published: HubSpot refused …* | HubSpot didn't let the app publish the version (subscription, permissions, a required field); it is a draft: publish it in HubSpot. |
 | *The app restarted during the translation* | Start the translation again; languages already done are kept. |
 | *Select at most 50 items at a time.* | A batch takes up to 50 items; translate more in several runs. |
 | An item made in HubSpot a moment ago isn't in the list | The list is kept for a minute: click **Reload the list** below it. |
@@ -180,4 +184,4 @@ Nothing to do: the app runs on Supertext's servers and is updated there. The set
 - The texts you translate are sent to Supertext (api.supertext.com) and deleted there right after download (they expire after 24 hours anyway). For languages with [Translation review](#translation-review) on, they go through Supertext's review service, which keeps the translations so reviewers can correct them.
 - The app stores per HubSpot account: the account's ID and domain, the granted scopes, the OAuth tokens and the Supertext API key (both encrypted), the settings above, which email copy belongs to which email and language (and the IDs of the other versions it made), and the list of recent translations (item names and results). It doesn't store your content or any contact data.
 - With *Send version information to Supertext* on, the reports described under *Version information* go to Supertext's support center; never content, the API key or personal data.
-- The app reads content and creates and edits drafts of language versions. It never publishes a page or post and never sends an email.
+- The app reads content and creates and edits drafts of language versions. It publishes pages, posts and articles only with *Publish translations right away* on, and never sends an email.

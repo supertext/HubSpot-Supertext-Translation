@@ -76,6 +76,8 @@ export const de: Messages = {
   'translate.overwriteHint': 'Ohne diese Option bleiben Sprachen, für die es bereits eine Version gibt, unverändert.',
   'translate.overwriteWarning':
     'Die Entwürfe der vorhandenen Versionen werden ersetzt, auch Änderungen, die in HubSpot von Hand gemacht wurden. Ihre veröffentlichten Seiten bleiben, bis Sie die neuen Entwürfe veröffentlichen.',
+  'translate.publishNotice': 'Übersetzungen werden sofort veröffentlicht (Einstellungen → Übersetzung). Marketing-E-Mails bleiben Entwürfe.',
+  'translate.overwriteWarningPublish': 'Die vorhandenen Versionen werden ersetzt und sofort veröffentlicht, einschliesslich Änderungen, die von Hand in HubSpot gemacht wurden.',
   'translate.submit': 'Mit Supertext übersetzen',
   'translate.submitCount.one': 'In {count} Sprache mit Supertext übersetzen',
   'translate.submitCount.other': 'In {count} Sprachen mit Supertext übersetzen',
@@ -97,6 +99,10 @@ export const de: Messages = {
   'job.running': '«{item}» wird übersetzt… {completed} von {total}',
   'job.done': 'Fertig: {created} erstellt, {updated} aktualisiert, {kept} beibehalten, {failed} fehlgeschlagen.',
   'job.failed': 'Die Übersetzung wurde abgebrochen: {reason}',
+  'job.createdPublished': 'Neue Version (veröffentlicht)',
+  'job.updatedPublished': 'Aktualisiert und veröffentlicht',
+  'job.notPublished': 'Als Entwurf gespeichert, nicht veröffentlicht: {reason}',
+  'job.reviewPublished': 'Die veröffentlichten Versionen sind online. Prüfen Sie sie in HubSpot.',
   'job.created': 'Neue Version (Entwurf)',
   'job.updated': 'Entwurf aktualisiert',
   'job.kept': 'Version vorhanden, beibehalten',
@@ -154,6 +160,9 @@ export const de: Messages = {
     "Zum Beispiel wird /de-ch/about-us zu /de-ch/ueber-uns, bei Seiten, Blogbeiträgen und Wissensdatenbank-Artikeln. Bestehende Versionen behalten ihre Adresse, damit veröffentlichte Links weiter funktionieren. Sprachen mit anderer Schrift (etwa Japanisch oder Russisch) behalten die ursprüngliche Adresse.",
   'settings.style.links': "Links auf die übersetzten Seiten, Beiträge und Artikel setzen",
   'settings.style.linksHelp': "Ein Link von einer Übersetzung auf eine andere Website-Seite, Landingpage, einen Blogbeitrag oder Wissensdatenbank-Artikel führt zu diesem Inhalt in derselben Sprache, egal welcher Art die beiden sind (eine Seite auf einen Artikel, eine E-Mail auf eine Seite …). Links auf Inhalte, die noch nicht übersetzt sind, werden automatisch angepasst, sobald sie übersetzt sind. Geändert werden nur die Entwürfe von Übersetzungen, die die App erstellt hat: Eine veröffentlichte Übersetzung hat danach einen neuen Entwurf zum Veröffentlichen. Solange es eine Beta ist, ist es ausgeschaltet, bis Sie es einschalten.",
+  'settings.style.publish': 'Übersetzungen sofort veröffentlichen',
+  'settings.style.publishHelp': 'Aus (empfohlen): Jede Übersetzung ist ein Entwurf in HubSpot, den Sie prüfen und veröffentlichen. Ein: Website-Seiten, Landingpages, Blogbeiträge und Wissensdatenbank-Artikel werden veröffentlicht, sobald sie übersetzt sind, und beim Aktualisieren einer Version wird auch der neue Text veröffentlicht. Marketing-E-Mails werden nie versendet: Sie bleiben immer Entwürfe.',
+  'settings.style.publishKbScope': 'Um Wissensdatenbank-Artikel zu veröffentlichen, verbinden Sie HubSpot erneut und erlauben das Veröffentlichen. Bis dahin bleiben Artikel Entwürfe.',
   'settings.style.linkCount': "{all} Links zwischen Übersetzungen, davon warten {waiting} auf eine Übersetzung.",
   'settings.style.waitingList': "Liste ansehen",
   'settings.style.notOffered':
@@ -236,6 +245,7 @@ export const de: Messages = {
     'Die App wurde während der Übersetzung neu gestartet. Starten Sie sie erneut; fertige Sprachen bleiben erhalten.',
   'error.session': 'Ihre Sitzung ist abgelaufen. Verbinden Sie HubSpot erneut.',
   'error.tooMany': 'Wählen Sie höchstens 50 Inhalte auf einmal aus.',
+  'error.kbPublishScope': 'Um Wissensdatenbank-Artikel zu veröffentlichen, verbinden Sie HubSpot erneut und erlauben das Veröffentlichen.',
   'error.select': 'Wählen Sie einen Inhalt und mindestens eine Sprache aus.',
   'keyCheck.ok': 'API-Schlüssel geprüft: Die Verbindung zu Supertext funktioniert.',
   'keyCheck.invalid':

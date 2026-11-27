@@ -17,7 +17,7 @@ describe('connecting HubSpot', () => {
     const location = new URL(begin.headers.get('location')!);
     expect(location.origin + location.pathname).toBe('https://hubspot.test/oauth/authorize');
     expect(location.searchParams.get('scope')).toBe('oauth content');
-    expect(location.searchParams.get('optional_scope')).toBe('cms.knowledge_base.articles.read cms.knowledge_base.articles.write');
+    expect(location.searchParams.get('optional_scope')).toBe('cms.knowledge_base.articles.read cms.knowledge_base.articles.write cms.knowledge_base.articles.publish');
     expect(location.searchParams.get('redirect_uri')).toBe('https://app.test/oauth/callback');
 
     const done = await env.connect();
@@ -160,6 +160,62 @@ describe('website pages', () => {
     const german = version(env, 'site-page', '101', 'de-ch')!;
     const { job } = await env.translate('site-page', german.id, ['fr-ch']);
     expect(job).toMatchObject({ status: 'failed', error: { code: 'isTranslation' } });
+  });
+});
+
+describe('publishing right away', () => {
+  it('is off by default: every version is a draft', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    expect((await env.store.getAccount(PORTAL_ID))!.publishTranslations).toBe(false);
+    const { html } = await env.translate('site-page', '101', ['de-ch']);
+    expect(version(env, 'site-page', '101', 'de-ch')?.state).toBe('DRAFT');
+    expect(html).toContain('New version (draft)');
+    expect(env.hubspot.requests.some((r) => r.path.endsWith('/push-live'))).toBe(false);
+  });
+
+  it('publishes pages, posts and articles once written, never sends emails', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings([...STANDARD_SETTINGS, ['publishTranslations', '1']]);
+    const settings = await (await env.request('/settings')).text();
+    expect(settings).toMatch(/name="publishTranslations"[^>]*checked/);
+    const translatePage = await (await env.request('/?kind=site-page')).text();
+    expect(translatePage).toContain('Translations are published right away');
+
+    const page = await env.translate('site-page', '101', ['de-ch', 'fr-ch']);
+    expect(page.html).toContain('New version (published)');
+    expect(page.html).toContain('The published versions are live.');
+    const german = version(env, 'site-page', '101', 'de-ch')!;
+    expect(german).toMatchObject({ state: 'PUBLISHED', currentlyPublished: true, name: 'Über uns' });
+    expect(page.job.items.every((item) => item.published)).toBe(true);
+
+    // Updating publishes the new text too.
+    const again = await env.translate('site-page', '101', ['de-ch'], true);
+    expect(again.html).toContain('Updated and published');
+    expect(env.hubspot.requests.filter((r) => r.method === 'POST' && r.path.endsWith(`/${german.id}/draft/push-live`)).length).toBe(2);
+
+    await env.translate('kb-article', '501', ['de-ch']);
+    expect(version(env, 'kb-article', '501', 'de-ch')?.state).toBe('PUBLISHED');
+
+    const email = await env.translate('email', '401', ['de-ch']);
+    expect(email.html).toContain('New version (draft)');
+    expect(version(env, 'email', '401', 'de-ch')?.state).not.toMatch(/PUBLISHED|SENT/);
+    expect(env.hubspot.requests.some((r) => r.path.includes('/marketing/') && r.path.endsWith('/push-live'))).toBe(false);
+  });
+
+  it('leaves an article a draft when the account did not grant the publish scope', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings([...STANDARD_SETTINGS, ['publishTranslations', '1']]);
+    const account = (await env.store.getAccount(PORTAL_ID))!;
+    await env.store.saveAccount({ ...account, scopes: account.scopes.filter((scope) => scope !== 'cms.knowledge_base.articles.publish') });
+    expect(await (await env.request('/settings')).text()).toContain('To publish knowledge base articles, connect HubSpot again');
+    const { job, html } = await env.translate('kb-article', '501', ['de-ch']);
+    expect(job.items[0]).toMatchObject({ state: 'created', publishError: { code: 'kbPublishScope' } });
+    expect(html).toContain('Saved as a draft, not published');
+    expect(version(env, 'kb-article', '501', 'de-ch')?.state).not.toBe('PUBLISHED');
   });
 });
 

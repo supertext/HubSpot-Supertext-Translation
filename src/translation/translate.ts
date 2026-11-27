@@ -1,16 +1,20 @@
 import type { HubSpotClient } from '../hubspot/client.js';
 import {
   createArticleTranslation,
+  canPublish,
   createVersion,
   extractItem,
+  KB_PUBLISH_SCOPE,
+  publishDraft,
   removeItem,
   updateDraft,
   type Item,
   type Kind,
 } from '../hubspot/content.js';
 import type { Extraction } from '../hubspot/extract.js';
+import { errorInfo, LocalizedError } from '../i18n/error.js';
 import type { Politeness, SupertextClient } from '../supertext/client.js';
-import type { JobItem } from '../store/store.js';
+import type { Account, JobItem } from '../store/store.js';
 import type { ContentLinks, RewriteResult } from './links.js';
 import { slugify, slugWords, withLastPart } from './slug.js';
 
@@ -18,7 +22,8 @@ import { slugify, slugWords, withLastPart } from './slug.js';
  * One item × one language: make the language version (unless it exists), translate its texts in
  * one Supertext request, then write them to the version's draft — a version made for the purpose
  * (HubSpot's language variant, an email clone, an article translation), or the
- * existing one when it is to be updated. Nothing is published.
+ * existing one when it is to be updated. The version is published only with `publish`
+ * (Settings → Publish translations right away; never emails).
  */
 
 export interface TranslateArgs {
@@ -49,14 +54,50 @@ export interface TranslateArgs {
   translateUrls?: boolean;
   /** Point links between pages, posts and articles to the same language (Settings → Translation); one per job. */
   links?: ContentLinks;
+  /**
+   * Publish the version once it is written (Settings → Publish translations right away): `true`, or
+   * `'noScope'` when the account didn't grant the knowledge base's publish scope (it stays a draft).
+   * Ignored for emails.
+   */
+  publish?: boolean | 'noScope';
 }
 
 /** Where an item keeps its address: a page's or post's slug, an article's path; emails have none. */
 const ADDRESS: Partial<Record<Kind, 'slug' | 'path'>> = { 'site-page': 'slug', 'landing-page': 'slug', 'blog-post': 'slug', 'kb-article': 'path' };
 
-export type TranslateResult = Pick<JobItem, 'state' | 'targetId'>;
+/** `publish` for an account and kind: the setting, and for articles the publish scope. */
+export function publishMode(account: Pick<Account, 'publishTranslations' | 'scopes'>, kind: Kind): TranslateArgs['publish'] {
+  if (!account.publishTranslations || !canPublish(kind)) return false;
+  return kind === 'kb-article' && !account.scopes.includes(KB_PUBLISH_SCOPE) ? 'noScope' : true;
+}
+
+export type TranslateResult = Pick<JobItem, 'state' | 'targetId' | 'published' | 'publishError'>;
+
+/**
+ * Publishes a version the app has just written, if the account wants that. Publishing never fails
+ * the translation: the version then stays a draft and the result says why.
+ */
+async function published(args: TranslateArgs, result: TranslateResult): Promise<TranslateResult> {
+  if (!args.publish || !result.targetId || !canPublish(args.kind)) return result;
+  if (args.publish === 'noScope') {
+    const error = new LocalizedError('Connect HubSpot again to let the app publish knowledge base articles.', 'kbPublishScope');
+    return { ...result, publishError: errorInfo(error) };
+  }
+  try {
+    await publishDraft(args.client, args.kind, result.targetId);
+    return { ...result, published: true };
+  } catch (error) {
+    console.warn(`Supertext: ${args.kind} ${result.targetId} not published:`, error instanceof Error ? error.message : error);
+    return { ...result, publishError: errorInfo(error) };
+  }
+}
 
 export async function translateItem(args: TranslateArgs): Promise<TranslateResult> {
+  const result = await write(args);
+  return result.state === 'kept' ? result : published(args, result);
+}
+
+async function write(args: TranslateArgs): Promise<TranslateResult> {
   const { client, kind, source, existingId } = args;
   if (existingId && !args.overwrite) return { state: 'kept', targetId: existingId };
   const { extraction, fields } = extractItem(kind, args.draft);

@@ -568,6 +568,7 @@ export function createApp(deps: AppDeps) {
     account.tone = tone === 'more' || tone === 'less' ? tone : 'default';
     account.translateUrls = field('translateUrls') === '1';
     account.translateLinks = field('translateLinks') === '1';
+    account.publishTranslations = field('publishTranslations') === '1';
     const source = field('sourceLanguage');
     account.sourceLanguage = isLanguage(source) ? source : '';
     const chosen = form.target === undefined ? [] : Array.isArray(form.target) ? form.target : [form.target];

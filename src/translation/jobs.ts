@@ -5,7 +5,7 @@ import { errorInfo, LocalizedError, type ErrorInfo } from '../i18n/error.js';
 import { fromSdk, type SupertextClient } from '../supertext/client.js';
 import { newJobId, type Account, type Job, type JobItem, type Store } from '../store/store.js';
 import { hubspotCode, sameLanguage, supertextSource, supertextTarget, supportsPoliteness } from './languages.js';
-import { translateItem } from './translate.js';
+import { publishMode, translateItem } from './translate.js';
 
 /**
  * A translation job: one item, or a batch of up to {@link MAX_BATCH} items of one kind, into one
@@ -250,6 +250,7 @@ async function translateOne(
         primaryLanguage: itemLanguage,
         translateUrls: account.translateUrls,
         links,
+        publish: publishMode(account, kind),
       });
       Object.assign(item, written);
       if (written.targetId && written.state !== 'kept') {
