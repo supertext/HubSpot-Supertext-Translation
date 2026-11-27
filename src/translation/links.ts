@@ -1,209 +1,330 @@
-// Links between knowledge base articles, pointed to the article in the same language.
+// Links between pages, posts and articles, pointed to the version in the same language.
 //
-// HubSpot gives every article its address (`url`) and its language versions (`translations`,
-// language → { id }), and a translation has an address of its own (translated by the app,
-// see slug.ts). So a link to another article of the knowledge base, full
-// (https://…/en-us/knowledge-base/troubleshooting-orders) or relative (/en-us/knowledge-base/…),
-// with an anchor or query string or without, can be pointed to that article's version in the
-// translation's language. Links to articles without that version yet stay on the original and
-// are remembered (Store.saveWaitingLinks): when the app later translates the article they point
-// to, it fixes them in the drafts that wait for it. Only href attributes of <a> change; the rest
-// of a draft, including an editor's changes, stays as it is. Links to anything else (pages,
-// other sites, #anchors on the same article, mailto:) are left alone.
+// HubSpot gives every website page, landing page, blog post and knowledge base article its
+// address (`url`) and links its language versions (`translatedFromId` for pages and posts,
+// `translationOfId` for articles). So a link in a translation to another item of the account,
+// full (https://www.example.com/about-us) or relative (/en/knowledge-base/…), with an anchor or
+// query string or without, can be pointed to that item's version in the translation's language,
+// whatever kind either of them is (an email to a page, a page to an article …). The address used
+// is the version's draft's: a version the app just made has its translated address only in the
+// draft until an editor publishes it (slug.ts).
+//
+// Links are found in HTML (`<a href>`) and in HubSpot's link fields (`{ href, type, content_id }`
+// in modules such as buttons; `content_id` is updated too). Every link to another item is stored
+// (Store.saveLinks): `translated` when it points to the version, `waiting` when that item has no
+// version in the language yet. When the app later translates an item, it fixes the waiting links
+// in the drafts that wait for it. `kept` links ("Keep the original link") are never changed. Only
+// links change; the rest of a draft, including an editor's changes, stays as it is. Links to
+// anything else (other sites, #anchors on the same page, mailto:, HubL) are left alone.
 
 import type { HubSpotClient } from '../hubspot/client.js';
-import { basePath, getDraft, getItem, translationMap, updateDraft, type Item } from '../hubspot/content.js';
-import type { Store } from '../store/store.js';
+import { basePath, getDraft, getItem, updateDraft, type Item, type Kind } from '../hubspot/content.js';
+import type { Account, Store } from '../store/store.js';
 
-interface Article {
+/** Kinds a link can point to (emails have no address of their own). */
+export const LINK_TARGETS: readonly Kind[] = ['site-page', 'landing-page', 'blog-post', 'kb-article'];
+
+/** The fields of a draft that hold links, per kind (what the app writes back when fixing links). */
+const LINK_FIELDS: Record<Kind, string[]> = {
+  'site-page': ['widgets', 'widgetContainers', 'layoutSections'],
+  'landing-page': ['widgets', 'widgetContainers', 'layoutSections'],
+  'blog-post': ['postBody', 'postSummary', 'widgets', 'widgetContainers', 'layoutSections'],
+  email: ['content'],
+  'kb-article': ['body'],
+};
+
+interface Entry {
+  kind: Kind;
   id: string;
   url: string;
   title: string;
   language: string;
-  /** The original's ID for a translation, else its own. */
+  /** The original's ID for a version, else its own. */
   original: string;
-  /** Language → ID of the other versions. */
-  translations: Record<string, string>;
 }
 
 const str = (value: unknown): string => (value === undefined || value === null ? '' : String(value));
-
 const key = (url: URL): string => decodeURIComponent(url.pathname).replace(/\/+$/, '').toLowerCase();
-
 const decode = (href: string): string => href.replace(/&amp;/g, '&').replace(/&#38;/g, '&');
 const encode = (href: string): string => href.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+const HREF = /(<a\b[^>]*?\bhref\s*=\s*)(["'])(.*?)\2/gi;
 
-export class KnowledgeBaseLinks {
-  private articles?: Map<string, Article>;
-  private byAddress = new Map<string, Article>();
+/** A target in the form the store and `kept` use. */
+const ref = (kind: Kind, id: string) => `${kind}:${id}`;
+
+export interface RewriteResult {
+  links: { targetKind: Kind; targetId: string; status: 'translated' | 'waiting'; href?: string }[];
+}
+
+/** The link helper for an account's job or page, or undefined when the setting is off. */
+export function linksFor(client: HubSpotClient, store: Store, account: Account): ContentLinks | undefined {
+  if (!account.translateLinks) return undefined;
+  // The knowledge base only with its scopes (see app.ts → knowledgeBase).
+  const kinds = LINK_TARGETS.filter((kind) => kind !== 'kb-article' || account.scopes.includes('cms.knowledge_base.articles.write'));
+  return new ContentLinks(client, store, account.accountId, kinds);
+}
+
+export class ContentLinks {
+  private items?: Map<string, Entry>;
+  private byAddress = new Map<string, Entry>();
+  /** kind:original → language → version. */
+  private versions = new Map<string, Map<string, Entry>>();
   private hosts = new Set<string>();
-  /** A translation's address as its draft has it (the list shows the published one). */
   private drafts = new Map<string, string>();
 
   constructor(
     private readonly client: HubSpotClient,
     private readonly store: Store,
     private readonly accountId: string,
+    /** The kinds the account can read (the knowledge base only with its scopes). */
+    private readonly kinds: readonly Kind[] = LINK_TARGETS,
   ) {}
 
-  private remember(item: Item): Article {
+  private remember(kind: Kind, item: Item): Entry {
     const id = str(item.id);
-    const article: Article = {
+    const entry: Entry = {
+      kind,
       id,
       url: str(item.url),
-      title: str(item.title),
+      title: str(item.title ?? item.name) || id,
       language: str(item.language).toLowerCase(),
-      original: str(item.translationOfId) || id,
-      translations: translationMap(item.translations, id),
+      original: str(item.translatedFromId ?? item.translationOfId) || id,
     };
-    this.articles!.set(id, article);
-    if (article.url) {
+    this.items!.set(ref(kind, id), entry);
+    const group = this.versions.get(ref(kind, entry.original)) ?? new Map<string, Entry>();
+    if (entry.language) group.set(entry.language, entry);
+    this.versions.set(ref(kind, entry.original), group);
+    if (entry.url) {
       try {
-        const url = new URL(article.url);
+        const url = new URL(entry.url);
         this.hosts.add(url.host.toLowerCase());
-        this.byAddress.set(key(url), article);
+        // An original wins over a version at the same address.
+        const there = this.byAddress.get(key(url));
+        if (!there || there.original !== there.id || entry.original === entry.id) this.byAddress.set(key(url), entry);
       } catch {
-        // an address HubSpot didn't fill in: the article can't be found by its links
+        // no usable address: links to it can't be recognized
       }
     }
-    return article;
+    return entry;
   }
 
-  /** All articles with their addresses and versions, read once per job. */
-  private async load(): Promise<Map<string, Article>> {
-    if (this.articles) return this.articles;
-    this.articles = new Map();
-    let after: string | undefined;
-    do {
-      const query = new URLSearchParams({ limit: '100', archived: 'false' });
-      if (after) query.set('after', after);
-      const page = await this.client.json<{ results?: Item[]; paging?: { next?: { after?: string } } }>('GET', `${basePath('kb-article')}?${query}`);
-      for (const item of page.results ?? []) this.remember(item);
-      after = page.paging?.next?.after || undefined;
-    } while (after);
-    return this.articles;
+  /** All pages, posts and articles with their addresses and versions, read once per job. */
+  private async load(): Promise<void> {
+    if (this.items) return;
+    this.items = new Map();
+    for (const kind of this.kinds.filter((k) => LINK_TARGETS.includes(k))) {
+      let after: string | undefined;
+      do {
+        const query = new URLSearchParams({ limit: '100', archived: 'false' });
+        if (after) query.set('after', after);
+        const page = await this.client.json<{ results?: Item[]; paging?: { next?: { after?: string } } }>('GET', `${basePath(kind)}?${query}`);
+        for (const item of page.results ?? []) this.remember(kind, item);
+        after = page.paging?.next?.after || undefined;
+      } while (after);
+    }
+    // Addresses the app pointed links to before: a version's draft address, which the list (the
+    // published version) doesn't show until it is published.
+    for (const link of await this.store.allLinks(this.accountId)) {
+      if (link.status !== 'translated' || !link.href) continue;
+      const version = this.versions.get(ref(link.targetKind, link.targetId))?.get(link.language);
+      if (version) this.addAddress(link.href, version);
+    }
   }
 
-  /** The article a link points to, if it is one of the knowledge base. */
-  private target(href: string, base: string): { article: Article; url: URL; relative: boolean } | undefined {
+  /** Also recognize `address` as `entry` (a version's draft address). */
+  private addAddress(address: string, entry: Entry): void {
+    try {
+      const url = new URL(address, 'https://relative.invalid/');
+      if (url.host !== 'relative.invalid') this.hosts.add(url.host.toLowerCase());
+      if (!this.byAddress.has(key(url))) this.byAddress.set(key(url), entry);
+    } catch {
+      // not an address
+    }
+  }
+
+  /** The item a link points to, if it is one of the account's pages, posts or articles. */
+  private target(href: string): { entry: Entry; url: URL; relative: boolean } | undefined {
     const raw = decode(href.trim());
-    if (!raw || raw.startsWith('#') || /^(mailto|tel|javascript):/i.test(raw) || /\{\{|\{%/.test(raw)) return undefined;
+    if (!raw || raw.startsWith('#') || /^(mailto|tel|javascript|data):/i.test(raw) || /\{\{|\{%/.test(raw)) return undefined;
     let url: URL;
     try {
-      url = new URL(raw, base || 'https://knowledge-base.invalid/');
+      url = new URL(raw, 'https://relative.invalid/');
     } catch {
       return undefined;
     }
-    const relative = !/^[a-z][a-z0-9+.-]*:|^\/\//i.test(raw);
+    const relative = url.host === 'relative.invalid';
     if (!relative && !this.hosts.has(url.host.toLowerCase())) return undefined;
-    const article = this.byAddress.get(key(url));
-    return article ? { article, url, relative } : undefined;
+    const entry = this.byAddress.get(key(url));
+    return entry ? { entry, url, relative } : undefined;
   }
 
-  /** The version of the linked article's group in `language`, if there is one. */
-  private versionIn(article: Article, language: string): Article | undefined {
-    if (article.language === language) return article;
-    const original = this.articles!.get(article.original) ?? article;
-    if (original.language === language) return original;
-    const id = original.translations[language] ?? article.translations[language];
-    return id ? this.articles!.get(id) : undefined;
+  /** The version in `language` of the item a link points to, if there is one. */
+  private versionIn(entry: Entry, language: string): Entry | undefined {
+    if (entry.language === language) return entry;
+    return this.versions.get(ref(entry.kind, entry.original))?.get(language);
   }
 
-  /**
-   * Points the links of a translation's HTML to the articles in `language`. Returns the HTML and
-   * the originals it links to that have no version in `language` yet.
-   */
-  /**
-   * The address a translation will have when it is published: its draft's. A translation the app
-   * just made has its translated path only in the draft until an editor publishes it.
-   */
-  private async addressOf(article: Article): Promise<string> {
-    let url = this.drafts.get(article.id);
-    if (url === undefined) {
-      url = str((await getDraft(this.client, 'kb-article', article.id)).url) || article.url;
-      this.drafts.set(article.id, url);
-    }
-    return url;
-  }
-
-  async rewrite(html: string, language: string, keep: string[] = []): Promise<{ html: string; waiting: string[] }> {
-    await this.load();
-    const waiting = new Set<string>();
-    const base = [...this.articles!.values()].find((a) => a.url)?.url ?? '';
-    // First the addresses of the versions the links need (one request each, then known for the job).
-    const pattern = /(<a\b[^>]*?\bhref\s*=\s*)(["'])(.*?)\2/gi;
-    const addresses = new Map<string, string>();
-    for (const m of html.matchAll(pattern)) {
-      const found = this.target(m[3], base);
-      const version = found && this.versionIn(found.article, language);
-      if (version && version !== found.article && !addresses.has(version.id)) addresses.set(version.id, await this.addressOf(version));
-    }
-    const out = html.replace(pattern, (all, start: string, quote: string, href: string) => {
-      const found = this.target(href, base);
-      // Not an article, or one whose links are to stay ("Stop waiting").
-      if (!found || keep.includes(found.article.original)) return all;
-      const version = this.versionIn(found.article, language);
-      if (!version) {
-        waiting.add(found.article.original);
-        return all;
+  /** The address a version will have when it is published: its draft's. */
+  private async addressOf(entry: Entry): Promise<string> {
+    const id = ref(entry.kind, entry.id);
+    let address = this.drafts.get(id);
+    if (address === undefined) {
+      const draft = await getDraft(this.client, entry.kind, entry.id);
+      address = entry.url;
+      if (entry.kind === 'kb-article') address = str(draft.url) || entry.url;
+      else if (typeof draft.slug === 'string' && entry.url) {
+        try {
+          address = `${new URL(entry.url).origin}/${draft.slug}`.replace(/\/$/, '');
+        } catch {
+          // keep the published address
+        }
       }
-      const address = addresses.get(version.id);
-      if (version === found.article || !address) return all;
-      const to = new URL(address);
-      to.search = found.url.search;
-      to.hash = found.url.hash;
-      const value = found.relative ? `${to.pathname}${to.search}${to.hash}` : to.toString();
-      return `${start}${quote}${encode(value)}${quote}`;
-    });
-    return { html: out, waiting: [...waiting] };
+      this.drafts.set(id, address);
+      if (address) this.addAddress(address, entry);
+    }
+    return address;
+  }
+
+  /** A link as it should be in `language`: the new href and ID, or nothing to leave it. Notes the link. */
+  private resolve(
+    href: string,
+    language: string,
+    keep: string[],
+    noted: Map<string, RewriteResult['links'][number]>,
+    addresses: Map<string, string>,
+  ): { href?: string; id?: string } {
+    const found = this.target(href);
+    if (!found) return {};
+    const original = this.items!.get(ref(found.entry.kind, found.entry.original)) ?? found.entry;
+    const target = ref(original.kind, original.id);
+    if (found.entry.language === language) {
+      // Already in the language: a version (pointed there before, by the app or by hand) still counts as translated.
+      if (found.entry !== original) noted.set(target, { targetKind: original.kind, targetId: original.id, status: 'translated', href: found.url.toString().replace('https://relative.invalid', '') });
+      return {};
+    }
+    if (keep.includes(target)) return {};
+    const version = this.versionIn(found.entry, language);
+    if (!version) {
+      noted.set(target, { targetKind: original.kind, targetId: original.id, status: 'waiting' });
+      return {};
+    }
+    const address = addresses.get(ref(version.kind, version.id));
+    noted.set(target, { targetKind: original.kind, targetId: original.id, status: 'translated', href: address });
+    if (!address) return {};
+    const to = new URL(address);
+    to.search = found.url.search;
+    to.hash = found.url.hash;
+    return { href: found.relative ? `${to.pathname}${to.search}${to.hash}` : to.toString(), id: version.id };
   }
 
   /**
-   * After `translatedId` (a version of `originalId` in `language`) was written: notes the links it
-   * still waits for, and fixes the drafts in `language` that waited for this article.
+   * Points the links in `values` (fields of a translation: HTML strings, modules, link fields) to
+   * the versions in `language`. Changes `values` in place; returns the links found.
    */
-  /** The originals whose links in a translation are to stay ("Stop waiting"). */
-  ignored(articleId: string): Promise<string[]> {
-    return this.store.ignoredLinks(this.accountId, articleId);
+  async rewrite(values: Record<string, unknown>, language: string, keep: string[] = []): Promise<RewriteResult> {
+    await this.load();
+    // First the addresses of the versions the links need (one request each, then known for the job).
+    const hrefs: string[] = [];
+    walk(values, (href) => {
+      hrefs.push(href);
+    });
+    const addresses = new Map<string, string>();
+    for (const href of hrefs) {
+      const found = this.target(href);
+      const version = found && found.entry.language !== language ? this.versionIn(found.entry, language) : undefined;
+      if (version && !addresses.has(ref(version.kind, version.id))) addresses.set(ref(version.kind, version.id), await this.addressOf(version));
+    }
+    const noted = new Map<string, RewriteResult['links'][number]>();
+    walk(values, (href) => this.resolve(href, language, keep, noted, addresses));
+    return { links: [...noted.values()] };
   }
 
-  async translated(originalId: string, language: string, translatedId: string, waiting: string[]): Promise<void> {
+  /**
+   * After a version (`translatedId`, of `originalId`, in `language`) was written: stores its links,
+   * and fixes the drafts in `language` whose links waited for this item.
+   */
+  async translated(kind: Kind, originalId: string, language: string, translatedId: string, result: RewriteResult): Promise<void> {
     await this.load();
-    const item = await getItem(this.client, 'kb-article', translatedId);
-    if (item) this.remember(item);
-    this.drafts.delete(translatedId); // its address may just have been translated
-    const original = this.articles!.get(originalId);
-    if (original) original.translations[language] = translatedId;
-    await this.store.saveWaitingLinks(this.accountId, translatedId, language, waiting);
-
-    for (const articleId of await this.store.waitingFor(this.accountId, language, originalId)) {
-      if (articleId !== translatedId) await this.recheck(articleId, language);
+    await this.store.saveLinks(this.accountId, kind, translatedId, language, result.links);
+    if (!LINK_TARGETS.includes(kind)) return;
+    const item = await getItem(this.client, kind, translatedId);
+    if (item) this.remember(kind, item);
+    this.drafts.delete(ref(kind, translatedId)); // its address may just have been translated
+    for (const waiting of await this.store.waitingFor(this.accountId, language, kind, originalId)) {
+      if (waiting.kind === kind && waiting.itemId === translatedId) continue;
+      await this.recheck(waiting.kind, waiting.itemId, language);
     }
   }
 
-  /** Title and address of articles, for the list of waiting links (undefined: no longer there). */
-  async describe(id: string, draft = false): Promise<{ title: string; url: string } | undefined> {
-    const article = (await this.load()).get(id);
-    if (!article) return undefined;
-    // A translation's title is in its draft until it is published (it was created with the original's).
-    const title = draft ? str((await getDraft(this.client, 'kb-article', id)).title) : '';
-    return { title: title || article.title || id, url: article.url };
-  }
-
   /**
-   * Checks one translation's links again ("Update links now"): points them to the versions that
-   * exist now, also ones made by hand in HubSpot, and keeps waiting for the rest.
+   * Checks one translation's links again ("Update links now", or when an item it waits for was
+   * translated): points them to the versions that exist now, also ones made by hand in HubSpot.
    */
-  async recheck(articleId: string, language: string): Promise<'updated' | 'unchanged' | 'gone'> {
+  async recheck(kind: Kind, itemId: string, language: string): Promise<'updated' | 'unchanged' | 'gone'> {
     await this.load();
-    if (!(await getItem(this.client, 'kb-article', articleId))) {
-      await this.store.saveWaitingLinks(this.accountId, articleId, language, []);
+    if (!(await getItem(this.client, kind, itemId))) {
+      await this.store.saveLinks(this.accountId, kind, itemId, language, []);
       return 'gone';
     }
-    const body = str((await getDraft(this.client, 'kb-article', articleId)).body);
-    const result = await this.rewrite(body, language, await this.store.ignoredLinks(this.accountId, articleId));
-    if (result.html !== body) await updateDraft(this.client, 'kb-article', articleId, { body: result.html });
-    await this.store.saveWaitingLinks(this.accountId, articleId, language, result.waiting);
-    return result.html !== body ? 'updated' : 'unchanged';
+    const draft = await getDraft(this.client, kind, itemId);
+    const values: Record<string, unknown> = {};
+    for (const name of LINK_FIELDS[kind]) if (draft[name] !== undefined && draft[name] !== null) values[name] = structuredClone(draft[name]);
+    const result = await this.rewrite(values, language, await this.store.keptLinks(this.accountId, kind, itemId));
+    const changed = Object.fromEntries(Object.entries(values).filter(([name, value]) => JSON.stringify(value) !== JSON.stringify(draft[name])));
+    if (Object.keys(changed).length) await updateDraft(this.client, kind, itemId, changed);
+    await this.store.saveLinks(this.accountId, kind, itemId, language, result.links);
+    return Object.keys(changed).length ? 'updated' : 'unchanged';
+  }
+
+  /** The targets whose links in an item stay on the original ("Keep the original link"). */
+  kept(kind: Kind, itemId: string): Promise<string[]> {
+    return this.store.keptLinks(this.accountId, kind, itemId);
+  }
+
+  /** Title and address of an item, for the list of links (undefined: no longer there). */
+  async describe(kind: Kind, id: string, draft = false): Promise<{ title: string; url: string } | undefined> {
+    await this.load();
+    let entry = this.items!.get(ref(kind, id));
+    if (!entry && kind === 'email') {
+      const item = await getItem(this.client, kind, id);
+      if (!item) return undefined;
+      entry = { kind, id, url: '', title: str(item.name) || id, language: str(item.language), original: id };
+    }
+    if (!entry) return undefined;
+    let title = '';
+    if (draft && kind !== 'email') {
+      // A version's title is in its draft until it is published (it was made with the original's).
+      const version = await getDraft(this.client, kind, id);
+      title = str(version.title ?? version.name);
+    }
+    return { title: title || entry.title, url: entry.url };
+  }
+}
+
+/**
+ * Calls `visit` for every link in `value` (HTML strings, HubSpot link fields); writes back the new
+ * href (and content ID) that `visit` returns.
+ */
+function walk(value: unknown, visit: (href: string) => { href?: string; id?: string } | void): void {
+  if (!value || typeof value !== 'object') return;
+  const object = value as Record<string, unknown>;
+  for (const [name, child] of Object.entries(object)) {
+    if (typeof child === 'string') {
+      if (/<a\b/i.test(child)) {
+        object[name] = child.replace(HREF, (all, start: string, quote: string, href: string) => {
+          const result = visit(href);
+          return result && result.href ? `${start}${quote}${encode(result.href)}${quote}` : all;
+        });
+      } else if (name === 'href' && child) {
+        // A link field: { href, type: 'EXTERNAL' | 'CONTENT', content_id }.
+        const result = visit(child);
+        if (result && result.href) {
+          object.href = result.href;
+          if ('content_id' in object && result.id) object.content_id = /^\d+$/.test(result.id) ? Number(result.id) : result.id;
+        }
+      }
+    } else if (child && typeof child === 'object') {
+      walk(child, visit);
+    }
   }
 }

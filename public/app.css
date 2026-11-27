@@ -98,6 +98,10 @@ td.link { text-align: right; white-space: nowrap; }
 .badge.state-published { background: var(--mint-light); color: var(--text); }
 .badge.state-scheduled, .badge.state-other { background: var(--bg); color: var(--muted); }
 .badge.done { background: var(--mint); color: var(--text); }
+.badge.link-translated { background: var(--mint); color: var(--text); }
+.badge.link-waiting { background: #fff1e6; color: #9a4a00; }
+.badge.link-kept { background: var(--bg); color: var(--muted); }
+table.links td .sub { display: block; font-size: 12px; color: var(--muted); }
 a.badge.done:hover { text-decoration: none; background: var(--mint-hover); }
 
 .languages { display: flex; flex-wrap: wrap; gap: 10px; }

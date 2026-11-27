@@ -53,6 +53,8 @@ const PATHS: [Kind, RegExp][] = [
 
 const KB_LANGUAGES = ['en', 'de-ch', 'fr-ch', 'it-ch'];
 export const KB_URL = 'https://help.swiss-chocolate.example';
+/** The website's address: pages and posts are at `${SITE_URL}/${slug}`. */
+export const SITE_URL = 'https://www.swiss-chocolate.example';
 const KB_SCOPES = ['cms.knowledge_base.articles.read', 'cms.knowledge_base.articles.write'];
 
 export function createHubSpotStandin(): HubSpotStandin {
@@ -102,6 +104,7 @@ export function createHubSpotStandin(): HubSpotStandin {
     if (t !== undefined) item.translations = t;
     // An article's address: the knowledge base's language version and the article's path.
     if (entry.kind === 'kb-article') item.url = `${KB_URL}/${String(item.language)}/knowledge-base/${String(item.path)}`;
+    else if (typeof item.slug === 'string') item.url = `${SITE_URL}/${item.slug}`.replace(/\/$/, '');
     if (entry.archived) item.archived = true;
     return item;
   };

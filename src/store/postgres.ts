@@ -3,7 +3,7 @@ import type { ReporterState } from 'supertext-plugin-health';
 import type { Tokens } from '../hubspot/client.js';
 import type { Kind } from '../hubspot/content.js';
 import type { ErrorInfo } from '../i18n/error.js';
-import { defaultAccount, type Account, type Job, type Secrets, type Store, type Translation } from './store.js';
+import { defaultAccount, type Account, type Job, type Secrets, type Store, type Translation, type LinkStatus } from './store.js';
 
 /**
  * PostgreSQL store (the shared Railway Postgres; its own database, created on
@@ -37,15 +37,19 @@ CREATE TABLE IF NOT EXISTS translation_jobs (
   data JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE TABLE IF NOT EXISTS waiting_links (
+DROP TABLE IF EXISTS waiting_links;
+CREATE TABLE IF NOT EXISTS content_links (
   account_id TEXT NOT NULL,
-  article_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  item_id TEXT NOT NULL,
   language TEXT NOT NULL,
+  target_kind TEXT NOT NULL,
   target_id TEXT NOT NULL,
-  ignored BOOLEAN NOT NULL DEFAULT false,
-  PRIMARY KEY (account_id, article_id, target_id)
+  status TEXT NOT NULL,
+  href TEXT,
+  PRIMARY KEY (account_id, kind, item_id, target_kind, target_id)
 );
-CREATE INDEX IF NOT EXISTS waiting_links_target ON waiting_links (account_id, language, target_id);
+CREATE INDEX IF NOT EXISTS content_links_target ON content_links (account_id, language, target_kind, target_id);
 CREATE INDEX IF NOT EXISTS translation_jobs_account ON translation_jobs (account_id, created_at DESC);
 `;
 
@@ -139,7 +143,7 @@ export class PostgresStore implements Store {
   }
 
   async deleteAccount(accountId: string) {
-    for (const table of ['accounts', 'translations', 'translation_jobs', 'waiting_links']) {
+    for (const table of ['accounts', 'translations', 'translation_jobs', 'content_links']) {
       await this.pool.query(`DELETE FROM ${table} WHERE account_id = $1`, [accountId]);
     }
   }
@@ -164,40 +168,55 @@ export class PostgresStore implements Store {
     );
   }
 
-  async saveWaitingLinks(accountId: string, articleId: string, language: string, targetIds: string[]) {
-    await this.pool.query('DELETE FROM waiting_links WHERE account_id = $1 AND article_id = $2 AND NOT ignored', [accountId, articleId]);
-    for (const targetId of new Set(targetIds)) {
+  async saveLinks(accountId: string, kind: Kind, itemId: string, language: string, links: { targetKind: Kind; targetId: string; status: 'translated' | 'waiting'; href?: string }[]) {
+    await this.pool.query("DELETE FROM content_links WHERE account_id = $1 AND kind = $2 AND item_id = $3 AND status <> 'kept'", [accountId, kind, itemId]);
+    for (const link of links) {
       await this.pool.query(
-        'INSERT INTO waiting_links (account_id, article_id, language, target_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
-        [accountId, articleId, language, targetId],
+        'INSERT INTO content_links (account_id, kind, item_id, language, target_kind, target_id, status, href) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING',
+        [accountId, kind, itemId, language, link.targetKind, link.targetId, link.status, link.href ?? null],
       );
     }
   }
 
-  async waitingFor(accountId: string, language: string, targetId: string) {
+  async allLinks(accountId: string) {
     const { rows } = await this.pool.query(
-      'SELECT article_id FROM waiting_links WHERE account_id = $1 AND language = $2 AND target_id = $3 AND NOT ignored',
-      [accountId, language, targetId],
-    );
-    return rows.map((row) => String(row.article_id));
-  }
-
-  async allWaitingLinks(accountId: string) {
-    const { rows } = await this.pool.query(
-      'SELECT article_id, language, target_id FROM waiting_links WHERE account_id = $1 AND NOT ignored ORDER BY language, article_id, target_id',
+      'SELECT kind, item_id, language, target_kind, target_id, status, href FROM content_links WHERE account_id = $1 ORDER BY language, item_id, target_id',
       [accountId],
     );
-    return rows.map((row) => ({ articleId: String(row.article_id), language: String(row.language), targetId: String(row.target_id) }));
+    return rows.map((row) => ({
+      kind: row.kind as Kind,
+      itemId: String(row.item_id),
+      language: String(row.language),
+      targetKind: row.target_kind as Kind,
+      targetId: String(row.target_id),
+      status: row.status as LinkStatus,
+      href: row.href ? String(row.href) : undefined,
+    }));
   }
 
-  async removeWaitingLink(accountId: string, articleId: string, targetId: string) {
-    await this.pool.query('UPDATE waiting_links SET ignored = true WHERE account_id = $1 AND article_id = $2 AND target_id = $3', [accountId, articleId, targetId]);
+  async waitingFor(accountId: string, language: string, targetKind: Kind, targetId: string) {
+    const { rows } = await this.pool.query(
+      "SELECT kind, item_id FROM content_links WHERE account_id = $1 AND language = $2 AND target_kind = $3 AND target_id = $4 AND status = 'waiting'",
+      [accountId, language, targetKind, targetId],
+    );
+    return rows.map((row) => ({ kind: row.kind as Kind, itemId: String(row.item_id) }));
   }
 
-  async ignoredLinks(accountId: string, articleId: string) {
-    const { rows } = await this.pool.query('SELECT target_id FROM waiting_links WHERE account_id = $1 AND article_id = $2 AND ignored', [accountId, articleId]);
-    return rows.map((row) => String(row.target_id));
+  async setKept(accountId: string, kind: Kind, itemId: string, targetKind: Kind, targetId: string, kept: boolean) {
+    await this.pool.query(
+      'UPDATE content_links SET status = $6 WHERE account_id = $1 AND kind = $2 AND item_id = $3 AND target_kind = $4 AND target_id = $5',
+      [accountId, kind, itemId, targetKind, targetId, kept ? 'kept' : 'waiting'],
+    );
   }
+
+  async keptLinks(accountId: string, kind: Kind, itemId: string) {
+    const { rows } = await this.pool.query(
+      "SELECT target_kind, target_id FROM content_links WHERE account_id = $1 AND kind = $2 AND item_id = $3 AND status = 'kept'",
+      [accountId, kind, itemId],
+    );
+    return rows.map((row) => `${String(row.target_kind)}:${String(row.target_id)}`);
+  }
+
 
   async saveJob(job: Job) {
     await this.pool.query(

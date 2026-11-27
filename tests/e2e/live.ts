@@ -29,7 +29,7 @@ import { loadConfig } from '../../src/config.js';
 import { extractItem, type Item, type Kind } from '../../src/hubspot/content.js';
 import { HUBL } from '../../src/hubspot/rich-text.js';
 import { MemoryStore } from '../../src/store/store.js';
-import { createHubSpotStandin, KB_URL } from '../standin/hubspot.js';
+import { createHubSpotStandin, KB_URL, SITE_URL } from '../standin/hubspot.js';
 import { createSupertextStandin } from '../standin/supertext.js';
 
 const key = process.env.E2E_STANDIN === '1' ? 'stand-in' : (process.env.SUPERTEXT_API_KEY ?? '');
@@ -54,6 +54,8 @@ const ITEMS: { kind: Kind; id: string; languages: string[] }[] = [
   // Linked articles: "Returning an order" links to 501 and to 503, which is translated after it.
   { kind: 'kb-article', id: '502', languages: ['de-ch', 'fr-ch', 'it-ch'] },
   { kind: 'kb-article', id: '503', languages: ['de-ch', 'fr-ch', 'it-ch'] },
+  // Last: the contact page, which "About us" (button) and "Returning an order" (text) link to; their links wait for it.
+  { kind: 'site-page', id: '102', languages: ['de-ch', 'fr-ch', 'it-ch'] },
 ];
 
 const failures: string[] = [];
@@ -243,6 +245,8 @@ function checkVersion(tag: string, kind: Kind, source: Item, version: Item, lang
   }
   // Short texts can rightly stay the same (a greeting like "Hi {{ contact.firstname }},", a product
   // name), and an email has only a handful of texts: 70% keeps the check meaningful without flaking.
+  // The contact page has three words ("Contact" stays "Contact" in French): it is here for its links only.
+  if (source.id === '102') return;
   check(`${tag}: texts were changed by the translation`, before.size > 0 && changed / before.size >= 0.7, `${changed}/${before.size} texts`);
   const scores = Object.fromEntries(Object.keys(STOPWORDS).map((l) => [l, score(all, l)]));
   const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
@@ -275,7 +279,13 @@ for (const lang of ['de-ch', 'fr-ch', 'it-ch']) {
   const returning = hrefs(String(hubspot.draft(id('502'))?.body ?? ''));
   check(`links ${lang}: "Returning an order" links to the translated "Track my order"`, returning[0] === `${KB_URL}${address('501')}`, returning[0]);
   check(`links ${lang}: … and, once translated, to "Damaged chocolate" with its anchor`, returning[1] === `${address('503')}#photos`, returning[1]);
-  check(`links ${lang}: … and keeps its other links`, returning[2] === '#before' && returning[3] === 'https://www.swiss-chocolate.example/contact', returning.slice(2).join(' '));
+  const contact = `${SITE_URL}/${String(hubspot.draft(firstIds.get(`102:${lang}`) ?? '')?.slug ?? '')}`;
+  check(`links ${lang}: … keeps its anchor link, and points to the contact page translated last`, returning[2] === '#before' && returning[3] === contact, returning.slice(2).join(' '));
+  const button = (hubspot.draft(id('101')) as any)?.widgets?.cta?.body?.link?.url;
+  check(`links ${lang}: the button of "About us" points to the translated contact page, with its ID`, button?.href === contact && String(button?.content_id) === firstIds.get(`102:${lang}`), JSON.stringify(button));
+  const blogVersion = firstIds.get(`301:${lang}`);
+  const roasting = (hubspot.draft(id('401')) as any)?.content?.widgets?.roasting?.body?.link?.url?.href;
+  if (blogVersion) check(`links ${lang}: the email's link points to the translated blog post`, roasting === `${SITE_URL}/${String(hubspot.draft(blogVersion)?.slug)}`, roasting);
   const damaged = hrefs(String(hubspot.draft(id('503'))?.body ?? ''));
   check(`links ${lang}: "Damaged chocolate" links to the translated "Returning an order"`, damaged[0] === `${KB_URL}${address('502')}`, damaged[0]);
 }

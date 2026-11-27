@@ -4,7 +4,7 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
-- Added: links between knowledge base articles point to the translated articles. Articles can be translated in any order: a link to an article without a translation yet waits and is updated when the app translates that article. *Settings → Translation* shows how many links wait and links to the list (*Stop waiting*, *Update links now*). On by default; *Point links between knowledge base articles to the translated articles*.
+- Added: links between translations point to the same language: from and to website pages, landing pages, blog posts and knowledge base articles, and from marketing emails (in text and in HubSpot's link fields such as buttons). Items can be translated in any order: a link to an item without a translation yet waits and is updated when the app translates that item. *Settings → Translation → See the list* shows all links, filtered by *Waiting*, *Translated* or *Kept on the original* (*Keep the original link*, *Update links now*). On by default; *Point links to the translated pages, posts and articles*.
 - Added: new language versions get their address (URL) in their language: `/de-ch/about-us` becomes `/de-ch/ueber-uns`, for pages, blog posts and knowledge base articles. On by default; *Settings → Translation → Translate the addresses (URLs) of new versions*. Existing versions keep their address.
 
 ## 1.2.0 — 2026-11-26

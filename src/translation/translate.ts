@@ -11,7 +11,7 @@ import {
 import type { Extraction } from '../hubspot/extract.js';
 import type { Politeness, SupertextClient } from '../supertext/client.js';
 import type { JobItem } from '../store/store.js';
-import type { KnowledgeBaseLinks } from './links.js';
+import type { ContentLinks, RewriteResult } from './links.js';
 import { slugify, slugWords, withLastPart } from './slug.js';
 
 /**
@@ -47,8 +47,8 @@ export interface TranslateArgs {
   primaryLanguage: string;
   /** Translate the address of a new version (Settings → Translation); not with an imported file. */
   translateUrls?: boolean;
-  /** Point links between articles to the same language (Settings → Translation); one per job. */
-  links?: KnowledgeBaseLinks;
+  /** Point links between pages, posts and articles to the same language (Settings → Translation); one per job. */
+  links?: ContentLinks;
 }
 
 /** Where an item keeps its address: a page's or post's slug, an article's path; emails have none. */
@@ -83,25 +83,24 @@ export async function translateItem(args: TranslateArgs): Promise<TranslateResul
     if (words) slugPart = slugify(translated.pop() ?? '', args.language);
     extraction.apply(translated);
     const values = fields();
-    if (links && typeof values.body === 'string') {
+    if (links) {
       // A link problem never costs the translation: the links then stay as they are.
       try {
-        const result = await links.rewrite(values.body, args.language, existingId ? await links.ignored(existingId) : []);
-        values.body = result.html;
-        waiting = result.waiting;
+        linkResult = await links.rewrite(values, args.language, existingId ? await links.kept(kind, existingId) : []);
       } catch (error) {
+        linkResult = undefined;
         console.warn(`Links of ${kind} ${String(source.id)} not updated:`, error instanceof Error ? error.message : error);
       }
     }
     return values;
   };
-  const links = kind === 'kb-article' ? args.links : undefined;
-  let waiting: string[] = [];
-  /** After writing: notes the links still waiting, fixes drafts that waited for this article. */
+  const links = args.links;
+  let linkResult: RewriteResult | undefined;
+  /** After writing: stores the version's links, fixes drafts that waited for this item. */
   const linked = async (targetId: string) => {
-    if (!links) return;
+    if (!links || !linkResult) return;
     try {
-      await links.translated(String(source.id), args.language, targetId, waiting);
+      await links.translated(kind, String(source.id), args.language, targetId, linkResult);
     } catch (error) {
       console.warn(`Links waiting for ${kind} ${String(source.id)} not updated:`, error instanceof Error ? error.message : error);
     }

@@ -163,15 +163,21 @@ async function main() {
   await page.waitForSelector('.job');
   await shot('import-results', page.locator('.job'));
 
-  // A knowledge base article that links to one not translated yet: its link waits (Settings → Links waiting for a translation).
+  // A knowledge base article that links to items not translated yet: its links wait (Settings → Links between translations).
   await page.goto(`${appUrl}/?kind=kb-article&lang=en`);
   await page.check('input[name="item"][value="502"]');
   await page.uncheck('input[name="language"][value="de"]'); // the knowledge base has the Swiss languages only
   await page.click('#translate-button');
   await page.waitForURL(/item=502/, { timeout: 300_000 });
   await page.waitForSelector('.job .notice.success', { timeout: 300_000 });
+  // Then the contact page: the links to it now point to its translations.
+  await page.goto(`${appUrl}/?kind=site-page&lang=en`);
+  await page.check('input[name="item"][value="102"]');
+  await page.click('#translate-button');
+  await page.waitForURL(/item=102/, { timeout: 300_000 });
+  await page.waitForSelector('.job .notice', { timeout: 300_000 });
   await page.goto(`${appUrl}/links`);
-  await shot('waiting-links', page.locator('main'));
+  await shot('links', page.locator('main'));
 
   // Phones: every page must fit a 390 px wide screen (wide tables scroll inside their card).
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });

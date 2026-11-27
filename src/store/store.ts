@@ -41,8 +41,8 @@ export interface Account {
    */
   translateUrls: boolean;
   /**
-   * Point links between knowledge base articles to the article in the same language: when an
-   * article is translated, and later, when an article it links to gets its translation.
+   * Point links between pages, posts and articles to the version in the same language: when an
+   * item is translated, and later, when an item it links to gets its translation.
    */
   translateLinks: boolean;
   /** "Send version information to Supertext" (SUPERTEXT_VERSION_REPORTS=0 turns it off for all accounts). */
@@ -106,11 +106,24 @@ export interface Job {
   finishedAt?: string;
 }
 
-/** A translation's link to an original that has no version in the translation's language yet. */
-export interface WaitingLink {
-  articleId: string;
+/**
+ * A link in a translation the app wrote, to another page, post or article (Settings → Links):
+ * `translated` points to the target's version in the translation's language, `waiting` still to
+ * the original (no version yet; fixed when the app translates it), `kept` stays on the original
+ * ("Keep the original link").
+ */
+export type LinkStatus = 'translated' | 'waiting' | 'kept';
+
+export interface ContentLink {
+  kind: Kind;
+  itemId: string;
   language: string;
+  targetKind: Kind;
+  /** The original the link points to (its version in `language`, if any, is looked up in HubSpot). */
   targetId: string;
+  status: LinkStatus;
+  /** For a translated link: the address it points to (the version's draft address, as written). */
+  href?: string;
 }
 
 export interface Store {
@@ -129,18 +142,18 @@ export interface Store {
   saveTranslation(accountId: string, translation: Translation): Promise<void>;
 
   /**
-   * Links still waiting for a translation: `articleId` (a translation the app wrote) links to the
-   * originals `targetIds`, which have no version in `language` yet. Replaces the article's list.
+   * The links of one translation, as the app last wrote it. Replaces its links, except the ones
+   * marked `kept`, which stay (and are stored as `kept` when they come again).
    */
-  saveWaitingLinks(accountId: string, articleId: string, language: string, targetIds: string[]): Promise<void>;
-  /** The translations in `language` whose links wait for `targetId` to be translated. */
-  waitingFor(accountId: string, language: string, targetId: string): Promise<string[]>;
-  /** All waiting links of the account (Settings → Links waiting for a translation). */
-  allWaitingLinks(accountId: string): Promise<WaitingLink[]>;
-  /** Stops waiting: the link stays on the original, also later (see `ignoredLinks`). */
-  removeWaitingLink(accountId: string, articleId: string, targetId: string): Promise<void>;
-  /** The originals whose links in `articleId` are to stay as they are ("Stop waiting"). */
-  ignoredLinks(accountId: string, articleId: string): Promise<string[]>;
+  saveLinks(accountId: string, kind: Kind, itemId: string, language: string, links: { targetKind: Kind; targetId: string; status: 'translated' | 'waiting'; href?: string }[]): Promise<void>;
+  /** All links of the account, sorted by language, translation and target. */
+  allLinks(accountId: string): Promise<ContentLink[]>;
+  /** The translations in `language` with a link waiting for `targetId` to be translated. */
+  waitingFor(accountId: string, language: string, targetKind: Kind, targetId: string): Promise<{ kind: Kind; itemId: string }[]>;
+  /** "Keep the original link" (true) or "Point to the translation" again (false, then `waiting` until checked). */
+  setKept(accountId: string, kind: Kind, itemId: string, targetKind: Kind, targetId: string, kept: boolean): Promise<void>;
+  /** The targets (`kind:id`) whose links in an item stay on the original. */
+  keptLinks(accountId: string, kind: Kind, itemId: string): Promise<string[]>;
 
   saveJob(job: Job): Promise<void>;
   getJob(accountId: string, id: string): Promise<Job | undefined>;
@@ -187,8 +200,8 @@ export class MemoryStore implements Store {
   private readonly accounts = new Map<string, Account>();
   private readonly records = new Map<string, Translation[]>();
   private readonly jobs = new Map<string, Job>();
-  /** accountId → articleId → { language, targets, ignored }. */
-  private readonly waiting = new Map<string, Map<string, { language: string; targets: string[]; ignored: string[] }>>();
+  /** accountId → links. */
+  private readonly links = new Map<string, ContentLink[]>();
 
   async getAccount(accountId: string) {
     const account = this.accounts.get(accountId);
@@ -222,7 +235,7 @@ export class MemoryStore implements Store {
   async deleteAccount(accountId: string) {
     this.accounts.delete(accountId);
     this.records.delete(accountId);
-    this.waiting.delete(accountId);
+    this.links.delete(accountId);
     for (const [id, job] of this.jobs) if (job.accountId === accountId) this.jobs.delete(id);
   }
 
@@ -235,39 +248,43 @@ export class MemoryStore implements Store {
     return result;
   }
 
-  async saveWaitingLinks(accountId: string, articleId: string, language: string, targetIds: string[]) {
-    const map = this.waiting.get(accountId) ?? new Map();
-    const ignored: string[] = map.get(articleId)?.ignored ?? [];
-    const targets = [...new Set(targetIds)].filter((id) => !ignored.includes(id));
-    if (targets.length || ignored.length) map.set(articleId, { language, targets, ignored });
-    else map.delete(articleId);
-    this.waiting.set(accountId, map);
-  }
-
-  async waitingFor(accountId: string, language: string, targetId: string) {
-    return [...(this.waiting.get(accountId) ?? new Map<string, { language: string; targets: string[]; ignored: string[] }>())]
-      .filter(([, entry]) => entry.language === language && entry.targets.includes(targetId))
-      .map(([articleId]) => articleId);
-  }
-
-  async allWaitingLinks(accountId: string) {
-    const result: WaitingLink[] = [];
-    for (const [articleId, entry] of this.waiting.get(accountId) ?? []) {
-      for (const targetId of entry.targets) result.push({ articleId, language: entry.language, targetId });
+  async saveLinks(accountId: string, kind: Kind, itemId: string, language: string, links: { targetKind: Kind; targetId: string; status: 'translated' | 'waiting'; href?: string }[]) {
+    const all = this.links.get(accountId) ?? [];
+    const mine = (l: ContentLink) => l.kind === kind && l.itemId === itemId;
+    const kept = all.filter((l) => mine(l) && l.status === 'kept');
+    const isKept = (t: Kind, id: string) => kept.some((l) => l.targetKind === t && l.targetId === id);
+    const fresh: ContentLink[] = [];
+    for (const link of links) {
+      if (isKept(link.targetKind, link.targetId) || fresh.some((l) => l.targetKind === link.targetKind && l.targetId === link.targetId)) continue;
+      fresh.push({ kind, itemId, language, ...link });
     }
-    return result;
+    this.links.set(accountId, [...all.filter((l) => !mine(l)), ...kept, ...fresh]);
   }
 
-  async removeWaitingLink(accountId: string, articleId: string, targetId: string) {
-    const entry = this.waiting.get(accountId)?.get(articleId);
-    if (!entry) return;
-    entry.targets = entry.targets.filter((t) => t !== targetId);
-    if (!entry.ignored.includes(targetId)) entry.ignored.push(targetId);
+  async allLinks(accountId: string) {
+    return [...(this.links.get(accountId) ?? [])].sort(
+      (a, b) => a.language.localeCompare(b.language) || a.itemId.localeCompare(b.itemId) || a.targetId.localeCompare(b.targetId),
+    );
   }
 
-  async ignoredLinks(accountId: string, articleId: string) {
-    return [...(this.waiting.get(accountId)?.get(articleId)?.ignored ?? [])];
+  async waitingFor(accountId: string, language: string, targetKind: Kind, targetId: string) {
+    return (this.links.get(accountId) ?? [])
+      .filter((l) => l.status === 'waiting' && l.language === language && l.targetKind === targetKind && l.targetId === targetId)
+      .map((l) => ({ kind: l.kind, itemId: l.itemId }));
   }
+
+  async setKept(accountId: string, kind: Kind, itemId: string, targetKind: Kind, targetId: string, kept: boolean) {
+    for (const l of this.links.get(accountId) ?? []) {
+      if (l.kind === kind && l.itemId === itemId && l.targetKind === targetKind && l.targetId === targetId) l.status = kept ? 'kept' : 'waiting';
+    }
+  }
+
+  async keptLinks(accountId: string, kind: Kind, itemId: string) {
+    return (this.links.get(accountId) ?? [])
+      .filter((l) => l.kind === kind && l.itemId === itemId && l.status === 'kept')
+      .map((l) => `${l.targetKind}:${l.targetId}`);
+  }
+
 
   async saveTranslation(accountId: string, translation: Translation) {
     const list = (this.records.get(accountId) ?? []).filter(

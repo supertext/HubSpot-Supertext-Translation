@@ -2,6 +2,7 @@ import { SDK_VERSION } from 'supertext-sdk';
 import { describe, expect, it } from 'vitest';
 import { REVIEW_URL } from '../src/config.js';
 import { PORTAL_ID, setup, STANDARD_SETTINGS } from './helpers.js';
+import { KB_URL, SITE_URL } from './standin/hubspot.js';
 
 /** The language version of `sourceId` in `language`, as the stand-in has it now. */
 const version = (env: ReturnType<typeof setup>, kind: Parameters<ReturnType<typeof setup>['hubspot']['items']>[0], sourceId: string, language: string) =>
@@ -71,7 +72,8 @@ describe('website pages', () => {
     );
     expect(widgets.cta.body).toEqual({
       button_text: 'Jetzt bestellen',
-      link: { url: { href: 'https://shop.example.com', type: 'EXTERNAL' } },
+      // A link to the contact page, which has no German version yet: it stays (and waits).
+      link: { url: { href: 'https://www.swiss-chocolate.example/contact', type: 'CONTENT', content_id: 102 } },
       style: { color: '#ff6e40' },
     });
     expect((widgets.hero_image.body.img as Record<string, unknown>).alt).toBe('Unsere Werkstatt in Bern');
@@ -293,21 +295,22 @@ describe('knowledge base', () => {
     const env = setup();
     await env.connect();
     await env.saveSettings(STANDARD_SETTINGS);
-    const KB = 'https://help.swiss-chocolate.example';
     const hrefs = (html: unknown) => [...String(html).matchAll(/href="([^"]*)"/g)].map((m) => m[1]);
 
-    // "Track my order" first; "Returning an order" links to it (full address) and to "Damaged chocolate" (relative, with an anchor).
+    // "Track my order" first; "Returning an order" links to it (full address), to "Damaged chocolate" (relative,
+    // with an anchor) and to the website's contact page.
     await env.translate('kb-article', '501', ['de-ch']);
     await env.translate('kb-article', '502', ['de-ch']);
     const tracking = version(env, 'kb-article', '501', 'de-ch')!;
     const returning = version(env, 'kb-article', '502', 'de-ch')!;
     expect(hrefs(returning.body)).toEqual([
-      `${KB}/de-ch/knowledge-base/${tracking.path}`, // translated: the German article's (translated) address
+      `${KB_URL}/de-ch/knowledge-base/${tracking.path}`, // translated: the German article's (translated) address
       '/en/knowledge-base/damaged-chocolate#photos', // not translated yet: stays, and waits
       '#before', // an anchor on the same article
-      'https://www.swiss-chocolate.example/contact', // not an article
+      `${SITE_URL}/contact`, // a website page, not translated yet: waits too
     ]);
-    expect(await env.store.waitingFor(PORTAL_ID, 'de-ch', '503')).toEqual([String(returning.id)]);
+    expect(await env.store.waitingFor(PORTAL_ID, 'de-ch', 'kb-article', '503')).toEqual([{ kind: 'kb-article', itemId: String(returning.id) }]);
+    expect(await env.store.waitingFor(PORTAL_ID, 'de-ch', 'site-page', '102')).toEqual([{ kind: 'kb-article', itemId: String(returning.id) }]);
 
     // An editor changes the German draft meanwhile; then "Damaged chocolate" is translated.
     const edited = String(returning.body).replace('</p>', ' Danke!</p>');
@@ -318,14 +321,44 @@ describe('knowledge base', () => {
     // The waiting link now points to the German article, relative as it was and with its anchor; the editor's change stays.
     expect(hrefs(fixed.body)[1]).toBe(`/de-ch/knowledge-base/${damaged.path}#photos`);
     expect(String(fixed.body)).toContain('Danke!');
-    expect(await env.store.waitingFor(PORTAL_ID, 'de-ch', '503')).toEqual([]);
+    expect(await env.store.waitingFor(PORTAL_ID, 'de-ch', 'kb-article', '503')).toEqual([]);
     // And the new article's own link to "Returning an order" points to its German version right away.
-    expect(hrefs(damaged.body)).toEqual([`${KB}/de-ch/knowledge-base/${fixed.path}`]);
+    expect(hrefs(damaged.body)).toEqual([`${KB_URL}/de-ch/knowledge-base/${fixed.path}`]);
     // The English originals are never changed.
-    expect(hrefs(env.hubspot.draft('502')!.body)[0]).toBe(`${KB}/en/knowledge-base/track-my-order`);
+    expect(hrefs(env.hubspot.draft('502')!.body)[0]).toBe(`${KB_URL}/en/knowledge-base/track-my-order`);
   });
 
-  it('shows the waiting links, lets them go, and updates them on request', async () => {
+  it('points links between all kinds of content: articles, pages, posts and emails', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    const hrefs = (html: unknown) => [...String(html).matchAll(/href="([^"]*)"/g)].map((m) => m[1]);
+    await env.translate('kb-article', '502', ['de-ch']);
+    const returning = () => version(env, 'kb-article', '502', 'de-ch')!;
+    expect(hrefs(returning().body)[3]).toBe(`${SITE_URL}/contact`);
+
+    // The contact page is translated: the article's waiting link points to it (its translated address).
+    await env.translate('site-page', '102', ['de-ch']);
+    const contact = version(env, 'site-page', '102', 'de-ch')!;
+    expect(contact.slug).toBe('de-ch/kontakt');
+    expect(hrefs(returning().body)[3]).toBe(`${SITE_URL}/de-ch/kontakt`);
+
+    // "About us": its button links to the contact page with HubSpot's link field; both address and page ID follow.
+    await env.translate('site-page', '101', ['de-ch']);
+    const about = version(env, 'site-page', '101', 'de-ch')! as Record<string, any>;
+    expect(about.widgets.cta.body.link.url).toEqual({ href: `${SITE_URL}/de-ch/kontakt`, type: 'CONTENT', content_id: Number(contact.id) });
+
+    // An email linking to a blog post that gets its German version only afterwards.
+    await env.translate('email', '401', ['de-ch']);
+    const email = () => version(env, 'email', '401', 'de-ch')! as Record<string, any>;
+    expect(email().content.widgets.roasting.body.link.url.href).toBe(`${SITE_URL}/blog/roasting`);
+    await env.translate('blog-post', '301', ['de-ch']);
+    expect(email().content.widgets.roasting.body.link.url.href).toBe(`${SITE_URL}/de-ch/blog/roesten`);
+    // Only the article's links to the two articles not translated in this test still wait.
+    expect((await env.store.allLinks(PORTAL_ID)).filter((l) => l.status === 'waiting').map((l) => l.targetId)).toEqual(['501', '503']);
+  });
+
+  it('lists all links, filters them, keeps a link on the original and updates waiting ones on request', async () => {
     const env = setup();
     await env.connect();
     await env.saveSettings(STANDARD_SETTINGS);
@@ -335,37 +368,55 @@ describe('knowledge base', () => {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams([['csrf', await env.csrf()], ...fields]).toString(),
       });
+    await env.translate('kb-article', '501', ['de-ch']);
     await env.translate('kb-article', '502', ['de-ch', 'fr-ch']);
     const german = version(env, 'kb-article', '502', 'de-ch')!;
     const french = version(env, 'kb-article', '502', 'fr-ch')!;
 
-    // "Returning an order" waits for "Track my order" and "Damaged chocolate", in both languages.
-    expect(await (await env.request('/settings')).text()).toContain('4 links are waiting for a translation.');
-    const list = await (await env.request('/links')).text();
-    expect(list).toContain('Links waiting for a translation');
-    expect(list).toContain('Damaged chocolate');
-    expect(list).toContain('How do I track my order?');
-    expect(list).toContain(`/knowledge-article/${PORTAL_ID}/editor/${german.id}/content`);
+    // German: to "Track my order" translated, to "Damaged chocolate" and the contact page waiting; French: all three waiting.
+    expect(await (await env.request('/settings')).text()).toContain('6 links between translations, 5 of them waiting for a translation.');
+    const all = await (await env.request('/links')).text();
+    expect(all).toContain('Links between translations');
+    expect(all).toContain('All (6)');
+    expect(all).toContain('Waiting (5)');
+    expect(all).toContain('Translated (1)');
+    expect(all).toContain('Damaged chocolate');
+    expect(all).toContain('Website page');
+    expect(all).toContain(`/knowledge-article/${PORTAL_ID}/editor/${german.id}/content`);
+    const translated = await (await env.request('/links?status=translated')).text();
+    expect(translated).toContain('How do I track my order?');
+    expect(translated).not.toContain('Damaged chocolate');
 
-    // Stop waiting for one: that link stays on the original.
-    await post('/links/remove', [['articleId', String(french.id)], ['targetId', '503']]);
-    expect((await env.store.allWaitingLinks(PORTAL_ID)).length).toBe(3);
-    expect(await (await env.request('/links?removed=1')).text()).toContain('no longer on this list');
+    // Keep one on the original: it moves to "Kept", and stays there.
+    await post('/links/keep', [['kind', 'kb-article'], ['itemId', String(french.id)], ['targetKind', 'kb-article'], ['targetId', '503'], ['keep', '1'], ['status', 'waiting']]);
+    expect(await (await env.request('/links?status=kept')).text()).toContain('Kept on the original (1)');
 
     // "Damaged chocolate" translated while updating links was off (as if made by hand); then "Update links now".
     await env.saveSettings(STANDARD_SETTINGS.filter(([name]) => name !== 'translateLinks'));
-    await env.translate('kb-article', '503', ['de-ch']);
+    await env.translate('kb-article', '503', ['de-ch', 'fr-ch']);
     expect(String(version(env, 'kb-article', '502', 'de-ch')!.body)).toContain('/en/knowledge-base/damaged-chocolate#photos');
     await env.saveSettings(STANDARD_SETTINGS);
     const updated = await post('/links/update');
     expect(updated.headers.get('location')).toBe('/links?updated=1');
     const damaged = version(env, 'kb-article', '503', 'de-ch')!;
     expect(String(version(env, 'kb-article', '502', 'de-ch')!.body)).toContain(`/de-ch/knowledge-base/${damaged.path}#photos`);
-    // Still waiting: the German link to "Track my order" and the French one; the one let go stays gone.
-    expect((await env.store.allWaitingLinks(PORTAL_ID)).map((w) => `${w.language}:${w.targetId}`).sort()).toEqual(['de-ch:501', 'fr-ch:501']);
-    // The link let go stays on the original, also once its article is translated.
-    await env.translate('kb-article', '503', ['fr-ch']);
+    // The kept French link stays on the original.
     expect(String(version(env, 'kb-article', '502', 'fr-ch')!.body)).toContain('/en/knowledge-base/damaged-chocolate#photos');
+    const status = (await env.store.allLinks(PORTAL_ID)).map((l) => `${l.language}:${l.targetKind}:${l.targetId}:${l.status}`).sort();
+    expect(status).toEqual([
+      'de-ch:kb-article:501:translated',
+      'de-ch:kb-article:503:translated',
+      'de-ch:site-page:102:waiting',
+      'fr-ch:kb-article:501:waiting',
+      'fr-ch:kb-article:503:kept',
+      'fr-ch:site-page:102:waiting',
+    ]);
+
+    // "Wait for the translation" again: the link is updated with the next check.
+    await post('/links/keep', [['kind', 'kb-article'], ['itemId', String(french.id)], ['targetKind', 'kb-article'], ['targetId', '503'], ['keep', '0']]);
+    await post('/links/update');
+    const frenchDamaged = version(env, 'kb-article', '503', 'fr-ch')!;
+    expect(String(version(env, 'kb-article', '502', 'fr-ch')!.body)).toContain(`/fr-ch/knowledge-base/${frenchDamaged.path}#photos`);
   });
 
   it('leaves links alone when the setting is off', async () => {
@@ -376,6 +427,7 @@ describe('knowledge base', () => {
     await env.translate('kb-article', '502', ['de-ch']);
     expect(String(version(env, 'kb-article', '502', 'de-ch')!.body)).toContain('href="https://help.swiss-chocolate.example/en/knowledge-base/track-my-order"');
     expect((await env.store.getAccount(PORTAL_ID))!.translateLinks).toBe(false);
+    expect(await env.store.allLinks(PORTAL_ID)).toEqual([]);
   });
 
   it('is only offered when the account granted its scopes', async () => {

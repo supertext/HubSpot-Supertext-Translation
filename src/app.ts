@@ -20,8 +20,8 @@ import { appUrl, type PageContext } from './views/layout.js';
 import { KeyCheckMessage, keyCheckText, SettingsPage } from './views/settings.js';
 import { ImportPage } from './views/import.js';
 import { TranslatePage, type ItemRow } from './views/translate.js';
-import { LinksPage, type WaitingRow } from './views/links.js';
-import { KnowledgeBaseLinks } from './translation/links.js';
+import { LINK_FILTERS, LinksPage, type LinkFilter, type LinkRow } from './views/links.js';
+import { ContentLinks, LINK_TARGETS } from './translation/links.js';
 
 export interface AppDeps {
   config: Config;
@@ -40,6 +40,9 @@ export const KB_SCOPE = 'cms.knowledge_base.articles.write';
 
 /** The kinds an account can translate: the knowledge base only with its scopes. */
 export const knowledgeBase = (account: Pick<Account, 'scopes'>): boolean => account.scopes.includes(KB_SCOPE);
+
+/** The kinds links can point to for an account (the knowledge base only with its scopes). */
+const linkKinds = (account: Account) => LINK_TARGETS.filter((kind) => kind !== 'kb-article' || knowledgeBase(account));
 
 /** Everything the routes share. */
 export function services(deps: AppDeps) {
@@ -403,27 +406,38 @@ export function createApp(deps: AppDeps) {
     }
   });
 
-  // --- Links waiting for a translation (Settings → Translation) ---------------------
+  // --- Links between translations (Settings → Translation) ------------------------
 
-  /** HubSpot client and link helper for a page request. */
-  const linkHelper = (account: Account) => {
-    return new KnowledgeBaseLinks(hubspot(account), store, account.accountId);
+  /** Link helper for a page request (all kinds the account can read, whatever the setting). */
+  const linkHelper = (account: Account) => new ContentLinks(hubspot(account), store, account.accountId, linkKinds(account));
+  const PER_PAGE = 50;
+  /** For the settings page: how many links there are, and how many wait. */
+  const linkCounts = async (accountId: string) => {
+    const all = await store.allLinks(accountId);
+    return { all: all.length, waiting: all.filter((l) => l.status === 'waiting').length };
   };
 
   app.get('/links', async (c) => {
     const session = await current(c);
     if (!session) return c.redirect('/', 302);
     const t = tr(c);
-    const waiting = await store.allWaitingLinks(session.account.accountId);
-    const links = waiting.length ? linkHelper(session.account) : undefined;
-    let rows: WaitingRow[] = waiting;
-    if (links) {
+    const all = await store.allLinks(session.account.accountId);
+    const status = c.req.query('status');
+    const filter: LinkFilter = LINK_FILTERS.includes(status as LinkFilter) ? (status as LinkFilter) : 'all';
+    const counts = Object.fromEntries(LINK_FILTERS.map((f) => [f, f === 'all' ? all.length : all.filter((l) => l.status === f).length])) as Record<LinkFilter, number>;
+    const filtered = filter === 'all' ? all : all.filter((l) => l.status === filter);
+    const pages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+    const pageNumber = Math.min(pages, Math.max(1, Number(c.req.query('page')) || 1));
+    const shown = filtered.slice((pageNumber - 1) * PER_PAGE, pageNumber * PER_PAGE);
+    let rows: LinkRow[] = shown;
+    if (shown.length) {
       try {
+        const links = linkHelper(session.account);
         rows = [];
-        for (const w of waiting) rows.push({ ...w, article: await links.describe(w.articleId, true), target: await links.describe(w.targetId) });
+        for (const l of shown) rows.push({ ...l, item: await links.describe(l.kind, l.itemId, true), target: await links.describe(l.targetKind, l.targetId) });
       } catch (error) {
-        console.warn('Waiting links: articles not read:', error instanceof Error ? error.message : error);
-        rows = waiting;
+        console.warn('Links: items not read:', error instanceof Error ? error.message : error);
+        rows = shown;
       }
     }
     const updated = c.req.query('updated');
@@ -434,20 +448,29 @@ export function createApp(deps: AppDeps) {
           account: session.account,
           appBase: editorBase,
           rows,
+          filter,
+          counts,
+          page: pageNumber,
+          pages,
           updated: updated !== undefined && /^\d+$/.test(updated) ? Number(updated) : undefined,
-          removed: c.req.query('removed') === '1',
+          changed: c.req.query('changed') === '1',
         }),
       ),
     );
   });
 
-  app.post('/links/remove', async (c) => {
+  app.post('/links/keep', async (c) => {
     const session = await current(c);
     if (!session) return c.redirect('/', 303);
     const form = await c.req.parseBody();
     if (!sessions.checkCsrf(session.cookie, String(form.csrf ?? ''))) return c.redirect('/?error=session', 303);
-    await store.removeWaitingLink(session.account.accountId, String(form.articleId ?? ''), String(form.targetId ?? ''));
-    return c.redirect('/links?removed=1', 303);
+    const kind = String(form.kind ?? '');
+    const targetKind = String(form.targetKind ?? '');
+    if (isKind(kind) && isKind(targetKind)) {
+      await store.setKept(session.account.accountId, kind, String(form.itemId ?? ''), targetKind, String(form.targetId ?? ''), form.keep === '1');
+    }
+    const status = String(form.status ?? '');
+    return c.redirect(appUrl('/links', { status: LINK_FILTERS.includes(status as LinkFilter) && status !== 'all' ? status : undefined, changed: '1' }), 303);
   });
 
   app.post('/links/update', async (c) => {
@@ -459,13 +482,13 @@ export function createApp(deps: AppDeps) {
     const links = linkHelper(session.account);
     const seen = new Set<string>();
     let updated = 0;
-    for (const w of await store.allWaitingLinks(session.account.accountId)) {
-      if (seen.has(w.articleId)) continue;
-      seen.add(w.articleId);
+    for (const l of await store.allLinks(session.account.accountId)) {
+      if (l.status !== 'waiting' || seen.has(`${l.kind}:${l.itemId}`)) continue;
+      seen.add(`${l.kind}:${l.itemId}`);
       try {
-        if ((await links.recheck(w.articleId, w.language)) === 'updated') updated++;
+        if ((await links.recheck(l.kind, l.itemId, l.language)) === 'updated') updated++;
       } catch (error) {
-        console.warn(`Links of article ${w.articleId} not updated:`, error instanceof Error ? error.message : error);
+        console.warn(`Links of ${l.kind} ${l.itemId} not updated:`, error instanceof Error ? error.message : error);
       }
     }
     return c.redirect(`/links?updated=${updated}`, 303);
@@ -490,7 +513,7 @@ export function createApp(deps: AppDeps) {
           configResult: (['sent', 'off', 'failed'] as const).find((r) => r === c.req.query('config')),
           invalidCodes: c.req.query('invalid') || undefined,
           knowledgeBase: knowledgeBase(session.account),
-          waitingLinks: (await store.allWaitingLinks(session.account.accountId)).length,
+          links: await linkCounts(session.account.accountId),
           review: config.reviewUrl !== '',
           uiLanguage: (() => {
             const chosen = getCookie(c, 'st_locale') ?? '';

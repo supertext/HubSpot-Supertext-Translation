@@ -43,7 +43,12 @@ export function seed(): Record<'site-page' | 'landing-page' | 'blog-post' | 'ema
           cta: {
             name: 'cta',
             type: 'module',
-            body: { button_text: 'Order now', link: { url: { href: 'https://shop.example.com', type: 'EXTERNAL' } }, style: { color: '#ff6e40' } },
+            // A link to another page of the site, as HubSpot's link field stores it (with the page's ID).
+            body: {
+              button_text: 'Order now',
+              link: { url: { href: 'https://www.swiss-chocolate.example/contact', type: 'CONTENT', content_id: 102 } },
+              style: { color: '#ff6e40' },
+            },
           },
           hero_image: {
             name: 'hero_image',
@@ -158,6 +163,12 @@ export function seed(): Record<'site-page' | 'landing-page' | 'blog-post' | 'ema
               },
             },
             button: { name: 'button', type: 'module', body: { button_text: 'Shop now', destination: 'https://shop.example.com' } },
+            // An image linking to a blog post.
+            roasting: {
+              name: 'roasting',
+              type: 'module',
+              body: { link: { url: { href: 'https://www.swiss-chocolate.example/blog/roasting', type: 'EXTERNAL' } } },
+            },
           },
           plainTextVersion: 'Hi {{ contact.firstname }},\n\nOur autumn collection has arrived.\n\n{{ unsubscribe_link }}',
         },
