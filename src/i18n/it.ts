@@ -283,6 +283,8 @@ export const it: Messages = {
   'links.previous': "Indietro",
   'links.next': "Avanti",
   'links.update': "Aggiorna i link ora",
+  'links.updateTooltip':
+    "Fa puntare i link in attesa alle versioni che esistono ora, anche a quelle create a mano in HubSpot. Cambiano solo i link nelle bozze; i link lasciati sull’originale restano. Di solito non serve: l’app lo fa da sé quando traduce il contenuto che un link attende.",
   'links.updateHelp': "Controlla di nuovo le traduzioni con link in attesa e le fa puntare alle versioni che esistono ora, anche a quelle create a mano in HubSpot. Vengono modificate solo le bozze.",
   'links.back': "Torna alle impostazioni",
   'links.kind.site-page': "Pagina del sito",

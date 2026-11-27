@@ -291,6 +291,8 @@ export const en = {
   'links.previous': "Previous",
   'links.next': "Next",
   'links.update': "Update links now",
+  'links.updateTooltip':
+    "Points waiting links to the versions that exist now, also ones made by hand in HubSpot. Only the links in the drafts change; links kept on the original stay. Usually not needed: the app does this by itself when it translates the item a link waits for.",
   'links.updateHelp': "Checks the translations with waiting links again and points them to the versions that exist now, including ones made by hand in HubSpot. Only drafts are changed.",
   'links.back': "Back to the settings",
   'links.kind.site-page': "Website page",

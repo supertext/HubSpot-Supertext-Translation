@@ -286,6 +286,8 @@ export const de: Messages = {
   'links.previous': "Zurück",
   'links.next': "Weiter",
   'links.update': "Links jetzt anpassen",
+  'links.updateTooltip':
+    "Setzt wartende Links auf die Versionen, die es jetzt gibt, auch auf solche, die in HubSpot von Hand erstellt wurden. Geändert werden nur die Links in den Entwürfen; beim Original belassene Links bleiben. Meist nicht nötig: Die App erledigt das selbst, wenn sie den Inhalt übersetzt, auf den ein Link wartet.",
   'links.updateHelp': "Prüft die Übersetzungen mit wartenden Links erneut und setzt sie auf die Versionen, die es jetzt gibt, auch auf solche, die in HubSpot von Hand erstellt wurden. Geändert werden nur Entwürfe.",
   'links.back': "Zurück zu den Einstellungen",
   'links.kind.site-page': "Website-Seite",

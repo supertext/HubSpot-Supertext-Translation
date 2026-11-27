@@ -4,6 +4,7 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Added: *Update links now* explains what it does in a tooltip.
 - Changed: the list of links between translations has its own **Links** tab in the top bar (before, it was only linked from the settings).
 ## 1.3.0 — 2026-11-27
 

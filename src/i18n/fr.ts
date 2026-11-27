@@ -282,6 +282,8 @@ export const fr: Messages = {
   'links.previous': "Précédent",
   'links.next': "Suivant",
   'links.update': "Mettre à jour les liens maintenant",
+  'links.updateTooltip':
+    "Fait pointer les liens en attente vers les versions qui existent maintenant, y compris celles créées à la main dans HubSpot. Seuls les liens des brouillons changent ; les liens laissés sur l’original restent. En général inutile : l’application le fait d’elle-même lorsqu’elle traduit le contenu qu’un lien attend.",
   'links.updateHelp': "Vérifie à nouveau les traductions dont des liens sont en attente et les fait pointer vers les versions qui existent maintenant, y compris celles créées à la main dans HubSpot. Seuls les brouillons sont modifiés.",
   'links.back': "Retour aux paramètres",
   'links.kind.site-page': "Page de site web",

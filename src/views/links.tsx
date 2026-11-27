@@ -137,9 +137,12 @@ export function LinksPage(props: LinksPageProps) {
         )}
         <form method="post" action="/links/update" class="actions">
           <input type="hidden" name="csrf" value={ctx.csrf} />
-          <button type="submit" class="primary" disabled={!account.translateLinks || props.counts.waiting === 0}>
-            {t.t('links.update')}
-          </button>
+          {/* The tooltip sits on a wrapper too, so it shows while the button is disabled. */}
+          <span title={t.t('links.updateTooltip')}>
+            <button type="submit" class="primary" title={t.t('links.updateTooltip')} disabled={!account.translateLinks || props.counts.waiting === 0}>
+              {t.t('links.update')}
+            </button>
+          </span>
         </form>
         <p class="help">{t.t('links.updateHelp')}</p>
       </section>
