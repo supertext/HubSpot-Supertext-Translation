@@ -419,6 +419,15 @@ describe('knowledge base', () => {
     expect(String(version(env, 'kb-article', '502', 'fr-ch')!.body)).toContain(`/fr-ch/knowledge-base/${frenchDamaged.path}#photos`);
   });
 
+  it('is a beta, off for a new account', async () => {
+    const env = setup();
+    await env.connect();
+    expect((await env.store.getAccount(PORTAL_ID))!.translateLinks).toBe(false);
+    const html = await (await env.request('/settings')).text();
+    expect(html).toMatch(/name="translateLinks" value="1"(?! checked)/);
+    expect(html).toContain('<span class="badge beta">Beta</span>');
+  });
+
   it('leaves links alone when the setting is off', async () => {
     const env = setup();
     await env.connect();

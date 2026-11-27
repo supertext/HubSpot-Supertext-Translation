@@ -147,6 +147,8 @@ for (const [code, supertext] of Object.entries(TARGETS)) {
     }, supertext);
   }
 }
+// Links that follow the language are a beta, off by default: turn them on, the link checks below need them.
+await page.check('input[name="translateLinks"]');
 await page.click('button.primary');
 await page.waitForSelector('.notice.success');
 const settingsWarnings = await page.locator('.notice.warning, .notice.error').allTextContents();

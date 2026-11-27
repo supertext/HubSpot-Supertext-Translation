@@ -4,6 +4,7 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Changed: *Point links to the translated pages, posts and articles* is marked **Beta** (in the settings and on the Links page) and is off by default for new accounts; accounts that already saved the setting keep their choice.
 - Added: *Update links now* explains what it does in a tooltip.
 - Changed: the list of links between translations has its own **Links** tab in the top bar (before, it was only linked from the settings).
 ## 1.3.0 — 2026-11-27

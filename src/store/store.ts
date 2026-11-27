@@ -42,7 +42,7 @@ export interface Account {
   translateUrls: boolean;
   /**
    * Point links between pages, posts and articles to the version in the same language: when an
-   * item is translated, and later, when an item it links to gets its translation.
+   * item is translated, and later, when an item it links to gets its translation. Beta, off by default.
    */
   translateLinks: boolean;
   /** "Send version information to Supertext" (SUPERTEXT_VERSION_REPORTS=0 turns it off for all accounts). */
@@ -66,7 +66,8 @@ export const defaultAccount = (accountId: string): Account => ({
   languageCodes: {},
   reviewLanguages: [],
   translateUrls: true,
-  translateLinks: true,
+  // Beta (November 2026): off until an administrator turns it on.
+  translateLinks: false,
   versionReports: true,
   reporter: null,
   connectedAt: new Date().toISOString(),

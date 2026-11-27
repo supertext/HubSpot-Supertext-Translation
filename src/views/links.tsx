@@ -54,7 +54,9 @@ export function LinksPage(props: LinksPageProps) {
   );
   return (
     <Layout ctx={ctx} title={heading}>
-      <h1>{heading}</h1>
+      <h1>
+        {heading} <span class="badge beta">{t.t('beta')}</span>
+      </h1>
       <p class="intro">{t.t('links.intro')}</p>
       {!account.translateLinks && <Notice tone="info">{t.t('links.off')}</Notice>}
       {props.updated !== undefined && <Notice tone="success">{t.tn('links.updated', props.updated)}</Notice>}

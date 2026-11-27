@@ -137,7 +137,7 @@ export const en = {
   'settings.style.urlsHelp':
     "For example /de-ch/about-us becomes /de-ch/ueber-uns, for pages, blog posts and knowledge base articles. Versions that exist already keep their address, so published links don't break. Languages written in other scripts (such as Japanese or Russian) keep the original address.",
   'settings.style.links': "Point links to the translated pages, posts and articles",
-  'settings.style.linksHelp': "A link from a translation to another website page, landing page, blog post or knowledge base article points to that item in the same language, whatever kind either of them is (a page to an article, an email to a page …). Links to items that aren't translated yet are updated automatically once they are. Only the drafts of translations the app made are changed: a published translation then has a new draft to publish.",
+  'settings.style.linksHelp': "A link from a translation to another website page, landing page, blog post or knowledge base article points to that item in the same language, whatever kind either of them is (a page to an article, an email to a page …). Links to items that aren't translated yet are updated automatically once they are. Only the drafts of translations the app made are changed: a published translation then has a new draft to publish. While it is a beta, it is off until you turn it on.",
   'settings.style.linkCount': "{all} links between translations, {waiting} of them waiting for a translation.",
   'settings.style.waitingList': "See the list",
   'settings.style.notOffered':
@@ -231,6 +231,7 @@ export const en = {
     "The API key couldn't be checked: Supertext answered with an error ({status}). The settings are saved; check again later.",
 
   // Translation files
+  beta: 'Beta',
   'nav.links': 'Links',
   'nav.import': 'Import translation',
   'export.heading': '3. Or: Export for translation',

@@ -267,7 +267,7 @@ export function SettingsPage(props: SettingsPageProps) {
           <p class="help">{t.t('settings.style.urlsHelp')}</p>
           <label class="inline">
             <input type="checkbox" name="translateLinks" value="1" checked={account.translateLinks} />
-            {t.t('settings.style.links')}
+            {t.t('settings.style.links')} <span class="badge beta">{t.t('beta')}</span>
           </label>
           <p class="help">{t.t('settings.style.linksHelp')}</p>
           <p class="help">

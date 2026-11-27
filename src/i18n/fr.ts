@@ -129,7 +129,7 @@ export const fr: Messages = {
   'settings.style.urlsHelp':
     "Par exemple, /fr-ch/about-us devient /fr-ch/a-propos-de-nous, pour les pages, les articles de blog et les articles de la base de connaissances. Les versions existantes gardent leur adresse, pour que les liens publiés restent valables. Les langues écrites dans un autre alphabet (japonais ou russe, par exemple) gardent l’adresse d’origine.",
   'settings.style.links': "Faire pointer les liens vers les pages, articles de blog et articles traduits",
-  'settings.style.linksHelp': "Un lien d’une traduction vers une autre page de site web, landing page, un article de blog ou un article de la base de connaissances mène à ce contenu dans la même langue, quel que soit leur type (une page vers un article, un e-mail vers une page…). Les liens vers des contenus pas encore traduits sont mis à jour automatiquement dès qu’ils le sont. Seuls les brouillons des traductions créées par l’application sont modifiés : une traduction publiée a alors un nouveau brouillon à publier.",
+  'settings.style.linksHelp': "Un lien d’une traduction vers une autre page de site web, landing page, un article de blog ou un article de la base de connaissances mène à ce contenu dans la même langue, quel que soit leur type (une page vers un article, un e-mail vers une page…). Les liens vers des contenus pas encore traduits sont mis à jour automatiquement dès qu’ils le sont. Seuls les brouillons des traductions créées par l’application sont modifiés : une traduction publiée a alors un nouveau brouillon à publier. Tant qu’il s’agit d’une bêta, la fonction reste désactivée jusqu’à ce que vous l’activiez.",
   'settings.style.linkCount': "{all} liens entre traductions, dont {waiting} en attente d’une traduction.",
   'settings.style.waitingList': "Voir la liste",
   'settings.style.notOffered':
@@ -222,6 +222,7 @@ export const fr: Messages = {
     "La clé API n'a pas pu être vérifiée : Supertext a répondu par une erreur ({status}). Les paramètres sont enregistrés ; réessayez plus tard.",
 
   // Translation files
+  beta: 'Beta',
   'nav.links': 'Liens',
   'nav.import': 'Importer une traduction',
   'export.heading': '3. Ou : Exporter pour traduction',

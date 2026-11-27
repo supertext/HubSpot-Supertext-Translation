@@ -96,6 +96,7 @@ async function main() {
   await combo.fill('germany');
   await combo.press('Enter');
   if ((await page.inputValue('select[name="code:de"]')) !== 'de-DE') throw new Error('the dropdown did not choose de-DE');
+  await page.check('input[name="translateLinks"]'); // a beta, off by default
   await page.click('button.primary');
   await page.waitForSelector('.notice.success');
   await page.click('#test-button');

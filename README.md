@@ -12,7 +12,7 @@ Translate your HubSpot content with [Supertext](https://www.supertext.com) AI: w
 - **Five kinds of content:** website pages, landing pages, blog posts, marketing emails and (with Service Hub Professional or Enterprise) knowledge base articles.
 - **Drafts only:** nothing is published or sent; the original is never changed.
 - Translates titles, meta descriptions, subject lines, preview text, rich text and the text fields of modules; keeps layout, images, links, forms and **HubL / personalization tokens** (`{{ contact.firstname }}`).
-- **Links follow the language:** links between pages, blog posts and knowledge base articles (and from emails to them) point to the version in the same language, in any order of translation; a list shows every link and the ones still waiting for a translation. New versions also get their **address in their language** (`/de-ch/about-us` → `/de-ch/ueber-uns`).
+- **Links follow the language** (beta, off by default): links between pages, blog posts and knowledge base articles (and from emails to them) point to the version in the same language, in any order of translation; a list shows every link and the ones still waiting for a translation. New versions also get their **address in their language** (`/de-ch/about-us` → `/de-ch/ueber-uns`).
 - Existing language versions get a fresh translation of their drafts; untick *Update existing versions* to keep them.
 - **Translation files:** *Export for translation* as XLIFF 1.2 (for translation tools) or HTML, and *Import translation* of the translated file, with a summary of what was imported.
 - The app's pages are in English, German, French and Italian.

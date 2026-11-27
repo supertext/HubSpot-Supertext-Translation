@@ -98,6 +98,8 @@ td.link { text-align: right; white-space: nowrap; }
 .badge.state-published { background: var(--mint-light); color: var(--text); }
 .badge.state-scheduled, .badge.state-other { background: var(--bg); color: var(--muted); }
 .badge.done { background: var(--mint); color: var(--text); }
+.badge.beta { background: var(--text); color: var(--mint); vertical-align: middle; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+h1 .badge.beta { font-size: 12px; position: relative; top: -3px; }
 .badge.link-translated { background: var(--mint); color: var(--text); }
 .badge.link-waiting { background: #fff1e6; color: #9a4a00; }
 .badge.link-kept { background: var(--bg); color: var(--muted); }

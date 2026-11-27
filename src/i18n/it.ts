@@ -129,7 +129,7 @@ export const it: Messages = {
   'settings.style.urlsHelp':
     "Per esempio /it-ch/about-us diventa /it-ch/chi-siamo, per pagine, articoli del blog e articoli della knowledge base. Le versioni già esistenti mantengono il loro indirizzo, così i link pubblicati continuano a funzionare. Le lingue scritte con un altro alfabeto (come giapponese o russo) mantengono l’indirizzo originale.",
   'settings.style.links': "Far puntare i link alle pagine, ai post e agli articoli tradotti",
-  'settings.style.linksHelp': "Un link da una traduzione a un’altra pagina del sito, landing page, post del blog o articolo della knowledge base porta a quel contenuto nella stessa lingua, qualunque sia il tipo (una pagina a un articolo, un’e-mail a una pagina …). I link a contenuti non ancora tradotti vengono aggiornati automaticamente appena lo sono. Vengono modificate solo le bozze delle traduzioni create dall’app: una traduzione pubblicata ha poi una nuova bozza da pubblicare.",
+  'settings.style.linksHelp': "Un link da una traduzione a un’altra pagina del sito, landing page, post del blog o articolo della knowledge base porta a quel contenuto nella stessa lingua, qualunque sia il tipo (una pagina a un articolo, un’e-mail a una pagina …). I link a contenuti non ancora tradotti vengono aggiornati automaticamente appena lo sono. Vengono modificate solo le bozze delle traduzioni create dall’app: una traduzione pubblicata ha poi una nuova bozza da pubblicare. Finché è in beta, resta disattivato finché non lo attiva.",
   'settings.style.linkCount': "{all} link tra traduzioni, di cui {waiting} in attesa di una traduzione.",
   'settings.style.waitingList': "Vedi l’elenco",
   'settings.style.notOffered':
@@ -223,6 +223,7 @@ export const it: Messages = {
     'Non è stato possibile verificare la chiave API: Supertext ha risposto con un errore ({status}). Le impostazioni sono salvate; riprovi più tardi.',
 
   // Translation files
+  beta: 'Beta',
   'nav.links': 'Link',
   'nav.import': 'Importa traduzione',
   'export.heading': '3. Oppure: Esporta per la traduzione',

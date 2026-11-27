@@ -132,7 +132,7 @@ export const de: Messages = {
   'settings.style.urlsHelp':
     "Zum Beispiel wird /de-ch/about-us zu /de-ch/ueber-uns, bei Seiten, Blogbeiträgen und Wissensdatenbank-Artikeln. Bestehende Versionen behalten ihre Adresse, damit veröffentlichte Links weiter funktionieren. Sprachen mit anderer Schrift (etwa Japanisch oder Russisch) behalten die ursprüngliche Adresse.",
   'settings.style.links': "Links auf die übersetzten Seiten, Beiträge und Artikel setzen",
-  'settings.style.linksHelp': "Ein Link von einer Übersetzung auf eine andere Website-Seite, Landingpage, einen Blogbeitrag oder Wissensdatenbank-Artikel führt zu diesem Inhalt in derselben Sprache, egal welcher Art die beiden sind (eine Seite auf einen Artikel, eine E-Mail auf eine Seite …). Links auf Inhalte, die noch nicht übersetzt sind, werden automatisch angepasst, sobald sie übersetzt sind. Geändert werden nur die Entwürfe von Übersetzungen, die die App erstellt hat: Eine veröffentlichte Übersetzung hat danach einen neuen Entwurf zum Veröffentlichen.",
+  'settings.style.linksHelp': "Ein Link von einer Übersetzung auf eine andere Website-Seite, Landingpage, einen Blogbeitrag oder Wissensdatenbank-Artikel führt zu diesem Inhalt in derselben Sprache, egal welcher Art die beiden sind (eine Seite auf einen Artikel, eine E-Mail auf eine Seite …). Links auf Inhalte, die noch nicht übersetzt sind, werden automatisch angepasst, sobald sie übersetzt sind. Geändert werden nur die Entwürfe von Übersetzungen, die die App erstellt hat: Eine veröffentlichte Übersetzung hat danach einen neuen Entwurf zum Veröffentlichen. Solange es eine Beta ist, ist es ausgeschaltet, bis Sie es einschalten.",
   'settings.style.linkCount': "{all} Links zwischen Übersetzungen, davon warten {waiting} auf eine Übersetzung.",
   'settings.style.waitingList': "Liste ansehen",
   'settings.style.notOffered':
@@ -226,6 +226,7 @@ export const de: Messages = {
     'Der API-Schlüssel konnte nicht geprüft werden: Supertext hat mit einem Fehler geantwortet ({status}). Die Einstellungen sind gespeichert; prüfen Sie ihn später erneut.',
 
   // Translation files
+  beta: 'Beta',
   'nav.links': 'Links',
   'nav.import': 'Übersetzung importieren',
   'export.heading': '3. Oder: Für Übersetzung exportieren',
