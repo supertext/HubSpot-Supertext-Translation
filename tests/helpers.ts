@@ -120,5 +120,6 @@ export const STANDARD_SETTINGS: [string, string][] = [
   ['target', 'de-ch'],
   ['target', 'fr-ch'],
   ['tone', 'default'],
+  ['translateUrls', '1'],
   ['versionReports', '1'],
 ];

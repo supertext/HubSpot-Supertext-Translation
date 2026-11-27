@@ -4,6 +4,8 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Added: new language versions get their address (URL) in their language: `/de-ch/about-us` becomes `/de-ch/ueber-uns`, for pages, blog posts and knowledge base articles. On by default; *Settings → Translation → Translate the addresses (URLs) of new versions*. Existing versions keep their address.
+
 ## 1.2.0 — 2026-11-26
 
 - Added: Indonesian, Romanian, Thai and Vietnamese (`id`, `ro`, `th`, `vi`) can be chosen as Supertext languages, all with formal and informal address (Supertext SDK 0.7.0).

@@ -92,6 +92,37 @@ describe('website pages', () => {
     expect(after).not.toContain('Über uns'); // variants aren't listed as items of their own
   });
 
+  it("translates a new version's address, and keeps the address of an existing one", async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings([...STANDARD_SETTINGS, ['target', 'it-ch']]);
+    await env.translate('site-page', '101', ['de-ch', 'fr-ch', 'it-ch']);
+    expect(version(env, 'site-page', '101', 'de-ch')!.slug).toBe('de-ch/ueber-uns');
+    expect(version(env, 'site-page', '101', 'fr-ch')!.slug).toBe('fr-ch/a-propos-de-nous');
+    expect(version(env, 'site-page', '101', 'it-ch')!.slug).toBe('it-ch/chi-siamo');
+    // The words travel in the same Supertext request as the other texts.
+    expect(env.supertext.documents.length).toBe(3);
+
+    // An existing version keeps its address, even when its draft is translated again.
+    const german = version(env, 'site-page', '101', 'de-ch')!;
+    env.hubspot.edit(String(german.id), { slug: 'de-ch/unsere-geschichte' });
+    await env.translate('site-page', '101', ['de-ch'], true);
+    expect(version(env, 'site-page', '101', 'de-ch')!.slug).toBe('de-ch/unsere-geschichte');
+
+    // Blog posts keep the blog's part of the address.
+    await env.translate('blog-post', '301', ['de-ch']);
+    expect(version(env, 'blog-post', '301', 'de-ch')!.slug).toBe('de-ch/blog/roesten');
+  });
+
+  it('keeps the original address when the setting is off', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS.filter(([name]) => name !== 'translateUrls'));
+    await env.translate('site-page', '101', ['de-ch']);
+    expect(version(env, 'site-page', '101', 'de-ch')!.slug).toBe('de-ch/about-us');
+    expect((await env.store.getAccount(PORTAL_ID))!.translateUrls).toBe(false);
+  });
+
   it('keeps existing versions unless asked to update their drafts', async () => {
     const env = setup();
     await env.connect();
@@ -232,7 +263,8 @@ describe('knowledge base', () => {
       title: 'Wie verfolge ich meine Bestellung?',
       subtitle: 'Finden Sie Ihr Paket mit wenigen Klicks',
       metaDescription: 'Ihre Schokoladenbestellung verfolgen',
-      path: 'track-my-order',
+      // The address is translated too (Settings → Translation, on by default).
+      path: 'bestellung-verfolgen',
       state: 'DRAFT',
       translationOfId: '501',
       tagIds: [],

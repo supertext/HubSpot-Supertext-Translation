@@ -446,6 +446,7 @@ export function createApp(deps: AppDeps) {
     if (apiKey) account.apiKey = apiKey;
     const tone = field('tone');
     account.tone = tone === 'more' || tone === 'less' ? tone : 'default';
+    account.translateUrls = field('translateUrls') === '1';
     const source = field('sourceLanguage');
     account.sourceLanguage = isLanguage(source) ? source : '';
     const chosen = form.target === undefined ? [] : Array.isArray(form.target) ? form.target : [form.target];

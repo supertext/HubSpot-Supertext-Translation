@@ -39,6 +39,8 @@ export interface HubSpotStandin {
   withoutKnowledgeBase(): void;
   /** Sets an item's state, as publishing or sending it in HubSpot would. */
   setState(id: string, state: string): void;
+  /** Changes fields of an item, live and draft (an editor's change in HubSpot). */
+  edit(id: string, fields: Record<string, unknown>): void;
 }
 
 const PATHS: [Kind, RegExp][] = [
@@ -110,6 +112,10 @@ export function createHubSpotStandin(): HubSpotStandin {
     },
     withoutKnowledgeBase: () => {
       kb = false;
+    },
+    edit: (id, fields) => {
+      const entry = entries.get(id);
+      if (entry) for (const item of [entry.live, entry.draft]) Object.assign(item, structuredClone(fields));
     },
     setState: (id, value) => {
       const entry = entries.get(id);
@@ -205,6 +211,8 @@ export function createHubSpotStandin(): HubSpotStandin {
         }
         const id = String(nextId++);
         const copy: Item = { ...structuredClone(source.draft), id, language, translatedFromId: source.live.id, state: 'DRAFT', currentlyPublished: false };
+        // HubSpot puts the language in front of the original's slug ("blog/roasting" → "de-ch/blog/roasting", seen 26 November 2026).
+        if (typeof source.draft.slug === 'string') copy.slug = `${language}/${source.draft.slug}`;
         entries.set(id, { kind, live: copy, draft: structuredClone(copy), archived: false, group: source.group });
         return json(view(entries.get(id)!, 'live'));
       }

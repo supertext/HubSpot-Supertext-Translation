@@ -128,6 +128,9 @@ export const de: Messages = {
   'settings.style.default': 'Supertext entscheiden lassen',
   'settings.style.more': 'Formell (z. B. «Sie»)',
   'settings.style.less': 'Informell (z. B. «du»)',
+  'settings.style.urls': "Adressen (URLs) neuer Versionen übersetzen",
+  'settings.style.urlsHelp':
+    "Zum Beispiel wird /de-ch/about-us zu /de-ch/ueber-uns, bei Seiten, Blogbeiträgen und Wissensdatenbank-Artikeln. Bestehende Versionen behalten ihre Adresse, damit veröffentlichte Links weiter funktionieren. Sprachen mit anderer Schrift (etwa Japanisch oder Russisch) behalten die ursprüngliche Adresse.",
   'settings.style.notOffered':
     'Supertext bietet für {languages} keine formelle oder informelle Anrede an; diese Sprachen werden mit der Vorgabe von Supertext übersetzt.',
   'settings.keyCheck.label': 'Prüfung des API-Schlüssels:',

@@ -11,6 +11,7 @@ import {
 import type { Extraction } from '../hubspot/extract.js';
 import type { Politeness, SupertextClient } from '../supertext/client.js';
 import type { JobItem } from '../store/store.js';
+import { slugify, slugWords, withLastPart } from './slug.js';
 
 /**
  * One item × one language: make the language version (unless it exists), translate its texts in
@@ -43,7 +44,12 @@ export interface TranslateArgs {
   overwrite: boolean;
   /** HubSpot code of the source's language when the page has none set (create-language-variation needs it). */
   primaryLanguage: string;
+  /** Translate the address of a new version (Settings → Translation); not with an imported file. */
+  translateUrls?: boolean;
 }
+
+/** Where an item keeps its address: a page's or post's slug, an article's path; emails have none. */
+const ADDRESS: Partial<Record<Kind, 'slug' | 'path'>> = { 'site-page': 'slug', 'landing-page': 'slug', 'blog-post': 'slug', 'kb-article': 'path' };
 
 export type TranslateResult = Pick<JobItem, 'state' | 'targetId'>;
 
@@ -51,18 +57,27 @@ export async function translateItem(args: TranslateArgs): Promise<TranslateResul
   const { client, kind, source, existingId } = args;
   if (existingId && !args.overwrite) return { state: 'kept', targetId: existingId };
   const { extraction, fields } = extractItem(kind, args.draft);
+  // A new version's address travels as words with the other texts, in the same request.
+  const address = ADDRESS[kind];
+  const words =
+    address && args.translateUrls && !existingId && !args.produce ? slugWords(String(args.draft[address] ?? source[address] ?? '')) : '';
+  let slugPart = '';
 
   /** Translates and checks every segment (HubL tokens) before anything is written; returns the fields to write. */
   const translate = async (): Promise<Record<string, unknown>> => {
     const segments = extraction.segments;
+    const texts = segments.map((segment) => segment.html);
+    if (words) texts.push(words.replace(/&/g, '&amp;').replace(/</g, '&lt;'));
     const translated = args.produce
       ? args.produce(extraction)
-      : segments.length === 0
+      : texts.length === 0
         ? []
-        : await args.supertext!.translateSegments(
-            segments.map((segment) => segment.html),
-            { targetLanguage: args.supertextTarget, sourceLanguage: args.sourceLanguage, politeness: args.politeness },
-          );
+        : await args.supertext!.translateSegments(texts, {
+            targetLanguage: args.supertextTarget,
+            sourceLanguage: args.sourceLanguage,
+            politeness: args.politeness,
+          });
+    if (words) slugPart = slugify(translated.pop() ?? '', args.language);
     extraction.apply(translated);
     return fields();
   };
@@ -85,6 +100,14 @@ export async function translateItem(args: TranslateArgs): Promise<TranslateResul
     // Don't leave an untranslated copy behind.
     await removeItem(client, kind, String(created.id)).catch(() => undefined);
     throw error;
+  }
+  if (address && slugPart) {
+    // On its own: if HubSpot refuses the address (one that is taken), the version keeps the original's.
+    const current = String(created[address] ?? source[address] ?? '');
+    const translated = withLastPart(current, slugPart);
+    if (current && translated !== current) {
+      await updateDraft(client, kind, String(created.id), { [address]: translated }).catch(() => undefined);
+    }
   }
   return { state: 'created', targetId: String(created.id) };
 }

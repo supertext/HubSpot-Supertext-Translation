@@ -133,6 +133,9 @@ export const en = {
   'settings.style.default': 'Let Supertext decide',
   'settings.style.more': 'Formal (e.g. German “Sie”)',
   'settings.style.less': 'Informal (e.g. German “du”)',
+  'settings.style.urls': "Translate the addresses (URLs) of new versions",
+  'settings.style.urlsHelp':
+    "For example /de-ch/about-us becomes /de-ch/ueber-uns, for pages, blog posts and knowledge base articles. Versions that exist already keep their address, so published links don't break. Languages written in other scripts (such as Japanese or Russian) keep the original address.",
   'settings.style.notOffered':
     "Supertext offers no formal or informal address for {languages}; these are translated with Supertext's default.",
   'settings.keyCheck.label': 'API key check:',

@@ -186,6 +186,7 @@ export async function runJob(deps: JobDeps, job: Job): Promise<Job> {
         politeness: supportsPoliteness(target) ? account.tone : 'default',
         overwrite: job.overwrite,
         primaryLanguage: itemLanguage,
+        translateUrls: account.translateUrls,
       });
       Object.assign(item, result);
       if (result.targetId && result.state !== 'kept') {

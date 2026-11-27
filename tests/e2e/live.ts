@@ -198,6 +198,17 @@ function versions(kind: Kind, id: string): Map<string, Item[]> {
 /** Checks one language version against its source. */
 function checkVersion(tag: string, kind: Kind, source: Item, version: Item, lang: string): void {
   check(`${tag}: a draft, not published or sent`, version.state === 'DRAFT' && !version.currentlyPublished && !version.isPublished, String(version.state));
+  // Translate the addresses (on by default): a new version gets an ASCII address in its language, with HubSpot's prefix.
+  const address = kind === 'kb-article' ? 'path' : kind === 'email' ? '' : 'slug';
+  if (address && String(source[address] ?? '')) {
+    const was = String(source[address]).split('/').pop() ?? '';
+    const now = String(version[address] ?? '');
+    const last = now.split('/').pop() ?? '';
+    // A word can rightly stay the same ("contact" in French), so an unchanged one is only noted.
+    check(`${tag}: the address is a clean address`, /^[a-z0-9]+(-[a-z0-9]+)*$/.test(last), `${source[address]} → ${now}`);
+    if (last === was) note(`${tag}: the address "${was}" stayed the same`);
+    if (address === 'slug') check(`${tag}: the address keeps the language prefix`, now.startsWith(`${lang}/`), now);
+  }
   const before = texts(kind, source);
   const after = texts(kind, version);
   if (!check(`${tag}: the same texts`, sorted([...after.keys()]) === sorted([...before.keys()]), `${after.size}/${before.size}`)) return;

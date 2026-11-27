@@ -258,6 +258,11 @@ export function SettingsPage(props: SettingsPageProps) {
           {account.tone !== 'default' && noPoliteness.length > 0 && (
             <p class="help">{t.t('settings.style.notOffered', { languages: names(noPoliteness) })}</p>
           )}
+          <label class="inline">
+            <input type="checkbox" name="translateUrls" value="1" checked={account.translateUrls} />
+            {t.t('settings.style.urls')}
+          </label>
+          <p class="help">{t.t('settings.style.urlsHelp')}</p>
         </section>
 
         <section class="card">

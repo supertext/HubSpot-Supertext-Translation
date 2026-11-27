@@ -35,6 +35,11 @@ export interface Account {
    * through Supertext's review service (SUPERTEXT_REVIEW_URL), the others directly to Supertext.
    */
   reviewLanguages: string[];
+  /**
+   * Translate the address of new language versions: the last part of a page's or post's slug
+   * and an article's path ("about-us" → "ueber-uns"). Existing versions keep theirs.
+   */
+  translateUrls: boolean;
   /** "Send version information to Supertext" (SUPERTEXT_VERSION_REPORTS=0 turns it off for all accounts). */
   versionReports: boolean;
   /** The Commando Center reporter's state (Plugin Health's ReporterState JSON); see reporting.ts. */
@@ -55,6 +60,7 @@ export const defaultAccount = (accountId: string): Account => ({
   targets: [],
   languageCodes: {},
   reviewLanguages: [],
+  translateUrls: true,
   versionReports: true,
   reporter: null,
   connectedAt: new Date().toISOString(),

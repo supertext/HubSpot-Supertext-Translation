@@ -125,6 +125,9 @@ export const it: Messages = {
   'settings.style.default': 'Lasciare decidere a Supertext',
   'settings.style.more': 'Formale (p. es. «Lei»)',
   'settings.style.less': 'Informale (p. es. «tu»)',
+  'settings.style.urls': "Tradurre gli indirizzi (URL) delle nuove versioni",
+  'settings.style.urlsHelp':
+    "Per esempio /it-ch/about-us diventa /it-ch/chi-siamo, per pagine, articoli del blog e articoli della knowledge base. Le versioni già esistenti mantengono il loro indirizzo, così i link pubblicati continuano a funzionare. Le lingue scritte con un altro alfabeto (come giapponese o russo) mantengono l’indirizzo originale.",
   'settings.style.notOffered':
     'Supertext non offre una forma di cortesia formale o informale per {languages}; queste lingue vengono tradotte con l’impostazione predefinita di Supertext.',
   'settings.keyCheck.label': 'Verifica della chiave API:',

@@ -95,7 +95,7 @@ An email copy that was sent already is never changed: the next translation makes
 
 ## Review and publish
 
-Open the version in HubSpot (the *Open in HubSpot* link, or HubSpot's own lists), check the texts, the page title and meta description, the URL (HubSpot gives language variants their own) and, for emails, the subject line, preview text and recipients. Then publish or send it as usual.
+Open the version in HubSpot (the *Open in HubSpot* link, or HubSpot's own lists), check the texts, the page title and meta description, the URL (a new version gets an address in its language, such as `/de-ch/ueber-uns` for `/about-us`, unless your administrator turned that off; check it before publishing, since it is hard to change once the page is live) and, for emails, the subject line, preview text and recipients. Then publish or send it as usual.
 
 **Translation review:** if your administrator turned on *Translation review* for a language, reviewers (your colleagues or Supertext linguists) check and correct the translations on the website. Their corrections come into HubSpot the next time you translate the item into that language with *Update existing versions* ticked: after a review, translate it again. Texts reviewed once keep their corrected wording in later translations.
 

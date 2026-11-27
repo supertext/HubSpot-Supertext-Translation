@@ -33,7 +33,12 @@
     "You receive a tracking link by e-mail as soon as your order ships.": "Sie erhalten einen Tracking-Link per E-Mail, sobald Ihre Bestellung versandt wird.",
     "Open the e-mail.": "Öffnen Sie die E-Mail.",
     "Click <strong>Track parcel</strong>.": "Klicken Sie auf <strong>Paket verfolgen</strong>.",
-    "Tracking your chocolate order": "Ihre Schokoladenbestellung verfolgen"
+    "Tracking your chocolate order": "Ihre Schokoladenbestellung verfolgen",
+    "about us": "Über uns",
+    "track my order": "Bestellung verfolgen",
+    "roasting": "Rösten",
+    "advent calendar": "Adventskalender",
+    "contact": "Kontakt"
   },
   "fr": {
     "About us": "À propos de nous",
@@ -69,7 +74,12 @@
     "You receive a tracking link by e-mail as soon as your order ships.": "Vous recevez un lien de suivi par e-mail dès que votre commande est expédiée.",
     "Open the e-mail.": "Ouvrez l’e-mail.",
     "Click <strong>Track parcel</strong>.": "Cliquez sur <strong>Suivre le colis</strong>.",
-    "Tracking your chocolate order": "Suivre votre commande de chocolat"
+    "Tracking your chocolate order": "Suivre votre commande de chocolat",
+    "about us": "À propos de nous",
+    "track my order": "Suivre ma commande",
+    "roasting": "Torréfaction",
+    "advent calendar": "Calendrier de l’Avent",
+    "contact": "Contact"
   },
   "it": {
     "About us": "Chi siamo",
@@ -105,6 +115,11 @@
     "You receive a tracking link by e-mail as soon as your order ships.": "Riceve un link di tracciamento per e-mail non appena il Suo ordine viene spedito.",
     "Open the e-mail.": "Apra l’e-mail.",
     "Click <strong>Track parcel</strong>.": "Clicchi su <strong>Traccia il pacco</strong>.",
-    "Tracking your chocolate order": "Seguire il Suo ordine di cioccolato"
+    "Tracking your chocolate order": "Seguire il Suo ordine di cioccolato",
+    "about us": "Chi siamo",
+    "track my order": "Seguire il mio ordine",
+    "roasting": "Tostatura",
+    "advent calendar": "Calendario dell’Avvento",
+    "contact": "Contatto"
   }
 }
