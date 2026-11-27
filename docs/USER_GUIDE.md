@@ -83,7 +83,7 @@ Errors instead of a summary: *This file isn't a valid XLIFF or HTML translation 
 | Marketing emails | A new email named after the original with the language code, for example *Autumn newsletter · DE-CH*, with its language set. Choose its recipients in HubSpot before you send it. |
 | Knowledge base articles | A translation of the article, in the knowledge base's version for that language, at the same path. The knowledge base needs a multi-language variation for the language (your administrator sets that up); otherwise that language fails with a message saying so. The translation has no tags (HubSpot's tags belong to one language): add tags in that language in HubSpot if you use them. |
 
-Links between your pages, blog posts and knowledge base articles (and from emails to them) point to the version in the same language once it exists; links to an item not translated yet are updated when the app translates it. Your administrator can see all of them under *Settings → Translation → See the list*.
+Links between your pages, blog posts and knowledge base articles (and from emails to them) point to the version in the same language once it exists; links to an item not translated yet are updated when the app translates it. All of them are listed under **Links** in the app's top bar.
 
 Everything is a **draft**: nothing is visible on your website or sent to anyone until you publish or send it in HubSpot.
 

@@ -444,7 +444,7 @@ export function createApp(deps: AppDeps) {
     return c.html(
       page(
         LinksPage({
-          ctx: pageContext(t, 'settings', session),
+          ctx: pageContext(t, 'links', session),
           account: session.account,
           appBase: editorBase,
           rows,

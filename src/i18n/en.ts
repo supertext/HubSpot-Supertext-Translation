@@ -231,6 +231,7 @@ export const en = {
     "The API key couldn't be checked: Supertext answered with an error ({status}). The settings are saved; check again later.",
 
   // Translation files
+  'nav.links': 'Links',
   'nav.import': 'Import translation',
   'export.heading': '3. Or: Export for translation',
   'export.intro':

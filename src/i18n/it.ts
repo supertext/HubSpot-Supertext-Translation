@@ -223,6 +223,7 @@ export const it: Messages = {
     'Non è stato possibile verificare la chiave API: Supertext ha risposto con un errore ({status}). Le impostazioni sono salvate; riprovi più tardi.',
 
   // Translation files
+  'nav.links': 'Link',
   'nav.import': 'Importa traduzione',
   'export.heading': '3. Oppure: Esporta per la traduzione',
   'export.intro':

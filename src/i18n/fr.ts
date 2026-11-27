@@ -222,6 +222,7 @@ export const fr: Messages = {
     "La clé API n'a pas pu être vérifiée : Supertext a répondu par une erreur ({status}). Les paramètres sont enregistrés ; réessayez plus tard.",
 
   // Translation files
+  'nav.links': 'Liens',
   'nav.import': 'Importer une traduction',
   'export.heading': '3. Ou : Exporter pour traduction',
   'export.intro':

@@ -226,6 +226,7 @@ export const de: Messages = {
     'Der API-Schlüssel konnte nicht geprüft werden: Supertext hat mit einem Fehler geantwortet ({status}). Die Einstellungen sind gespeichert; prüfen Sie ihn später erneut.',
 
   // Translation files
+  'nav.links': 'Links',
   'nav.import': 'Übersetzung importieren',
   'export.heading': '3. Oder: Für Übersetzung exportieren',
   'export.intro':
