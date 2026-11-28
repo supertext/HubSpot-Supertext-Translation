@@ -25,6 +25,8 @@ export const fr: Messages = {
     'Vous vous connectez à HubSpot et autorisez Supertext à lire vos contenus et à en créer des versions linguistiques. La base de connaissances est proposée si votre compte en dispose.',
   'connect.denied': 'L’accès à HubSpot n’a pas été accordé. Connectez-vous à nouveau pour utiliser l’app.',
   'connect.disconnected': 'HubSpot est déconnecté. Vos paramètres ont été supprimés.',
+  'connect.sessionEnded': 'Votre session a expiré. Reconnectez-vous avec HubSpot pour continuer : les sessions durent 7 jours, et seules les personnes ayant accès au compte HubSpot peuvent se connecter.',
+  'connect.loggedOut': 'Vous êtes déconnecté. HubSpot reste connecté pour votre équipe.',
 
   'kind.site-page': 'Pages de site web',
   'kind.landing-page': 'Pages de destination',
@@ -111,6 +113,7 @@ export const fr: Messages = {
   'job.open': 'Ouvrir dans HubSpot',
   'job.review': 'Vérifiez les brouillons dans HubSpot et publiez-les quand ils sont prêts.',
   'history.heading': 'Traductions récentes',
+  'history.startedBy': 'Lancé par {name}',
   'history.all': 'Toutes les traductions',
   'history.pageHeading': 'Historique',
   'history.intro': 'Toutes les traductions lancées dans l’application, les plus récentes d’abord. Ouvrez-en une pour voir son résultat par contenu et par langue, avec des liens vers les versions dans HubSpot.',
@@ -277,6 +280,7 @@ export const fr: Messages = {
   // Translation files
   beta: 'Beta',
   'nav.history': 'Historique',
+  'nav.logout': 'Se déconnecter',
   'nav.links': 'Liens/Images',
   'nav.import': 'Importer une traduction',
   'export.heading': '3. Ou : Exporter pour traduction',

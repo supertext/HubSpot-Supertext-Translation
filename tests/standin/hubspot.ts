@@ -27,6 +27,8 @@ export interface HubSpotStandin {
   handle(request: Request): Promise<Response>;
   /** Every API request (method and path) after OAuth. */
   requests: { method: string; path: string; body?: unknown }[];
+  /** The HubSpot user who logs in next (the token introspection reports them). */
+  user: { id: number; email: string };
   /** The item as HubSpot has it now (draft fields), or undefined. */
   draft(id: string): Item | undefined;
   /** The items of a kind, archived ones included. */
@@ -113,6 +115,7 @@ export function createHubSpotStandin(): HubSpotStandin {
 
   const state: HubSpotStandin = {
     requests: [],
+    user: { id: 501, email: 'editor@swiss-chocolate.example' },
     draft: (id) => {
       const entry = entries.get(id);
       return entry ? view(entry, 'draft') : undefined;
@@ -177,7 +180,7 @@ export function createHubSpotStandin(): HubSpotStandin {
         const form = new URLSearchParams(await request.text());
         const token = form.get('token') ?? '';
         if (!validTokens.has(token)) return json({ active: false });
-        return json({ active: true, token, hub_id: Number(PORTAL_ID), hub_domain: HUB_DOMAIN, user: 'editor@swiss-chocolate.example', scopes: granted(), token_use: 'access_token', expires_in: 1800 });
+        return json({ active: true, token, hub_id: Number(PORTAL_ID), hub_domain: HUB_DOMAIN, user: state.user.email, user_id: state.user.id, scopes: granted(), token_use: 'access_token', expires_in: 1800 });
       }
 
       // --- Content APIs ---

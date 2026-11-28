@@ -10,6 +10,8 @@ export interface PageContext {
   /** Empty on the connect page (no session). */
   csrf: string;
   accountName?: string;
+  /** The HubSpot login of the session (shown with a Log out button). */
+  userName?: string;
 }
 
 export const SIGNUP_URL = 'https://www.supertext.com/person/en/account/signin';
@@ -82,7 +84,17 @@ export function Layout(props: { ctx: PageContext; title: string; children: Child
             </nav>
           )}
           <span class="spacer"></span>
-          {ctx.accountName && <span class="account">{ctx.accountName}</span>}
+          {ctx.accountName && (
+            <span class="account" title={ctx.userName}>
+              {ctx.userName ? `${ctx.userName} · ${ctx.accountName}` : ctx.accountName}
+            </span>
+          )}
+          {ctx.csrf && (
+            <form method="post" action="/logout" class="logout">
+              <input type="hidden" name="csrf" value={ctx.csrf} />
+              <button type="submit" class="link">{t.t('nav.logout')}</button>
+            </form>
+          )}
         </header>
         <main class="page">{props.children}</main>
         <script src={ASSETS.js} defer></script>

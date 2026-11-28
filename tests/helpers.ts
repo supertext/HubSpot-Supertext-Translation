@@ -112,7 +112,12 @@ export function setup(env: Record<string, string> = {}) {
   const clearCookies = () => {
     cookies = {};
   };
-  return { app, hubspot, supertext, supertextRequests, store, config, request, connect, csrf, api, saveSettings, translate, settle, onJob, fetchFn, clearCookies };
+  /** The browser's cookies now, and putting saved ones back (another browser, an old cookie). */
+  const saveCookies = () => ({ ...cookies });
+  const restoreCookies = (saved: typeof cookies) => {
+    cookies = { ...saved };
+  };
+  return { app, hubspot, supertext, supertextRequests, store, config, request, connect, csrf, api, saveSettings, translate, settle, onJob, fetchFn, clearCookies, saveCookies, restoreCookies };
 }
 
 const PORTAL = '48210377';

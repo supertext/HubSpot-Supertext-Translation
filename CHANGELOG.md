@@ -4,6 +4,9 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Added: **each person has their own session.** The app shows who is logged in (their HubSpot login, top right) and records who started each translation (*History*: *Started by …*). **Log out** ends this browser's session.
+- Changed: sessions last **7 days** (before: 30), then you log in with HubSpot again, which only works while you still have access to the HubSpot account. *Disconnect HubSpot* ends every session, also if the account connects again. Everyone has to log in once after this update.
+
 - Changed: **Disconnect HubSpot** also removes the app from the HubSpot account (Connected apps); HubSpot emails the account's admins.
 - Added: an uninstall in HubSpot is noticed within a day, and the account's settings, API key and history are deleted 30 days later (connecting again before keeps everything).
 

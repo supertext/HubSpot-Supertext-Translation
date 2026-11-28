@@ -164,6 +164,7 @@ export function JobRows(props: { t: Translator; jobs: Job[] }) {
               <td class="when">{date.format(new Date(job.createdAt))}</td>
               <td class="title">
                 <a href={`/history/${encodeURIComponent(job.id)}`}>{jobName(t, job)}</a>
+                {job.startedBy && <div class="by">{t.t('history.startedBy', { name: job.startedBy })}</div>}
               </td>
               <td class="muted">{t.t(`kind.${job.kind}` as MessageKey)}</td>
               <td class="codes">

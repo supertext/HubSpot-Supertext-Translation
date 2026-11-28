@@ -1,7 +1,7 @@
 import { Hono, type Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { ApiKeyCheck } from 'supertext-sdk/v1';
-import { SESSION_COOKIE, Sessions, STATE_COOKIE } from './auth/session.js';
+import { newSessionEpoch, SESSION_COOKIE, SESSION_DAYS, Sessions, STATE_COOKIE, type SessionUser } from './auth/session.js';
 import { serverApiKey, type Config } from './config.js';
 import { authorizeUrl, exchangeCode, HubSpotClient, uninstallApp, type OAuthOptions } from './hubspot/client.js';
 import { getDraft, getItem, isKind, KINDS, MAX_LISTED, summary, type Kind } from './hubspot/content.js';
@@ -140,20 +140,22 @@ export function createApp(deps: AppDeps) {
   const tr = (c: Context): Translator => translator(localeFromRequest(c.req.raw));
 
   /** The connected account of this browser, if any. */
-  const current = async (c: Context): Promise<{ account: Account; cookie: string } | undefined> => {
+  const current = async (c: Context): Promise<{ account: Account; cookie: string; user: SessionUser } | undefined> => {
     const cookie = getCookie(c, SESSION_COOKIE);
     const session = sessions.read(cookie);
     if (!session || !cookie) return undefined;
     const account = await store.getAccount(session.accountId);
-    if (!account || !account.refreshToken) return undefined;
-    return { account, cookie };
+    // Disconnect deletes the account and its epoch: earlier sessions end, also after connecting again.
+    if (!account || !account.refreshToken || !account.sessionEpoch || account.sessionEpoch !== session.epoch) return undefined;
+    return { account, cookie, user: { userId: session.userId, user: session.user } };
   };
 
-  const pageContext = (t: Translator, page: PageContext['page'], session?: { account: Account; cookie: string }): PageContext => ({
+  const pageContext = (t: Translator, page: PageContext['page'], session?: { account: Account; cookie: string; user?: SessionUser }): PageContext => ({
     t,
     page,
     csrf: session ? sessions.csrf(session.cookie) : '',
     accountName: session?.account.accountName || session?.account.accountId,
+    userName: session?.user?.user || undefined,
   });
 
   /** API calls: a session and the CSRF token in a header (POST). */
@@ -172,7 +174,18 @@ export function createApp(deps: AppDeps) {
     const t = tr(c);
     const session = await current(c);
     if (!session) {
-      const notice = c.req.query('denied') ? 'denied' : c.req.query('disconnected') ? 'disconnected' : undefined;
+      // A cookie that no longer works: the session ended (after SESSION_DAYS, or the account was disconnected).
+      const ended = Boolean(getCookie(c, SESSION_COOKIE));
+      if (ended) deleteCookie(c, SESSION_COOKIE, { path: '/' });
+      const notice = c.req.query('denied')
+        ? 'denied'
+        : c.req.query('disconnected')
+          ? 'disconnected'
+          : c.req.query('loggedOut')
+            ? 'loggedOut'
+            : ended
+              ? 'sessionEnded'
+              : undefined;
       const error = /^[a-zA-Z]{1,40}$/.test(c.req.query('error') ?? '') ? c.req.query('error') : undefined;
       return c.html(
         page(
@@ -270,13 +283,15 @@ export function createApp(deps: AppDeps) {
         ...(existing ?? defaultAccount(installation.portalId)),
         accountName: installation.hubDomain,
         scopes: installation.scopes,
+        sessionEpoch: existing?.sessionEpoch || newSessionEpoch(),
       };
       await store.saveAccount(account);
       await store.saveTokens(account.accountId, tokens);
-      console.log(`Supertext: HubSpot account ${account.accountId} connected`);
-      setCookie(c, SESSION_COOKIE, sessions.create(account.accountId), {
+      console.log(`Supertext: HubSpot account ${account.accountId} connected (HubSpot user ${installation.userId || '?'})`);
+      const user: SessionUser = { userId: installation.userId, user: installation.user };
+      setCookie(c, SESSION_COOKIE, sessions.create(account.accountId, account.sessionEpoch!, user), {
         path: '/',
-        maxAge: 30 * 86400,
+        maxAge: SESSION_DAYS * 86400,
         httpOnly: true,
         sameSite: 'Lax',
         secure,
@@ -286,6 +301,15 @@ export function createApp(deps: AppDeps) {
       console.error('Supertext: OAuth failed', error);
       return c.redirect(`/?error=${encodeURIComponent(errorInfo(error).code ?? 'oauthFailed')}`, 302);
     }
+  });
+
+  // Log out: only this browser; the account stays connected for the others.
+  app.post('/logout', async (c) => {
+    const session = await current(c);
+    const form = await c.req.parseBody();
+    if (session && !sessions.checkCsrf(session.cookie, String(form.csrf ?? ''))) return c.redirect('/?error=session', 303);
+    deleteCookie(c, SESSION_COOKIE, { path: '/' });
+    return c.redirect('/?loggedOut=1', 303);
   });
 
   app.post('/disconnect', async (c) => {
@@ -340,6 +364,7 @@ export function createApp(deps: AppDeps) {
       itemIds,
       languages,
       overwrite: Boolean(body.overwrite),
+      startedBy: session.user.user || (session.user.userId ? `#${session.user.userId}` : undefined),
     });
     deps.onJob?.(done);
     return c.json({ id: job.id });

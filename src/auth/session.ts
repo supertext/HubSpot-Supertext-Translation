@@ -1,18 +1,33 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
 /**
- * Sessions are signed cookies (HMAC-SHA256): the HubSpot account a browser
- * connected, and when the session ends. Nothing secret is in the cookie;
- * the token stays in the database. Forms and API calls also carry a CSRF
- * token derived from the session.
+ * Sessions are signed cookies (HMAC-SHA256): the HubSpot account and the person who logged in
+ * with HubSpot, the account's session epoch, and when the session ends. Nothing secret is in
+ * the cookie; the token stays in the database. Forms and API calls also carry a CSRF token
+ * derived from the session.
+ *
+ * A session lasts SESSION_DAYS and is not extended: then the person logs in with HubSpot again,
+ * which only works while they still have access to the HubSpot account. A session is only valid
+ * while its epoch is the account's (`Account.sessionEpoch`): *Disconnect* deletes the account,
+ * so every earlier cookie stops working, also after connecting again.
  */
 
 export const SESSION_COOKIE = 'st_session';
 export const STATE_COOKIE = 'st_oauth_state';
-const SESSION_DAYS = 30;
+export const SESSION_DAYS = 7;
 
-export interface Session {
+/** The person who logged in with HubSpot (from the token's introspection). */
+export interface SessionUser {
+  /** HubSpot's user ID ('' if HubSpot didn't say). */
+  userId: string;
+  /** Their HubSpot login (email), as HubSpot reports it. */
+  user: string;
+}
+
+export interface Session extends SessionUser {
   accountId: string;
+  /** The account's session epoch when the session started. */
+  epoch: string;
   /** Unix seconds. */
   expires: number;
 }
@@ -40,8 +55,8 @@ export class Sessions {
     return data;
   }
 
-  create(accountId: string, now = Date.now()): string {
-    const session: Session = { accountId, expires: Math.floor(now / 1000) + SESSION_DAYS * 86400 };
+  create(accountId: string, epoch: string, user: SessionUser, now = Date.now()): string {
+    const session: Session = { accountId, epoch, userId: user.userId, user: user.user, expires: Math.floor(now / 1000) + SESSION_DAYS * 86400 };
     const data = Buffer.from(JSON.stringify(session)).toString('base64url');
     return `${data}.${this.sign(data)}`;
   }
@@ -51,8 +66,8 @@ export class Sessions {
     if (!data) return undefined;
     try {
       const session = JSON.parse(Buffer.from(data, 'base64url').toString('utf8')) as Session;
-      if (!session.accountId || session.expires * 1000 < now) return undefined;
-      return session;
+      if (!session.accountId || !session.epoch || session.expires * 1000 < now) return undefined;
+      return { ...session, userId: String(session.userId ?? ''), user: String(session.user ?? '') };
     } catch {
       return undefined;
     }
@@ -85,3 +100,6 @@ export class Sessions {
     return expected.length === given.length && timingSafeEqual(expected, given);
   }
 }
+
+/** A new random session epoch for an account. */
+export const newSessionEpoch = (): string => randomBytes(12).toString('base64url');

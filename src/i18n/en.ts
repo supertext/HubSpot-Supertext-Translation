@@ -26,6 +26,8 @@ export const en = {
     'You log in with HubSpot and allow Supertext to read your content and create language versions of it. The knowledge base is offered if your account has it.',
   'connect.denied': "HubSpot access wasn't granted. Connect again to use the app.",
   'connect.disconnected': 'HubSpot is disconnected. Your settings were removed.',
+  'connect.sessionEnded': 'Your session has ended. Log in with HubSpot again to continue: sessions last 7 days, and only people with access to the HubSpot account can log in.',
+  'connect.loggedOut': 'You are logged out. HubSpot stays connected for your team.',
 
   // Kinds of content
   'kind.site-page': 'Website pages',
@@ -118,6 +120,7 @@ export const en = {
   'job.open': 'Open in HubSpot',
   'job.review': 'Review the drafts in HubSpot and publish them when they are ready.',
   'history.heading': 'Recent translations',
+  'history.startedBy': 'Started by {name}',
   'history.all': 'All translations',
   'history.pageHeading': 'History',
   'history.intro': 'Every translation started in the app, newest first. Open one to see its result per item and language, with links to the versions in HubSpot.',
@@ -286,6 +289,7 @@ export const en = {
   // Translation files
   beta: 'Beta',
   'nav.history': 'History',
+  'nav.logout': 'Log out',
   'nav.links': 'Links/Images',
   'nav.import': 'Import translation',
   'export.heading': '3. Or: Export for translation',

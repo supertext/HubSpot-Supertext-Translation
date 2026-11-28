@@ -45,6 +45,10 @@ export interface Installation {
   /** The account's domain as HubSpot reports it, shown in the app. */
   hubDomain: string;
   scopes: string[];
+  /** The HubSpot user who authorized the app ('' if HubSpot didn't say). */
+  userId: string;
+  /** Their login (email). */
+  user: string;
 }
 
 export interface OAuthOptions {
@@ -153,11 +157,19 @@ export async function introspect(options: OAuthOptions, accessToken: string): Pr
     hub_id?: number | string;
     hub_domain?: string;
     scopes?: string[];
+    user?: string;
+    user_id?: number | string;
   };
   if (!response.ok || data.active === false || data.hub_id === undefined) {
     throw new HubSpotError('HubSpot did not return the account details.', 'oauthFailed', { status: response.status });
   }
-  return { portalId: String(data.hub_id), hubDomain: data.hub_domain ?? '', scopes: data.scopes ?? [] };
+  return {
+    portalId: String(data.hub_id),
+    hubDomain: data.hub_domain ?? '',
+    scopes: data.scopes ?? [],
+    userId: data.user_id !== undefined ? String(data.user_id) : '',
+    user: data.user ?? '',
+  };
 }
 
 /** Gives the client a valid access token, and a fresh one after HubSpot refused the current one. */

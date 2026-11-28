@@ -4,6 +4,8 @@ For editors. Once the app is set up (see [INSTALLATION.md](INSTALLATION.md)), yo
 
 *Screenshots: the app's pages with a sample account (a Swiss chocolate shop that writes in English and translates into French, German and Italian for Switzerland).*
 
+You log in with HubSpot: open the app and click **Connect HubSpot** (for an account that is already connected, this only logs you in). Your HubSpot login shows at the top right, with **Log out**. After 7 days the app asks you to log in again.
+
 ## Translate
 
 1. Open the app and go to **Translate**.
@@ -27,7 +29,7 @@ Marketing emails work the same way; each language gets its own copy of the email
 
 ## History
 
-The **History** tab lists every translation started in the app, newest first, 50 per page: when, what (an item, or *About us and 4 more* for a batch), the kind, the languages and the outcome. Filter by kind of content, or show only translations **With failures** or still **Running**. Click a name to see its result per item and language, with *Open in HubSpot* links. The Translate page shows the last five under *Recent translations*, with a link to *All translations*, and its result box shows the latest translation of the tab you have open.
+The **History** tab lists every translation started in the app, newest first, 50 per page: when, what (an item, or *About us and 4 more* for a batch), the kind, the languages and the outcome. Filter by kind of content, or show only translations **With failures** or still **Running**. Each translation shows who started it (*Started by …*, from translations made with version 1.5 on). Click a name to see its result per item and language, with *Open in HubSpot* links. The Translate page shows the last five under *Recent translations*, with a link to *All translations*, and its result box shows the latest translation of the tab you have open.
 
 ![History: four translations with date, name, kind, languages and Done: … created, updated, kept, failed; filters for the kind of content and All, With failures, Running](images/history.png)
 

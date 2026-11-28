@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { SDK_VERSION } from 'supertext-sdk';
 import { describe, expect, it } from 'vitest';
 import { services } from '../src/app.js';
+import { SESSION_COOKIE, Sessions } from '../src/auth/session.js';
 import { REVIEW_URL } from '../src/config.js';
 import { checkInstalls, DELETE_AFTER_DAYS } from '../src/hubspot/installs.js';
 import { TokenManager } from '../src/hubspot/tokens.js';
@@ -957,6 +958,73 @@ describe('disconnecting', () => {
     const account = await env.store.getAccount(PORTAL_ID);
     expect(account?.disconnectedAt).toBeUndefined();
     expect(account?.targets.length).toBeGreaterThan(0);
+  });
+});
+
+describe('people and sessions', () => {
+  const post = (env: ReturnType<typeof setup>, path: string, csrf: string) =>
+    env.request(path, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ csrf }).toString() });
+
+  it('knows who logged in: shown in the header and in History, with Log out', async () => {
+    const env = setup();
+    env.hubspot.user = { id: 101, email: 'anna@swiss-chocolate.example' };
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    const settings = await (await env.request('/settings')).text();
+    expect(settings).toContain('anna@swiss-chocolate.example');
+    expect(settings).toContain('action="/logout"');
+    const { job } = await env.translate('site-page', '101', ['de-ch']);
+    expect(job.startedBy).toBe('anna@swiss-chocolate.example');
+    expect(await (await env.request('/history')).text()).toContain('Started by anna@swiss-chocolate.example');
+  });
+
+  it('gives each person their own session; Log out ends only this one', async () => {
+    const env = setup();
+    env.hubspot.user = { id: 101, email: 'anna@swiss-chocolate.example' };
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    const anna = env.saveCookies();
+    env.clearCookies();
+    env.hubspot.user = { id: 102, email: 'ben@swiss-chocolate.example' };
+    await env.connect();
+    expect(await (await env.request('/settings')).text()).toContain('ben@swiss-chocolate.example');
+    // Ben's login kept the settings Anna made.
+    expect((await env.store.getAccount(PORTAL_ID))?.targets.length).toBeGreaterThan(0);
+
+    const loggedOut = await post(env, '/logout', await env.csrf());
+    expect(loggedOut.headers.get('location')).toBe('/?loggedOut=1');
+    expect(await (await env.request('/?loggedOut=1')).text()).toContain('You are logged out');
+    expect((await env.request('/settings')).headers.get('location')).toBe('/');
+    // Anna is still logged in, and the account is still connected.
+    env.restoreCookies(anna);
+    expect(await (await env.request('/settings')).text()).toContain('anna@swiss-chocolate.example');
+  });
+
+  it('ends every earlier session on Disconnect, also after connecting again', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    const before = env.saveCookies();
+    await post(env, '/disconnect', await env.csrf());
+    await env.connect();
+    expect((await env.request('/settings')).status).toBe(200);
+    // The cookie from before the disconnect names the same account, but not its new epoch.
+    env.restoreCookies(before);
+    const response = await env.request('/settings');
+    expect(response.headers.get('location')).toBe('/');
+    expect(await (await env.request('/')).text()).toContain('Your session has ended');
+  });
+
+  it('ends a session after 7 days: logging in with HubSpot again is required', async () => {
+    const now = Date.now();
+    const env = setup();
+    await env.connect();
+    const cookie = env.saveCookies();
+    const account = await env.store.getAccount(PORTAL_ID);
+    const sessions = new Sessions('session-secret');
+    const old = sessions.create(PORTAL_ID, account!.sessionEpoch!, { userId: '501', user: 'editor@swiss-chocolate.example' }, now - 8 * 86_400_000);
+    env.restoreCookies({ ...cookie, [SESSION_COOKIE]: old });
+    expect((await env.request('/settings')).headers.get('location')).toBe('/');
   });
 });
 

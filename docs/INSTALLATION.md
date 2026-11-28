@@ -48,6 +48,14 @@ The app asks HubSpot for:
 
 Everyone in your team who connects the same HubSpot account shares its settings. The connection stays until you disconnect it in the app or uninstall the app in HubSpot (Settings → Integrations → Connected apps).
 
+### Who can use the app
+
+- **Logging in is connecting.** Each person opens the app and clicks *Connect HubSpot*; HubSpot asks them to log in and only lets people through who may install apps in that HubSpot account (usually Super Admins). For an account that is already connected, this just logs them in: the settings stay.
+- **Each person has their own session.** The app knows who logged in (their HubSpot login, shown at the top right) and records who started each translation (*History*). **Log out** at the top right ends only that browser's session.
+- **Sessions last 7 days.** Then the person logs in with HubSpot again. Someone who was removed from the HubSpot account (a colleague who left) can no longer log in, so their access ends within 7 days at the latest.
+- **Disconnect ends every session.** After *Disconnect HubSpot*, nobody stays logged in, also if the account connects again later.
+- Everyone who is logged in has the same rights: translating, settings and *Disconnect*.
+
 ## 3. Settings
 
 Enter the API key, choose your languages and click **Save**. Saving checks the API key automatically (free of charge, nothing is translated) and shows the result under the key: *API key checked: the connection to Supertext works.* means everything is in place. **Test connection** runs the same check again, also for a key you have typed but not saved yet.

@@ -62,6 +62,11 @@ export interface Account {
    * DELETE_AFTER_DAYS later (hubspot/installs.ts).
    */
   disconnectedAt?: string;
+  /**
+   * Sessions are valid only with this epoch (auth/session.ts); set when the account first
+   * connects. Deleting the account (Disconnect) ends every session.
+   */
+  sessionEpoch?: string;
 }
 
 export const defaultAccount = (accountId: string): Account => ({
@@ -129,6 +134,8 @@ export interface Job {
   items: JobItem[];
   /** Set when the whole job stopped (authentication, limit, HubSpot errors). */
   error?: ErrorInfo;
+  /** Who started it (the HubSpot login of the session); unset for jobs before version 1.5. */
+  startedBy?: string;
   createdAt: string;
   finishedAt?: string;
 }

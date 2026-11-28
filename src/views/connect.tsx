@@ -2,7 +2,7 @@ import type { ErrorInfo } from '../i18n/error.js';
 import { LanguageLinks, Layout, Notice, type PageContext } from './layout.js';
 
 /** The start page without a session: what the app does and "Connect HubSpot". */
-export function ConnectPage(props: { ctx: PageContext; error?: ErrorInfo; notice?: 'denied' | 'disconnected'; configured: boolean }) {
+export function ConnectPage(props: { ctx: PageContext; error?: ErrorInfo; notice?: 'denied' | 'disconnected' | 'loggedOut' | 'sessionEnded'; configured: boolean }) {
   const { ctx } = props;
   const { t } = ctx;
   const heading = t.t('connect.heading');
@@ -13,6 +13,8 @@ export function ConnectPage(props: { ctx: PageContext; error?: ErrorInfo; notice
         <p class="intro">{t.t('connect.intro')}</p>
         {props.notice === 'denied' && <Notice tone="warning">{t.t('connect.denied')}</Notice>}
         {props.notice === 'disconnected' && <Notice tone="success">{t.t('connect.disconnected')}</Notice>}
+        {props.notice === 'loggedOut' && <Notice tone="success">{t.t('connect.loggedOut')}</Notice>}
+        {props.notice === 'sessionEnded' && <Notice tone="warning">{t.t('connect.sessionEnded')}</Notice>}
         {props.error && <Notice tone="error">{t.error(props.error)}</Notice>}
         {!props.configured && <Notice tone="error">{t.t('error.notConfigured')}</Notice>}
         <ol class="points">

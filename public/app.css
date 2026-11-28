@@ -42,6 +42,10 @@ code { font: 12px/1 ui-monospace, Menlo, monospace; background: var(--bg); paddi
 .tab:hover { color: #fff; background: rgba(255, 255, 255, .1); }
 .tab.active { color: var(--text); background: var(--mint); font-weight: 600; }
 .account { color: rgba(255, 255, 255, .72); font-size: 13px; white-space: nowrap; }
+.topbar .logout { margin: 0; }
+.history-table .by { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.topbar .logout button { background: none; border: 1px solid rgba(255, 255, 255, .35); color: #fff; border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.topbar .logout button:hover { background: rgba(255, 255, 255, .1); }
 .langs { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; }
 .langs a { color: var(--muted); text-decoration: none; }
 .langs a.active { color: var(--text); font-weight: 600; }

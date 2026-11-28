@@ -35,6 +35,8 @@ export interface JobRequest {
   itemIds: string[];
   languages: string[];
   overwrite: boolean;
+  /** The HubSpot login of the person who started it. */
+  startedBy?: string;
 }
 
 /** Errors that make every further item and language fail too: stop the job. */
@@ -71,6 +73,7 @@ export async function startJob(deps: JobDeps, request: JobRequest): Promise<{ jo
     itemId: itemIds[0],
     itemTitle: '',
     ...(itemIds.length > 1 ? { itemIds, titles: {} } : {}),
+    ...(request.startedBy ? { startedBy: request.startedBy } : {}),
     languages: [...new Set(request.languages)],
     overwrite: request.overwrite,
     items: [],
