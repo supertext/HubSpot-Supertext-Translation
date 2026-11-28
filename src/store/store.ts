@@ -56,6 +56,12 @@ export interface Account {
   /** The Commando Center reporter's state (Plugin Health's ReporterState JSON); see reporting.ts. */
   reporter?: ReporterState | null;
   connectedAt: string;
+  /**
+   * When the app noticed that HubSpot refused the account's tokens (the app was uninstalled in
+   * HubSpot); unset while connected. Written only by `saveTokens`. The account's data is deleted
+   * DELETE_AFTER_DAYS later (hubspot/installs.ts).
+   */
+  disconnectedAt?: string;
 }
 
 export const defaultAccount = (accountId: string): Account => ({
@@ -162,8 +168,13 @@ export interface Store {
   getAccount(accountId: string): Promise<Account | undefined>;
   /** Saves the settings; keeps the stored tokens (only `saveTokens` writes them) and `reporter` (only `saveReporterState`). */
   saveAccount(account: Account): Promise<void>;
-  /** Stores new tokens (null: forget them, the account has to connect again). */
+  /**
+   * Stores new tokens (null: forget them, the account has to connect again). Null also records
+   * `disconnectedAt` (the first time), new tokens clear it.
+   */
   saveTokens(accountId: string, tokens: Tokens | null): Promise<void>;
+  /** Every account: whether it has tokens, and since when it hasn't (hubspot/installs.ts). */
+  accountStates(): Promise<{ accountId: string; connected: boolean; disconnectedAt?: string }[]>;
   /** Stores only the reporter's state, so a report finishing late never overwrites newer settings. */
   saveReporterState(accountId: string, state: ReporterState): Promise<void>;
   /** Forgets everything about the account: settings, tokens, translations, jobs. */
@@ -274,6 +285,7 @@ export class MemoryStore implements Store {
       refreshToken: stored?.refreshToken ?? '',
       tokenExpiresAt: stored?.tokenExpiresAt ?? 0,
       reporter: stored?.reporter ?? null,
+      disconnectedAt: stored?.disconnectedAt,
     });
   }
 
@@ -283,6 +295,16 @@ export class MemoryStore implements Store {
     account.accessToken = tokens?.accessToken ?? '';
     account.refreshToken = tokens?.refreshToken ?? '';
     account.tokenExpiresAt = tokens?.expiresAt ?? 0;
+    if (tokens) delete account.disconnectedAt;
+    else account.disconnectedAt ??= new Date().toISOString();
+  }
+
+  async accountStates() {
+    return [...this.accounts.values()].map((a) => ({
+      accountId: a.accountId,
+      connected: Boolean(a.refreshToken),
+      ...(a.disconnectedAt ? { disconnectedAt: a.disconnectedAt } : {}),
+    }));
   }
 
   async saveReporterState(accountId: string, state: ReporterState) {

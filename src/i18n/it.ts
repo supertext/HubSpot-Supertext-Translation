@@ -208,8 +208,8 @@ export const it: Messages = {
   'settings.connection.reconnectHint': 'Le impostazioni, la chiave API e la cronologia vengono mantenute. Lo usi quando l’app chiede una nuova autorizzazione, ad esempio per pubblicare articoli della knowledge base, o dopo aver aggiunto la knowledge base al Suo abbonamento HubSpot.',
   'settings.connection.disconnect': 'Scollega HubSpot',
   'settings.connection.disconnectHint':
-    'Rimuove le Sue impostazioni e i token salvati. Le versioni linguistiche già create restano in HubSpot. Per rimuovere l’app anche da HubSpot, la disinstalli in HubSpot in Impostazioni → Integrazioni → App collegate.',
-  'settings.connection.confirm': 'Scollegare HubSpot da Supertext? Le Sue impostazioni verranno rimosse.',
+    'Rimuove l’app dal Suo account HubSpot (HubSpot ne informa i Suoi amministratori via e-mail) ed elimina qui le Sue impostazioni, i token salvati e la cronologia. Le versioni linguistiche già create restano in HubSpot. Se invece disinstalla l’app in HubSpot, l’app se ne accorge entro un giorno ed elimina i Suoi dati 30 giorni dopo.',
+  'settings.connection.confirm': 'Scollegare HubSpot da Supertext? L’app viene rimossa dal Suo account HubSpot e le Sue impostazioni vengono eliminate.',
   'settings.about.heading': 'Informazioni',
   'settings.about.version': 'Supertext Translation per HubSpot, versione {version}',
 

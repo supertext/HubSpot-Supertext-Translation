@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
-import { createApp } from './app.js';
+import { createApp, services } from './app.js';
+import { scheduleInstallChecks } from './hubspot/installs.js';
 import { loadConfig } from './config.js';
 import { ensureDatabase, PostgresStore } from './store/postgres.js';
 import { MemoryStore, Secrets, type Store } from './store/store.js';
@@ -31,6 +32,8 @@ async function main() {
   }
 
   const app = createApp({ config, store });
+  // Uninstalls in HubSpot: noticed within a day, data deleted 30 days later (hubspot/installs.ts).
+  if (config.hubspotClientId && config.hubspotClientSecret) scheduleInstallChecks({ store, tokens: services({ config, store }).tokens });
   const root = new URL('../public/', import.meta.url).pathname;
   // Versioned addresses (?v=<content hash>, see views/layout.tsx) can be cached for good; others are revalidated.
   app.use('/static/*', async (c, next) => {

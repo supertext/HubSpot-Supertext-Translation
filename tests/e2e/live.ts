@@ -353,6 +353,14 @@ await page.locator('.history-table a[href^="/history/"]').first().click();
 await page.locator('.job').waitFor();
 check('history: the latest translation opens with its results', (await page.locator('.job h2').textContent())?.includes('How we roast our cocoa beans') ?? false, (await page.locator('.job h2').textContent()) ?? '');
 
+// --- Disconnect: the app removes itself from HubSpot and deletes the account's data ------------
+await page.goto(`${appUrl}/settings?lang=en`);
+page.once('dialog', (dialog) => void dialog.accept());
+await page.locator('#disconnect-form button').click();
+await page.waitForURL(/disconnected=1/);
+check('disconnect: the app uninstalled itself in HubSpot', hubspot.requests.some((r) => r.method === 'DELETE' && r.path === '/appinstalls/2026-09/external-install'));
+check('disconnect: the connect page is shown again', (await page.locator('a[href="/oauth/start"]').count()) > 0);
+
 await browser.close();
 if (failures.length) {
   console.error(`\n${failures.length} check(s) failed:\n- ${failures.join('\n- ')}`);

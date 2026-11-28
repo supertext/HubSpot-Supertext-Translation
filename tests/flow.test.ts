@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { SDK_VERSION } from 'supertext-sdk';
 import { describe, expect, it } from 'vitest';
+import { services } from '../src/app.js';
 import { REVIEW_URL } from '../src/config.js';
+import { checkInstalls, DELETE_AFTER_DAYS } from '../src/hubspot/installs.js';
+import { TokenManager } from '../src/hubspot/tokens.js';
 import { PORTAL_ID, setup, STANDARD_SETTINGS } from './helpers.js';
 import { KB_URL, SITE_URL } from './standin/hubspot.js';
 
@@ -909,6 +912,51 @@ describe('disconnecting', () => {
     expect(response.headers.get('location')).toBe('/?disconnected=1');
     expect(await env.store.getAccount(PORTAL_ID)).toBeUndefined();
     expect(await env.store.recentJobs(PORTAL_ID, 5)).toEqual([]);
+    // The app removed itself from the HubSpot account too.
+    expect(env.hubspot.requests.filter((r) => r.method === 'DELETE' && r.path === '/appinstalls/2026-09/external-install').length).toBe(1);
+  });
+
+  it('notices an uninstall in HubSpot within a day and deletes the data 30 days later', async () => {
+    // The store records disconnectedAt with the real clock.
+    let now = Date.now();
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    await env.translate('site-page', '101', ['de-ch']);
+    const tokens = new TokenManager(env.store, services({ config: env.config, store: env.store, fetch: env.fetchFn }).oauth, () => now);
+
+    // Still installed: the daily check only refreshes the token.
+    expect(await checkInstalls({ store: env.store, tokens, now: () => now })).toEqual({ checked: 1, uninstalled: [], deleted: [] });
+
+    env.hubspot.revoke(); // uninstalled in HubSpot
+    expect(await checkInstalls({ store: env.store, tokens, now: () => now })).toMatchObject({ uninstalled: [PORTAL_ID], deleted: [] });
+    const account = await env.store.getAccount(PORTAL_ID);
+    expect(account?.refreshToken).toBe('');
+    expect(account?.disconnectedAt).toBeTruthy();
+    expect((await env.request('/settings')).headers.get('location')).toBe('/');
+
+    // Settings and history stay during the grace period …
+    now += (DELETE_AFTER_DAYS - 1) * 86_400_000;
+    expect((await checkInstalls({ store: env.store, tokens, now: () => now })).deleted).toEqual([]);
+    expect(await env.store.recentJobs(PORTAL_ID, 5)).not.toEqual([]);
+    // … and are deleted after it.
+    now += 2 * 86_400_000;
+    expect((await checkInstalls({ store: env.store, tokens, now: () => now })).deleted).toEqual([PORTAL_ID]);
+    expect(await env.store.getAccount(PORTAL_ID)).toBeUndefined();
+    expect(await env.store.recentJobs(PORTAL_ID, 5)).toEqual([]);
+  });
+
+  it('keeps everything when the account connects again within the grace period', async () => {
+    const env = setup();
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    env.hubspot.revoke();
+    await env.store.saveTokens(PORTAL_ID, null);
+    expect((await env.store.getAccount(PORTAL_ID))?.disconnectedAt).toBeTruthy();
+    await env.connect();
+    const account = await env.store.getAccount(PORTAL_ID);
+    expect(account?.disconnectedAt).toBeUndefined();
+    expect(account?.targets.length).toBeGreaterThan(0);
   });
 });
 

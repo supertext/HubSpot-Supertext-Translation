@@ -4,6 +4,9 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Changed: **Disconnect HubSpot** also removes the app from the HubSpot account (Connected apps); HubSpot emails the account's admins.
+- Added: an uninstall in HubSpot is noticed within a day, and the account's settings, API key and history are deleted 30 days later (connecting again before keeps everything).
+
 - Security: every page sends a strict Content-Security-Policy (only the app's own scripts, styles and fonts; no inline scripts; never inside a frame), and *Links/Images → Images* shows only `https:` image addresses as thumbnails (anything else as text).
 
 - Security: the Supertext API key on the server (`SUPERTEXT_API_KEY`) is only used for the one HubSpot account named in the new variable `SUPERTEXT_API_KEY_ACCOUNT` (the demo account). Every other account needs its own key, so nobody who installs the app can translate on the server's key.

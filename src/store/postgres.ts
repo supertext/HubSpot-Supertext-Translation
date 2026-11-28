@@ -123,11 +123,11 @@ export class PostgresStore implements Store {
     // Tokens are written only by saveTokens and the reporter's state only by saveReporterState:
     // a settings save that started before a token refresh or a background report finished must
     // not put back older values.
-    const { accessToken: _a, refreshToken: _r, tokenExpiresAt: _e, apiKey, reporter: _reporter, ...data } = account;
+    const { accessToken: _a, refreshToken: _r, tokenExpiresAt: _e, apiKey, reporter: _reporter, disconnectedAt: _d, ...data } = account;
     await this.pool.query(
       `INSERT INTO accounts (account_id, api_key, data, updated_at) VALUES ($1, $2, $3, now())
        ON CONFLICT (account_id) DO UPDATE SET api_key = $2,
-         data = CASE WHEN accounts.data ? 'reporter' THEN $3::jsonb || jsonb_build_object('reporter', accounts.data->'reporter') ELSE $3::jsonb END,
+         data = $3::jsonb || jsonb_strip_nulls(jsonb_build_object('reporter', accounts.data->'reporter', 'disconnectedAt', accounts.data->'disconnectedAt')),
          updated_at = now()`,
       [account.accountId, this.secrets.encrypt(apiKey), data],
     );
@@ -135,14 +135,29 @@ export class PostgresStore implements Store {
 
   async saveTokens(accountId: string, tokens: Tokens | null) {
     await this.pool.query(
-      'UPDATE accounts SET access_token = $2, refresh_token = $3, token_expires_at = $4, updated_at = now() WHERE account_id = $1',
+      `UPDATE accounts SET access_token = $2, refresh_token = $3, token_expires_at = $4,
+         data = CASE WHEN $5::boolean THEN data - 'disconnectedAt'
+                     WHEN data ? 'disconnectedAt' THEN data
+                     ELSE jsonb_set(data, '{disconnectedAt}', to_jsonb($6::text), true) END,
+         updated_at = now() WHERE account_id = $1`,
       [
         accountId,
         this.secrets.encrypt(tokens?.accessToken ?? ''),
         this.secrets.encrypt(tokens?.refreshToken ?? ''),
         tokens?.expiresAt ?? 0,
+        tokens !== null,
+        new Date().toISOString(),
       ],
     );
+  }
+
+  async accountStates() {
+    const { rows } = await this.pool.query("SELECT account_id, refresh_token, data->>'disconnectedAt' AS disconnected_at FROM accounts");
+    return rows.map((row) => ({
+      accountId: String(row.account_id),
+      connected: this.secrets.decrypt(String(row.refresh_token ?? '')) !== '',
+      ...(row.disconnected_at ? { disconnectedAt: String(row.disconnected_at) } : {}),
+    }));
   }
 
   async saveReporterState(accountId: string, state: ReporterState) {

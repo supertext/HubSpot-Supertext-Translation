@@ -211,8 +211,8 @@ export const de: Messages = {
   'settings.connection.reconnectHint': 'Ihre Einstellungen, der API-Schlüssel und der Verlauf bleiben erhalten. Nutzen Sie es, wenn die App eine neue Berechtigung braucht, etwa zum Veröffentlichen von Wissensdatenbank-Artikeln, oder nachdem die Wissensdatenbank zu Ihrem HubSpot-Abo hinzugekommen ist.',
   'settings.connection.disconnect': 'HubSpot trennen',
   'settings.connection.disconnectHint':
-    'Entfernt Ihre Einstellungen und die gespeicherten Tokens. Bereits erstellte Sprachversionen bleiben in HubSpot. Um die App auch aus HubSpot zu entfernen, deinstallieren Sie sie in HubSpot unter Einstellungen → Integrationen → Verknüpfte Apps.',
-  'settings.connection.confirm': 'HubSpot von Supertext trennen? Ihre Einstellungen werden entfernt.',
+    'Entfernt die App aus Ihrem HubSpot-Account (HubSpot benachrichtigt Ihre Admins per E-Mail) und löscht Ihre Einstellungen, die gespeicherten Tokens und den Verlauf hier. Bereits erstellte Sprachversionen bleiben in HubSpot. Deinstallieren Sie die App stattdessen in HubSpot, bemerkt die App das innerhalb eines Tages und löscht Ihre Daten 30 Tage später.',
+  'settings.connection.confirm': 'HubSpot von Supertext trennen? Die App wird aus Ihrem HubSpot-Account entfernt und Ihre Einstellungen werden gelöscht.',
   'settings.about.heading': 'Über',
   'settings.about.version': 'Supertext Translation für HubSpot, Version {version}',
 

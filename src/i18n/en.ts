@@ -216,8 +216,8 @@ export const en = {
   'settings.connection.reconnectHint': 'Keeps your settings, API key and history. Use it when the app asks for a new permission, such as publishing knowledge base articles, or after the knowledge base was added to your HubSpot subscription.',
   'settings.connection.disconnect': 'Disconnect HubSpot',
   'settings.connection.disconnectHint':
-    'Removes your settings and the stored tokens. Language versions already made stay in HubSpot. To remove the app from HubSpot too, uninstall it under Settings → Integrations → Connected apps in HubSpot.',
-  'settings.connection.confirm': 'Disconnect HubSpot from Supertext? Your settings will be removed.',
+    'Removes the app from your HubSpot account (HubSpot emails your admins) and deletes your settings, the stored tokens and the history here. Language versions already made stay in HubSpot. If you uninstall the app in HubSpot instead, the app notices within a day and deletes your data 30 days later.',
+  'settings.connection.confirm': 'Disconnect HubSpot from Supertext? The app is removed from your HubSpot account and your settings are deleted.',
   'settings.about.heading': 'About',
   'settings.about.version': 'Supertext Translation for HubSpot, version {version}',
 

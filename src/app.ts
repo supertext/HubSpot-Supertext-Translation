@@ -3,7 +3,7 @@ import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { ApiKeyCheck } from 'supertext-sdk/v1';
 import { SESSION_COOKIE, Sessions, STATE_COOKIE } from './auth/session.js';
 import { serverApiKey, type Config } from './config.js';
-import { authorizeUrl, exchangeCode, HubSpotClient, type OAuthOptions } from './hubspot/client.js';
+import { authorizeUrl, exchangeCode, HubSpotClient, uninstallApp, type OAuthOptions } from './hubspot/client.js';
 import { getDraft, getItem, isKind, KINDS, MAX_LISTED, summary, type Kind } from './hubspot/content.js';
 import { TokenManager } from './hubspot/tokens.js';
 import { errorInfo, LocalizedError, type ErrorInfo } from './i18n/error.js';
@@ -85,7 +85,7 @@ export function services(deps: AppDeps) {
     onChanged: (accountId, kind) => catalog.forget(accountId, kind),
     onAuthenticationFailed: (account, status) => void reporting.inBackground(account, 'authenticationFailed', status),
   };
-  return { oauth, hubspot, supertext, jobDeps, reporting, catalog };
+  return { oauth, tokens, hubspot, supertext, jobDeps, reporting, catalog };
 }
 
 /**
@@ -292,6 +292,10 @@ export function createApp(deps: AppDeps) {
     const session = await current(c);
     const form = await c.req.parseBody();
     if (session && sessions.checkCsrf(session.cookie, String(form.csrf ?? ''))) {
+      // Remove the app from HubSpot too (Connected apps); the data here is deleted either way.
+      await uninstallApp(hubspot(session.account)).catch((error) =>
+        console.warn(`Supertext: HubSpot account ${session.account.accountId}: uninstall in HubSpot failed:`, error instanceof Error ? error.message : error),
+      );
       await store.deleteAccount(session.account.accountId);
       console.log(`Supertext: HubSpot account ${session.account.accountId} disconnected; its data was deleted.`);
     }

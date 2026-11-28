@@ -183,6 +183,13 @@ export function createHubSpotStandin(): HubSpotStandin {
       // --- Content APIs ---
       const auth = request.headers.get('authorization') ?? '';
       if (!validTokens.has(auth.replace(/^Bearer /, ''))) return error(401, 'The OAuth token used to make this call expired.', 'EXPIRED_AUTHENTICATION');
+      // --- Uninstall (the app removes itself from the account) ---
+      if (request.method === 'DELETE' && path === '/appinstalls/2026-09/external-install') {
+        state.requests.push({ method: request.method, path });
+        refreshToken = 'revoked';
+        validTokens.clear();
+        return new Response(null, { status: 204 });
+      }
       const match = PATHS.find(([, pattern]) => pattern.test(path));
       if (!match) return error(404, `Unknown path ${path}`, 'OBJECT_NOT_FOUND');
       const [kind, pattern] = match;

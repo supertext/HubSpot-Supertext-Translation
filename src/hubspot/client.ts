@@ -227,6 +227,14 @@ export class HubSpotClient {
   }
 }
 
+/**
+ * Removes the app from the account of the client's token, as *Uninstall* under Connected apps in
+ * HubSpot does (HubSpot emails the account's admins). Used by *Disconnect*.
+ */
+export async function uninstallApp(client: HubSpotClient): Promise<void> {
+  await client.request('DELETE', '/appinstalls/2026-09/external-install');
+}
+
 /** A HubSpotError for a failed response; HubSpot's own message is kept, untranslated. */
 export async function hubspotError(response: Response): Promise<HubSpotError> {
   const status = response.status;
