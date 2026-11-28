@@ -2,7 +2,7 @@ import { Hono, type Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { ApiKeyCheck } from 'supertext-sdk/v1';
 import { SESSION_COOKIE, Sessions, STATE_COOKIE } from './auth/session.js';
-import type { Config } from './config.js';
+import { serverApiKey, type Config } from './config.js';
 import { authorizeUrl, exchangeCode, HubSpotClient, type OAuthOptions } from './hubspot/client.js';
 import { getDraft, getItem, isKind, KINDS, MAX_LISTED, summary, type Kind } from './hubspot/content.js';
 import { TokenManager } from './hubspot/tokens.js';
@@ -69,7 +69,7 @@ export function services(deps: AppDeps) {
     new HubSpotClient({ apiBase: config.hubspotApiBase, tokens: tokens.source(account), fetch: deps.fetch });
   const supertext = (account: Account) =>
     new SupertextClient({
-      apiKey: account.apiKey || config.supertextApiKey,
+      apiKey: account.apiKey || serverApiKey(config, account.accountId),
       endpoint: config.supertextEndpoint || undefined,
       // Languages with Translation review on go through the review service (see SupertextClient.forReview).
       reviewEndpoint: config.reviewUrl,
@@ -95,7 +95,7 @@ export function createApp(deps: AppDeps) {
   const { oauth, hubspot, jobDeps, reporting, catalog } = services(deps);
   /** Back-end requests that run the app's code: the reporter notices upgrades and changed keys (in the background). */
   const onRequest = (account: Account) => void reporting.inBackground(account, 'onRequest');
-  const hasKey = (account: Account) => Boolean(account.apiKey || config.supertextApiKey);
+  const hasKey = (account: Account) => Boolean(account.apiKey || serverApiKey(config, account.accountId));
   const secure = config.appUrl.startsWith('https://');
   const configured = Boolean(config.hubspotClientId && config.hubspotClientSecret);
   // Links into HubSpot's editor go to app.hubspot.com, also when the install page is a stand-in.
@@ -654,7 +654,7 @@ export function createApp(deps: AppDeps) {
         SettingsPage({
           ctx: pageContext(t, 'settings', session),
           account: session.account,
-          serverKey: Boolean(config.supertextApiKey),
+          serverKey: Boolean(serverApiKey(config, session.account.accountId)),
           reportsEnabled: reporting.enabled(session.account),
           reportsFixed: reporting.fixedByEnvironment,
           saved: c.req.query('saved') === '1',

@@ -6,7 +6,7 @@
  *   npm run standin
  *   HUBSPOT_CLIENT_ID=standin HUBSPOT_CLIENT_SECRET=standin-secret \
  *   HUBSPOT_APP_BASE=http://127.0.0.1:8766 HUBSPOT_API_BASE=http://127.0.0.1:8766 \
- *   SUPERTEXT_API_ENDPOINT=http://127.0.0.1:8765/v1/ SUPERTEXT_API_KEY=any npm run dev
+ *   SUPERTEXT_API_ENDPOINT=http://127.0.0.1:8765/v1/ SUPERTEXT_API_KEY=any SUPERTEXT_API_KEY_ACCOUNT=48210377 npm run dev
  *
  * Then open http://127.0.0.1:8080 and click Connect HubSpot: the stand-in
  * approves at once.

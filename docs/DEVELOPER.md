@@ -131,7 +131,7 @@ The pages follow supertext.com: the deep-green header bar (`#003230`, rounded bo
 
 AI file translation API v1 at `https://api.supertext.com/v1/` (upload an HTML file, poll its status, download the translation, delete the file), handled entirely by the Supertext SDK: the `Supertext-Auth-Key` header (a pasted prefix is stripped), the multipart upload with a file part of type exactly `text/html`, HTTP 429 retries, polling every 2 s with a 3-minute timeout, the delete after every upload, the HTML packing (one `<div data-st-id="N">` per segment) and the language codes. See the SDK's [integration guide](https://github.com/Supertext/Supertext-API-SDK-Guide/blob/main/docs/integration-guide.md) and [API reference](https://github.com/Supertext/Supertext-API-SDK-Guide/blob/main/docs/api-reference.md).
 
-`src/supertext/client.ts` creates one SDK client per account with the key and the base URL (`SUPERTEXT_API_ENDPOINT` for stand-ins), sends `HubSpot-Supertext-Translation/<version>` in the User-Agent, and turns the SDK's error codes into the app's (`authentication_failure` → `auth`, `quota_exceeded` → `limitExceeded`, `invalid_language_pair` → `languagePair`, `unsupported_language` → `unsupportedLanguage`, `unsupported_feature` → `unsupportedFeature`, `transport_error` → `unreachable`, `incomplete_response` → `incomplete` …). *Test connection* and the automatic key check are the SDK's cost-free `checkApiKey()` (`GET features`). The key is the account's own (Settings, AES-256-GCM encrypted with `APP_ENCRYPTION_KEY`, else a key derived from `HUBSPOT_CLIENT_SECRET`), else `SUPERTEXT_API_KEY`.
+`src/supertext/client.ts` creates one SDK client per account with the key and the base URL (`SUPERTEXT_API_ENDPOINT` for stand-ins), sends `HubSpot-Supertext-Translation/<version>` in the User-Agent, and turns the SDK's error codes into the app's (`authentication_failure` → `auth`, `quota_exceeded` → `limitExceeded`, `invalid_language_pair` → `languagePair`, `unsupported_language` → `unsupportedLanguage`, `unsupported_feature` → `unsupportedFeature`, `transport_error` → `unreachable`, `incomplete_response` → `incomplete` …). *Test connection* and the automatic key check are the SDK's cost-free `checkApiKey()` (`GET features`). The key is the account's own (Settings, AES-256-GCM encrypted with `APP_ENCRYPTION_KEY`, else a key derived from `HUBSPOT_CLIENT_SECRET`), else `SUPERTEXT_API_KEY`, but only for the one account `SUPERTEXT_API_KEY_ACCOUNT` names (`serverApiKey()` in `src/config.ts`); every other account, and every account when `SUPERTEXT_API_KEY_ACCOUNT` is empty, needs its own key, so whoever installs the app can't translate on the server's key.
 
 **Translation review** (`Account.reviewLanguages`, HubSpot codes, the checkbox per language under Settings → Languages; stored in the account's JSON, so existing accounts start with `[]` and need no migration): `jobs.ts` takes `supertext.forReview(account.reviewLanguages.includes(language))` for each language, a second SDK client with the same key, timeouts, fetch and User-Agent whose base URL is `SUPERTEXT_REVIEW_URL` (`Config.reviewUrl`, default `REVIEW_URL` in `src/config.ts`, the translation proxy of [Supertext Localization Review](https://github.com/Supertext/Localization-Review-Supertext-Translation)), created on first use. `translateSegments` uploads, polls, downloads and deletes with the same client, so a job is always collected where it was submitted. The proxy speaks the same API v1, forwards to the live Supertext API with the account's key, stores every segment per key and serves reviewers' corrections on the next upload, so nothing else changes in the app. `SUPERTEXT_REVIEW_URL=` (empty, or the same URL as the API) means `forReview()` always returns the direct client, and the settings page hides the column (saving then keeps the stored choice). The key check, *Test connection*, reports and file export/import never use the review service.
 
@@ -192,7 +192,7 @@ npm install
 npm run standin            # stand-in HubSpot :8766, stand-in Supertext :8765
 HUBSPOT_CLIENT_ID=standin HUBSPOT_CLIENT_SECRET=standin-secret \
 HUBSPOT_APP_BASE=http://127.0.0.1:8766 HUBSPOT_API_BASE=http://127.0.0.1:8766 \
-SUPERTEXT_API_ENDPOINT=http://127.0.0.1:8765/v1/ SUPERTEXT_API_KEY=any npm run dev
+SUPERTEXT_API_ENDPOINT=http://127.0.0.1:8765/v1/ SUPERTEXT_API_KEY=any SUPERTEXT_API_KEY_ACCOUNT=48210377 npm run dev
 # open http://127.0.0.1:8080 and click Connect HubSpot (the stand-in approves at once)
 ```
 
@@ -306,7 +306,8 @@ The service **HubSpot** in the Railway project *supertext-cms-demos* (region `eu
 | `SESSION_SECRET` | random secret for session cookies |
 | `DATABASE_URL` | the shared Postgres service with database `hubspot_supertext` (created on first start): `postgresql://${{Postgres.PGUSER}}:${{Postgres.PGPASSWORD}}@${{Postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/hubspot_supertext` |
 | `APP_ENCRYPTION_KEY` | random secret for stored tokens and keys; optional (falls back to the client secret) |
-| `SUPERTEXT_API_KEY` | optional default key (the demo account) |
+| `SUPERTEXT_API_KEY` | optional key on the server, for one account only |
+| `SUPERTEXT_API_KEY_ACCOUNT` | the HubSpot account ID (hub ID) that may use `SUPERTEXT_API_KEY`; empty: no account |
 | `HUBSPOT_SCOPES`, `HUBSPOT_OPTIONAL_SCOPES` | optional; default `oauth content` and the knowledge base scopes |
 | `SUPERTEXT_REVIEW_URL` | optional; the review service for languages with *Translation review* on (default: Supertext's review service, `https://localizationreview-production.up.railway.app/v1/`; empty turns review off for every account) |
 | `SUPERTEXT_VERSION_REPORTS` | optional; `0` turns the version reports off for every account |
@@ -333,7 +334,7 @@ The demo is a HubSpot account, not a container: HubSpot hosts the content, Railw
 1. A HubSpot developer test account (or a CMS/Content Hub trial) *Supertext Demo*, with English as the primary language and German, French and Italian (Switzerland) as further languages, a blog with language variants and, if available, a knowledge base.
 2. Content in English with the texts of `tests/standin/seed.ts`: an *About us* page, an *Advent calendar* landing page, the roasting blog post, the autumn newsletter and the order tracking article.
 3. **Accounts** (the demo accounts rule, as far as HubSpot allows): Supertext staff get access as HubSpot users with **Super Admin**; for tests and screenshots invite a user with marketing and content edit permissions (the closest to an editor role). HubSpot users are invited by hand and can't be created from Railway variables; passwords stay in Keeper, never in the repo or chat.
-4. Install the app in the demo account, enter the API key under Settings or set `SUPERTEXT_API_KEY` on Railway, choose `de-ch`, `fr-ch` and `it-ch`.
+4. Install the app in the demo account, enter the API key under Settings or set `SUPERTEXT_API_KEY` and `SUPERTEXT_API_KEY_ACCOUNT` (the demo account's hub ID) on Railway, choose `de-ch`, `fr-ch` and `it-ch`.
 
 ## Dependency updates
 

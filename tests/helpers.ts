@@ -3,6 +3,7 @@ import { loadConfig } from '../src/config.js';
 import { MemoryStore } from '../src/store/store.js';
 import { createHubSpotStandin } from './standin/hubspot.js';
 import { createSupertextStandin } from './standin/supertext.js';
+import { PORTAL_ID } from './standin/seed.js';
 
 export { PORTAL_ID } from './standin/seed.js';
 
@@ -31,6 +32,8 @@ export function setup(env: Record<string, string> = {}) {
     SESSION_SECRET: 'session-secret',
     SUPERTEXT_API_ENDPOINT: 'https://supertext.test/v1/',
     SUPERTEXT_API_KEY: 'server-key',
+    // The server's key is for the stand-in's account only.
+    SUPERTEXT_API_KEY_ACCOUNT: PORTAL_ID,
     // Version reports go to the stand-in (supertext.reports), never to the live Commando Center.
     SUPERTEXT_REPORT_URL: 'https://center.test/api/v1/report',
     ...env,

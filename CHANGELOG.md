@@ -4,6 +4,8 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Security: the Supertext API key on the server (`SUPERTEXT_API_KEY`) is only used for the one HubSpot account named in the new variable `SUPERTEXT_API_KEY_ACCOUNT` (the demo account). Every other account needs its own key, so nobody who installs the app can translate on the server's key.
+
 ## 1.4.1 — 2026-11-27
 
 - Fixed: *Publish translations right away* left new page and blog post versions as drafts on a real HubSpot account: pushing the draft live only updates pages that are already published. A version that was never published is now scheduled to go live a few seconds later. HubSpot's own rules show as the reason when it refuses (a blog post needs an author and a featured image).

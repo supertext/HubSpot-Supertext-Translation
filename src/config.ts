@@ -16,8 +16,13 @@ export interface Config {
   hubspotOptionalScopes: string;
   /** Signs session cookies; falls back to a key derived from the client secret. */
   sessionSecret: string;
-  /** Default Supertext API key for accounts that haven't entered their own (the demo account). */
+  /**
+   * SUPERTEXT_API_KEY: a Supertext API key on the server, for ONE HubSpot account only (the demo
+   * account): SUPERTEXT_API_KEY_ACCOUNT, its HubSpot account ID (hub ID). Without it the key is
+   * used for no account. Every other account enters its own key. See serverApiKey().
+   */
   supertextApiKey: string;
+  supertextApiKeyAccount: string;
   supertextEndpoint: string;
   /**
    * SUPERTEXT_REVIEW_URL: the review service for languages with *Translation review* on
@@ -58,6 +63,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     hubspotOptionalScopes: (env.HUBSPOT_OPTIONAL_SCOPES ?? DEFAULT_OPTIONAL_SCOPES).trim(),
     sessionSecret: env.SESSION_SECRET ?? '',
     supertextApiKey: env.SUPERTEXT_API_KEY ?? '',
+    supertextApiKeyAccount: (env.SUPERTEXT_API_KEY_ACCOUNT ?? '').trim(),
     supertextEndpoint: env.SUPERTEXT_API_ENDPOINT ?? '',
     reviewUrl: (env.SUPERTEXT_REVIEW_URL ?? REVIEW_URL).trim(),
     databaseUrl: env.DATABASE_URL ?? '',
@@ -65,4 +71,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     versionReports: env.SUPERTEXT_VERSION_REPORTS,
     reportUrl: env.SUPERTEXT_REPORT_URL ?? '',
   };
+}
+
+/**
+ * The server's Supertext API key for an account: SUPERTEXT_API_KEY, but only for the account
+ * SUPERTEXT_API_KEY_ACCOUNT names ('' for every other account, and when that is not set), so the
+ * key on the server can't be used by whoever installs the app.
+ */
+export function serverApiKey(config: Pick<Config, 'supertextApiKey' | 'supertextApiKeyAccount'>, accountId: string): string {
+  if (!config.supertextApiKey || !config.supertextApiKeyAccount) return '';
+  return config.supertextApiKeyAccount === accountId ? config.supertextApiKey : '';
 }

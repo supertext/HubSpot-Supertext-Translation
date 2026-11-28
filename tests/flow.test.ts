@@ -949,6 +949,23 @@ describe('Commando Center', () => {
     expect(await (await env.request('/settings')).text()).toContain('API key checked');
   });
 
+  it("uses the server's key only for the account SUPERTEXT_API_KEY_ACCOUNT names", async () => {
+    const env = setup({ SUPERTEXT_API_KEY_ACCOUNT: '999' });
+    await env.connect();
+    await env.saveSettings(STANDARD_SETTINGS);
+    const response = await env.api('POST', '/api/jobs', { kind: 'site-page', itemIds: ['101'], languages: ['de-ch'] });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: { code: 'noApiKey' } });
+    expect(await (await env.request('/settings')).text()).not.toContain('the app uses the key set on the server');
+    expect(env.supertextRequests.filter((r) => r.startsWith('POST'))).toEqual([]);
+
+    // Without SUPERTEXT_API_KEY_ACCOUNT the key is used for no account.
+    const none = setup({ SUPERTEXT_API_KEY_ACCOUNT: '' });
+    await none.connect();
+    await none.saveSettings(STANDARD_SETTINGS);
+    expect((await none.api('POST', '/api/jobs', { kind: 'site-page', itemIds: ['101'], languages: ['de-ch'] })).status).toBe(400);
+  });
+
   it('reports a key Supertext rejects during a translation once', async () => {
     const env = setup({ SUPERTEXT_API_KEY: 'invalid' });
     await env.connect();

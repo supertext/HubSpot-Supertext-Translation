@@ -18,7 +18,7 @@ export interface Account {
   tokenExpiresAt: number;
   /** The scopes HubSpot granted (the knowledge base needs its own, Service Hub Professional+). */
   scopes: string[];
-  /** The account's own Supertext API key ('' = use SUPERTEXT_API_KEY). */
+  /** The account's own Supertext API key ('' = the server's, if SUPERTEXT_API_KEY_ACCOUNT is this account). */
   apiKey: string;
   tone: Politeness;
   /** HubSpot code of the content's language, used where an item has none set ("en"); '' = let Supertext detect it. */

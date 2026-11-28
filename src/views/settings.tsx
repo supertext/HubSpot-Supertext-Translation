@@ -59,7 +59,7 @@ function sourceOk(account: Account): boolean {
 export interface SettingsPageProps {
   ctx: PageContext;
   account: Account;
-  /** A key is set on the server (SUPERTEXT_API_KEY). */
+  /** The server's key applies to this account (SUPERTEXT_API_KEY with SUPERTEXT_API_KEY_ACCOUNT). */
   serverKey: boolean;
   /** Version reports are on for this account (the setting and SUPERTEXT_VERSION_REPORTS). */
   reportsEnabled: boolean;

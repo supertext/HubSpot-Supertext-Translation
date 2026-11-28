@@ -31,6 +31,7 @@ import { HUBL } from '../../src/hubspot/rich-text.js';
 import { MemoryStore } from '../../src/store/store.js';
 import { createHubSpotStandin, KB_URL, SITE_URL } from '../standin/hubspot.js';
 import { createSupertextStandin } from '../standin/supertext.js';
+import { PORTAL_ID } from '../standin/seed.js';
 
 const key = process.env.E2E_STANDIN === '1' ? 'stand-in' : (process.env.SUPERTEXT_API_KEY ?? '');
 if (!key.trim()) {
@@ -116,6 +117,7 @@ const app = createApp({
     HUBSPOT_APP_BASE: hubspotUrl,
     HUBSPOT_API_BASE: hubspotUrl,
     SUPERTEXT_API_KEY: key,
+    SUPERTEXT_API_KEY_ACCOUNT: PORTAL_ID,
     // The live API (SUPERTEXT_API_ENDPOINT unset). Reports off, and if anything reported, the stand-in gets it.
     SUPERTEXT_VERSION_REPORTS: '0',
     SUPERTEXT_REPORT_URL: `${reportsUrl}/report`,

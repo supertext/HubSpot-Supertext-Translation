@@ -15,7 +15,7 @@ trap cleanup EXIT
 # One process (not npx tsx, whose child would outlive the cleanup).
 node --import tsx tests/standin/server.ts > "$work/standin.log" 2>&1 &
 HUBSPOT_CLIENT_ID=ci HUBSPOT_CLIENT_SECRET=ci-secret HUBSPOT_APP_BASE=$hs HUBSPOT_API_BASE=$hs \
-SUPERTEXT_API_ENDPOINT=http://127.0.0.1:8765/v1/ SUPERTEXT_API_KEY=ci-key SUPERTEXT_REPORT_URL=http://127.0.0.1:8765/report \
+SUPERTEXT_API_ENDPOINT=http://127.0.0.1:8765/v1/ SUPERTEXT_API_KEY=ci-key SUPERTEXT_API_KEY_ACCOUNT=48210377 SUPERTEXT_REPORT_URL=http://127.0.0.1:8765/report \
 APP_URL=$app SESSION_SECRET=ci-session PORT=8080 \
   node dist/server.js > "$work/app.log" 2>&1 &
 for i in $(seq 1 30); do curl -fs $app/health > /dev/null && curl -s -o /dev/null $hs/oauth/authorize && break; sleep 1; done
