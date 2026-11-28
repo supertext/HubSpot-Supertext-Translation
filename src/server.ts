@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { createApp, services } from './app.js';
 import { scheduleInstallChecks } from './hubspot/installs.js';
-import { loadConfig } from './config.js';
+import { encryptionKeys, loadConfig } from './config.js';
 import { ensureDatabase, PostgresStore } from './store/postgres.js';
 import { MemoryStore, Secrets, type Store } from './store/store.js';
 import { VERSION } from './version.js';
@@ -15,7 +15,7 @@ async function main() {
     await ensureDatabase(config.databaseUrl);
     const postgres = new PostgresStore(
       config.databaseUrl,
-      new Secrets(config.encryptionKey || config.hubspotClientSecret || 'local-development-only'),
+      new Secrets(encryptionKeys(config).length ? encryptionKeys(config) : ['local-development-only']),
     );
     await postgres.migrate();
     store = postgres;
@@ -28,7 +28,10 @@ async function main() {
     console.warn('Supertext: HUBSPOT_CLIENT_ID and HUBSPOT_CLIENT_SECRET are not set; HubSpot cannot be connected.');
   }
   if (!config.sessionSecret) {
-    console.warn('Supertext: SESSION_SECRET is not set; sessions are signed with a key derived from the client secret.');
+    console.warn('Supertext: SESSION_SECRET is not set; sessions are signed with a key derived from the client secret (a new client secret logs everyone out). Set it to a long random value.');
+  }
+  if (config.databaseUrl && !config.encryptionKey) {
+    console.warn('Supertext: APP_ENCRYPTION_KEY is not set; stored tokens and API keys are encrypted with a key derived from the client secret. Set it to a long random value: the stored secrets are re-encrypted with it on the next start.');
   }
 
   const app = createApp({ config, store });

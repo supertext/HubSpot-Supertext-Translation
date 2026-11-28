@@ -240,33 +240,69 @@ export function jobMatches(job: Job, query: Pick<JobQuery, 'kind' | 'outcome'>):
 export const newJobId = (): string => randomUUID();
 
 /** AES-256-GCM for stored tokens and API keys. */
+/**
+ * Encrypts stored tokens and API keys (AES-256-GCM, random IV). Values carry the ID of their key
+ * (`v2:<key id>:…`), so the key can be changed: the first key encrypts, every key decrypts (the
+ * current one, previous ones from APP_ENCRYPTION_KEY_PREVIOUS, and the key derived from the
+ * HubSpot client secret, which older versions used when APP_ENCRYPTION_KEY wasn't set).
+ * PostgresStore.migrate() re-encrypts values that aren't on the current key yet. A value no key
+ * opens is logged (never the value) and read as ''.
+ */
 export class Secrets {
-  private readonly key: Buffer;
+  private readonly keys: { id: string; key: Buffer }[];
 
-  constructor(secret: string) {
-    if (!secret) throw new Error('An encryption key or the HubSpot client secret is required.');
-    this.key = createHash('sha256').update(`supertext-hubspot:${secret}`).digest();
+  constructor(secret: string | string[]) {
+    const secrets = [...new Set((Array.isArray(secret) ? secret : [secret]).filter(Boolean))];
+    if (secrets.length === 0) throw new Error('An encryption key or the HubSpot client secret is required.');
+    this.keys = secrets.map((value) => {
+      const key = createHash('sha256').update(`supertext-hubspot:${value}`).digest();
+      return { id: createHash('sha256').update(key).digest('hex').slice(0, 8), key };
+    });
+  }
+
+  /** The ID of the key new values are encrypted with. */
+  get currentKeyId(): string {
+    return this.keys[0].id;
+  }
+
+  /** Whether a stored value is encrypted with the current key (or empty). */
+  isCurrent(value: string): boolean {
+    return !value || value.startsWith(`v2:${this.currentKeyId}:`);
   }
 
   encrypt(value: string): string {
     if (!value) return '';
+    const { id, key } = this.keys[0];
     const iv = randomBytes(12);
-    const cipher = createCipheriv('aes-256-gcm', this.key, iv);
+    const cipher = createCipheriv('aes-256-gcm', key, iv);
     const data = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
-    return ['v1', iv.toString('base64'), cipher.getAuthTag().toString('base64'), data.toString('base64')].join(':');
+    return ['v2', id, iv.toString('base64'), cipher.getAuthTag().toString('base64'), data.toString('base64')].join(':');
   }
 
   decrypt(value: string): string {
     if (!value) return '';
-    const [version, iv, tag, data] = value.split(':');
-    if (version !== 'v1' || !iv || !tag || !data) return '';
-    try {
-      const decipher = createDecipheriv('aes-256-gcm', this.key, Buffer.from(iv, 'base64'));
-      decipher.setAuthTag(Buffer.from(tag, 'base64'));
-      return Buffer.concat([decipher.update(Buffer.from(data, 'base64')), decipher.final()]).toString('utf8');
-    } catch {
+    const parts = value.split(':');
+    // v1 (before key IDs): iv, tag, data; try every key.
+    const [version] = parts;
+    const [keyId, iv, tag, data] = version === 'v2' ? parts.slice(1) : version === 'v1' ? ['', ...parts.slice(1)] : [];
+    if (!iv || !tag || !data) {
+      console.error('Supertext: a stored secret has an unknown format; it is ignored.');
       return '';
     }
+    const candidates = keyId ? this.keys.filter((k) => k.id === keyId) : this.keys;
+    for (const { key } of candidates) {
+      try {
+        const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64'));
+        decipher.setAuthTag(Buffer.from(tag, 'base64'));
+        return Buffer.concat([decipher.update(Buffer.from(data, 'base64')), decipher.final()]).toString('utf8');
+      } catch {
+        // the next key
+      }
+    }
+    console.error(
+      `Supertext: a stored secret could not be decrypted${keyId ? ` (key ${keyId} is not configured)` : ''}: set APP_ENCRYPTION_KEY_PREVIOUS to the key it was stored with.`,
+    );
+    return '';
   }
 }
 

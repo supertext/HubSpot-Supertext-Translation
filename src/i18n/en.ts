@@ -274,6 +274,7 @@ export const en = {
   'error.interrupted': 'The app restarted during the translation. Start it again; finished languages are kept.',
   'error.session': 'Your session has expired. Connect HubSpot again.',
   'error.tooMany': 'Select at most 50 items at a time.',
+  'error.tooManyRequests': 'Too many requests. Please wait a minute and try again.',
   'error.kbPublishScope': 'To publish knowledge base articles, connect HubSpot again and allow publishing.',
   'error.select': 'Select an item and at least one language.',
   'keyCheck.ok': 'API key checked: the connection to Supertext works.',

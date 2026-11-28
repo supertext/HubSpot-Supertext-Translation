@@ -14,6 +14,8 @@ COPY public ./public
 RUN npm run build && npm prune --omit=dev
 
 ENV NODE_ENV=production
+# Not as root: the app only reads its files and writes nothing to disk.
+USER node
 EXPOSE 8080
 # Creates its database on the shared Postgres server if needed and serves the
 # pages and the API for the translate page.

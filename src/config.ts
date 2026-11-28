@@ -30,8 +30,13 @@ export interface Config {
    */
   reviewUrl: string;
   databaseUrl: string;
-  /** Key for encrypting stored tokens and API keys; falls back to a key derived from the client secret. */
+  /**
+   * APP_ENCRYPTION_KEY: the key stored tokens and API keys are encrypted with; without it, a key
+   * derived from the HubSpot client secret (then a new client secret makes them unreadable).
+   * APP_ENCRYPTION_KEY_PREVIOUS: earlier keys (comma-separated) that still decrypt; see encryptionKeys().
+   */
   encryptionKey: string;
+  previousEncryptionKeys: string[];
   /** SUPERTEXT_VERSION_REPORTS: `0` turns the version reports off for every account (see reporting.ts). */
   versionReports: string | undefined;
   /** SUPERTEXT_REPORT_URL: where version reports go ('' = Plugin Health's default, the live Commando Center). Tests point it at a stand-in. */
@@ -68,6 +73,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     reviewUrl: (env.SUPERTEXT_REVIEW_URL ?? REVIEW_URL).trim(),
     databaseUrl: env.DATABASE_URL ?? '',
     encryptionKey: env.APP_ENCRYPTION_KEY ?? '',
+    previousEncryptionKeys: (env.APP_ENCRYPTION_KEY_PREVIOUS ?? '').split(',').map((key) => key.trim()).filter(Boolean),
     versionReports: env.SUPERTEXT_VERSION_REPORTS,
     reportUrl: env.SUPERTEXT_REPORT_URL ?? '',
   };
@@ -81,4 +87,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
 export function serverApiKey(config: Pick<Config, 'supertextApiKey' | 'supertextApiKeyAccount'>, accountId: string): string {
   if (!config.supertextApiKey || !config.supertextApiKeyAccount) return '';
   return config.supertextApiKeyAccount === accountId ? config.supertextApiKey : '';
+}
+
+/**
+ * The keys for Secrets: the current one first (APP_ENCRYPTION_KEY, else the client secret), then
+ * the previous ones, then the client secret (what versions before 1.5 used without APP_ENCRYPTION_KEY).
+ */
+export function encryptionKeys(config: Pick<Config, 'encryptionKey' | 'previousEncryptionKeys' | 'hubspotClientSecret'>): string[] {
+  return [config.encryptionKey || config.hubspotClientSecret, ...config.previousEncryptionKeys, config.hubspotClientSecret].filter(Boolean);
 }

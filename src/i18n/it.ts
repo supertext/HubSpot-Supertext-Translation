@@ -266,6 +266,7 @@ export const it: Messages = {
     'L’app è stata riavviata durante la traduzione. La avvii di nuovo; le lingue completate vengono mantenute.',
   'error.session': 'La Sua sessione è scaduta. Colleghi di nuovo HubSpot.',
   'error.tooMany': 'Selezioni al massimo 50 contenuti alla volta.',
+  'error.tooManyRequests': 'Troppe richieste. Attenda un minuto e riprovi.',
   'error.kbPublishScope': 'Per pubblicare gli articoli della knowledge base, colleghi di nuovo HubSpot e consenta la pubblicazione.',
   'error.select': 'Selezioni un contenuto e almeno una lingua.',
   'keyCheck.ok': 'Chiave API verificata: la connessione a Supertext funziona.',

@@ -155,6 +155,7 @@ The result shows the reason for each language that fails; the other languages (a
 | Message | What to do |
 | --- | --- |
 | *Add your Supertext API key* | An administrator needs to enter the API key under Settings. |
+| *Too many requests* | More than five translations of your account are running at once, or very many were started within a minute. Wait a minute and start it again. |
 | *Authentication failed* | The API key is no longer valid; tell your administrator. |
 | *The language “fr-be” has no Supertext code yet, so nothing was sent* | The language has no Supertext language yet (Supertext has no exact code for it and the app doesn't guess one); nothing was sent to Supertext for it, the other languages still ran. An administrator chooses its code in the *Supertext code* dropdown under Settings → Languages (for example `fr-FR`). On the Translate page such a language shows *No Supertext code yet*. |
 | *Supertext offers no formal or informal address for this language* | An administrator sets the form of address to *Let Supertext decide* under Settings → Translation. |

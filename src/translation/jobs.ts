@@ -60,10 +60,18 @@ export const jobItemIds = (job: Job): string[] => job.itemIds ?? [job.itemId];
 /** Items with a job running, so the same item isn't translated twice at once. */
 const running = new Map<string, Promise<Job>>();
 
+/** Translations running (or waiting) per account; at most MAX_RUNNING_JOBS are started. */
+export const MAX_RUNNING_JOBS = 5;
+const perAccount = new Map<string, number>();
+export const runningJobs = (accountId: string): number => perAccount.get(accountId) ?? 0;
+
 /** Starts the job and returns at once; `done` resolves when it has finished. */
 export async function startJob(deps: JobDeps, request: JobRequest): Promise<{ job: Job; done: Promise<Job> }> {
   const itemIds = [...new Set(request.itemIds)].slice(0, MAX_BATCH);
   if (itemIds.length === 0) throw new LocalizedError('Select an item and at least one language.', 'select');
+  // Counted before anything waits, so requests arriving together can't pass the limit.
+  if (runningJobs(request.accountId) >= MAX_RUNNING_JOBS) throw new LocalizedError('Too many requests. Please wait a minute.', 'tooManyRequests');
+  perAccount.set(request.accountId, runningJobs(request.accountId) + 1);
   const keys = itemIds.map((id) => `${request.accountId}|${request.kind}|${id}`);
   const job: Job = {
     id: newJobId(),
@@ -79,7 +87,17 @@ export async function startJob(deps: JobDeps, request: JobRequest): Promise<{ jo
     items: [],
     createdAt: new Date().toISOString(),
   };
-  await deps.store.saveJob(job);
+  const release = () => {
+    const left = runningJobs(job.accountId) - 1;
+    if (left > 0) perAccount.set(job.accountId, left);
+    else perAccount.delete(job.accountId);
+  };
+  try {
+    await deps.store.saveJob(job);
+  } catch (error) {
+    release();
+    throw error;
+  }
   // Waits for the jobs that are translating any of these items.
   const previous = Promise.all(keys.map((key) => (running.get(key) ?? Promise.resolve(undefined)).catch(() => undefined)));
   const done: Promise<Job> = previous
@@ -94,6 +112,7 @@ export async function startJob(deps: JobDeps, request: JobRequest): Promise<{ jo
     })
     .finally(() => {
       for (const key of keys) if (running.get(key) === done) running.delete(key);
+      release();
       deps.onChanged?.(job.accountId, job.kind);
     });
   for (const key of keys) running.set(key, done);

@@ -1,6 +1,8 @@
 import { Hono, type Context } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { ApiKeyCheck } from 'supertext-sdk/v1';
+import { MAX_BODY_BYTES, RateLimiter } from './auth/limits.js';
 import { newSessionEpoch, SESSION_COOKIE, SESSION_DAYS, Sessions, STATE_COOKIE, type SessionUser } from './auth/session.js';
 import { serverApiKey, type Config } from './config.js';
 import { authorizeUrl, exchangeCode, HubSpotClient, uninstallApp, type OAuthOptions } from './hubspot/client.js';
@@ -124,8 +126,18 @@ export function createApp(deps: AppDeps) {
     c.header('Content-Security-Policy', CONTENT_SECURITY_POLICY);
     c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
     c.header('X-Content-Type-Options', 'nosniff');
+    // Browsers that saw the app over HTTPS never use plain HTTP for it again (for a year).
+    if (secure) c.header('Strict-Transport-Security', 'max-age=31536000');
     // Pages show the account's live state: never from a cache (static files set their own, see server.ts).
     if (!c.req.path.startsWith('/static/')) c.header('Cache-Control', 'no-cache, private');
+  });
+
+  // Request bodies: 1 MB, except the import (its own limit, MAX_UPLOAD_BYTES).
+  app.use('*', async (c, next) => {
+    if (c.req.method === 'GET' || c.req.method === 'HEAD' || c.req.path === '/import') return next();
+    const length = Number(c.req.header('content-length') ?? 0);
+    if (length > MAX_BODY_BYTES) return c.text('Request too large', 413);
+    return bodyLimit({ maxSize: MAX_BODY_BYTES, onError: (c) => c.text('Request too large', 413) })(c, next);
   });
 
   // ?lang=de switches the interface language and remembers it.
@@ -157,6 +169,13 @@ export function createApp(deps: AppDeps) {
     accountName: session?.account.accountName || session?.account.accountId,
     userName: session?.user?.user || undefined,
   });
+
+  // Per account: Test connection 10 times a minute, starting translations 30 times a minute,
+  // and at most MAX_RUNNING_JOBS translations running at once.
+  const keyChecks = new RateLimiter(10, 60_000, deps.now);
+  const jobStarts = new RateLimiter(30, 60_000, deps.now);
+  const tooMany = (c: Context) =>
+    c.json({ error: { ...errorInfo(new LocalizedError('Too many requests. Please wait a minute.', 'tooManyRequests')), message: tr(c).t('error.tooManyRequests') } }, 429);
 
   /** API calls: a session and the CSRF token in a header (POST). */
   const apiSession = async (c: Context, write: boolean) => {
@@ -357,15 +376,18 @@ export function createApp(deps: AppDeps) {
     if (!hasKey(account)) {
       return c.json({ error: errorInfo(new LocalizedError('No Supertext API key configured.', 'noApiKey')) }, 400);
     }
+    if (!jobStarts.take(account.accountId)) return tooMany(c);
     onRequest(account);
-    const { job, done } = await startJob(jobDeps, {
+    const started = await startJob(jobDeps, {
       accountId: account.accountId,
       kind,
       itemIds,
       languages,
       overwrite: Boolean(body.overwrite),
       startedBy: session.user.user || (session.user.userId ? `#${session.user.userId}` : undefined),
-    });
+    }).catch((error: unknown) => (error instanceof LocalizedError && error.code === 'tooManyRequests' ? null : Promise.reject(error)));
+    if (!started) return tooMany(c);
+    const { job, done } = started;
     deps.onJob?.(done);
     return c.json({ id: job.id });
   });
@@ -383,6 +405,7 @@ export function createApp(deps: AppDeps) {
     const session = await apiSession(c, true);
     if (session instanceof Response) return session;
     const t = tr(c);
+    if (!keyChecks.take(session.account.accountId)) return c.json({ ok: false, message: t.t('error.tooManyRequests') }, 429);
     const body = (await c.req.json().catch(() => ({}))) as { apiKey?: string };
     const typed = body.apiKey?.trim() ?? '';
     const saved = reporting.apiKey(session.account);

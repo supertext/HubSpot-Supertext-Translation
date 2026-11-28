@@ -100,6 +100,24 @@ export class PostgresStore implements Store {
 
   async migrate(): Promise<void> {
     await this.pool.query(SCHEMA);
+    await this.reencrypt();
+  }
+
+  /** Re-encrypts tokens and API keys that aren't on the current key (after a key change, or from before key IDs). */
+  async reencrypt(): Promise<number> {
+    const { rows } = await this.pool.query('SELECT account_id, access_token, refresh_token, api_key FROM accounts');
+    let changed = 0;
+    for (const row of rows as { account_id: string; access_token: string; refresh_token: string; api_key: string }[]) {
+      const fields = [row.access_token, row.refresh_token, row.api_key];
+      if (fields.every((value) => this.secrets.isCurrent(value))) continue;
+      const plain = fields.map((value) => this.secrets.decrypt(value));
+      // A value no key opens stays as it is (it may open again once its key is configured).
+      const next = fields.map((value, i) => (plain[i] || !value ? this.secrets.encrypt(plain[i]) : value));
+      await this.pool.query('UPDATE accounts SET access_token = $2, refresh_token = $3, api_key = $4 WHERE account_id = $1', [row.account_id, ...next]);
+      changed++;
+    }
+    if (changed) console.log(`Supertext: re-encrypted the stored secrets of ${changed} account(s) with key ${this.secrets.currentKeyId}.`);
+    return changed;
   }
 
   private account(row: AccountRow): Account {

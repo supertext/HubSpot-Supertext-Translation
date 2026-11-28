@@ -269,6 +269,7 @@ export const de: Messages = {
     'Die App wurde während der Übersetzung neu gestartet. Starten Sie sie erneut; fertige Sprachen bleiben erhalten.',
   'error.session': 'Ihre Sitzung ist abgelaufen. Verbinden Sie HubSpot erneut.',
   'error.tooMany': 'Wählen Sie höchstens 50 Inhalte auf einmal aus.',
+  'error.tooManyRequests': 'Zu viele Anfragen. Bitte warten Sie eine Minute und versuchen Sie es erneut.',
   'error.kbPublishScope': 'Um Wissensdatenbank-Artikel zu veröffentlichen, verbinden Sie HubSpot erneut und erlauben das Veröffentlichen.',
   'error.select': 'Wählen Sie einen Inhalt und mindestens eine Sprache aus.',
   'keyCheck.ok': 'API-Schlüssel geprüft: Die Verbindung zu Supertext funktioniert.',

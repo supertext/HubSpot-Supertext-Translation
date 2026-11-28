@@ -265,6 +265,7 @@ export const fr: Messages = {
   'error.interrupted': 'L’app a redémarré pendant la traduction. Relancez-la ; les langues terminées sont conservées.',
   'error.session': 'Votre session a expiré. Connectez HubSpot à nouveau.',
   'error.tooMany': 'Sélectionnez au plus 50 contenus à la fois.',
+  'error.tooManyRequests': 'Trop de requêtes. Veuillez patienter une minute et réessayer.',
   'error.kbPublishScope': 'Pour publier les articles de la base de connaissances, connectez de nouveau HubSpot et autorisez la publication.',
   'error.select': 'Sélectionnez un contenu et au moins une langue.',
   'keyCheck.ok': 'Clé API vérifiée : la connexion à Supertext fonctionne.',

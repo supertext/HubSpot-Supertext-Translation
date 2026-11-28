@@ -4,6 +4,8 @@ All notable changes to Supertext Translation for HubSpot.
 
 ## Unreleased
 
+- Security: stored tokens and API keys name the key they were encrypted with, earlier keys still decrypt (`APP_ENCRYPTION_KEY_PREVIOUS`, and the client secret), and values are re-encrypted with the current key on start, so changing `APP_ENCRYPTION_KEY` or the client secret no longer loses them silently; a value no key opens is logged. Request bodies are limited to 1 MB (the import: 10 MB), *Test connection* to 10 and new translations to 30 a minute per account, with at most 5 running at once (*Too many requests*). HSTS over HTTPS; the container no longer runs as root.
+
 - Added: **each person has their own session.** The app shows who is logged in (their HubSpot login, top right) and records who started each translation (*History*: *Started by …*). **Log out** ends this browser's session.
 - Changed: sessions last **7 days** (before: 30), then you log in with HubSpot again, which only works while you still have access to the HubSpot account. *Disconnect HubSpot* ends every session, also if the account connects again. Everyone has to log in once after this update.
 
