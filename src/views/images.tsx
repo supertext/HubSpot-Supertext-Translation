@@ -37,9 +37,9 @@ export function LinksImagesTabs(props: { t: Translator; active: 'links' | 'image
   );
 }
 
-/** An image as a small thumbnail opening the full image (only http(s) addresses). */
-function Thumb(props: { src: string; label: string }) {
-  if (!/^https?:\/\//i.test(props.src)) return <code class="image-src">{props.src}</code>;
+/** An image as a small thumbnail opening the full image: HTTPS addresses only, anything else is shown as text. */
+export function Thumb(props: { src: string; label: string }) {
+  if (!/^https:\/\//i.test(props.src.trim())) return <code class="image-src">{props.src}</code>;
   return (
     <a href={props.src} target="_blank" rel="noopener" class="thumb" title={props.src}>
       <img src={props.src} alt={props.label} loading="lazy" width="96" height="64" />

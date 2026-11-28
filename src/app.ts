@@ -88,6 +88,24 @@ export function services(deps: AppDeps) {
   return { oauth, hubspot, supertext, jobDeps, reporting, catalog };
 }
 
+/**
+ * Only the app's own scripts, styles and fonts; images also from HTTPS addresses (the thumbnails
+ * of Links/Images show the account's own images) and data: (CSS icons). No inline scripts, no
+ * plugins, no other <base>, forms only to the app, and never inside a frame.
+ */
+export const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self'",
+  "img-src 'self' https: data:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ');
+
 export function createApp(deps: AppDeps) {
   const { config, store } = deps;
   const app = new Hono();
@@ -103,7 +121,7 @@ export function createApp(deps: AppDeps) {
 
   app.use('*', async (c, next) => {
     await next();
-    c.header('Content-Security-Policy', "frame-ancestors 'none'");
+    c.header('Content-Security-Policy', CONTENT_SECURITY_POLICY);
     c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
     c.header('X-Content-Type-Options', 'nosniff');
     // Pages show the account's live state: never from a cache (static files set their own, see server.ts).
