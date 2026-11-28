@@ -21,19 +21,19 @@
     "docs:movie:install": "tsx tests/docs/movie-install.ts"
   },
   "dependencies": {
-    "@hono/node-server": "^2.1.6",
-    "hono": "^4.13.17",
+    "@hono/node-server": "^2.1.11",
+    "hono": "^4.13.22",
     "node-html-parser": "^9.0.7",
     "pg": "^8.23.1",
     "supertext-plugin-health": "file:vendor/supertext-plugin-health",
     "supertext-sdk": "file:vendor/supertext-sdk"
   },
   "devDependencies": {
-    "@types/node": "^22.20.5",
+    "@types/node": "^22.20.7",
     "@types/pg": "^8.23.1",
-    "playwright": "1.65.0",
+    "playwright": "1.65.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.2"
   }
 }
